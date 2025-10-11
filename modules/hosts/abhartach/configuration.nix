@@ -1,8 +1,4 @@
 {
-  nixosHosts.abhartach = {
-    unstable = true;
-  };
-
   flake.modules.nixos."nixosConfigurations/abhartach" =
     { ... }:
     {
