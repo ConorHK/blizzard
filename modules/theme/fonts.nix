@@ -21,6 +21,22 @@
         fontconfig = {
           enable = true;
           useEmbeddedBitmaps = true;
+          # temp: track https://github.com/nixos/nixpkgs/issues/449657
+          localConf = ''
+            <?xml version="1.0"?>
+            <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+            <fontconfig>
+              <description>Accept bitmap fonts</description>
+            <!-- Accept bitmap fonts -->
+             <selectfont>
+              <acceptfont>
+               <pattern>
+                 <patelt name="outline"><bool>false</bool></patelt>
+               </pattern>
+              </acceptfont>
+             </selectfont>
+            </fontconfig>
+              '';
         };
       };
 
