@@ -2,8 +2,9 @@
   flake.modules.homeManager.core =
     { pkgs, lib, ... }:
     {
-      home.sessionVariables = {
-        SHELL = "${pkgs.fish}/bin/fish";
+      home = {
+        sessionVariables.SHELLS = lib.getExe pkgs.fish;
+        shell.enableFishIntegration = true;
       };
       programs = {
         zoxide.enableFishIntegration = true;
