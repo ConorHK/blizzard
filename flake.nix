@@ -10,10 +10,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    comma.url = "github:nix-community/comma";
-
     cnvim = {
       url = "github:conorhk/vimrc";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    crash = {
+      url = "github:RGBCube/crash";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -21,11 +24,6 @@
 
     devshell = {
       url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nur = {
-      url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -47,6 +45,8 @@
     impermanence.url = "github:nix-community/impermanence";
 
     import-tree.url = "github:vic/import-tree";
+
+    nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
 
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
