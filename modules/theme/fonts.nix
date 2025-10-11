@@ -11,8 +11,11 @@
       creeper = inputs.self.packages.${pkgs.system}.creeper;
     in
     {
-      environment.systemPackages = [ creeper ];
       fonts = {
+        packages = [
+          creeper
+          pkgs.lexend
+        ];
         enableDefaultPackages = true;
         fontDir.enable = true;
         fontconfig = {
@@ -40,4 +43,7 @@
         };
       };
     };
+  flake.modules.homeManager.desktop = {
+    fonts.fontconfig.enable = true;
+  };
 }
