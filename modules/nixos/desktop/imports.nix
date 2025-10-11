@@ -4,7 +4,6 @@
     android
     auto-login
     bluetooth
-    display-manager
     keyring
     plymouth
     sound
