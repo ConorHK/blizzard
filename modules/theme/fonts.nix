@@ -41,6 +41,10 @@
       };
 
       stylix.fonts = {
+        sizes = {
+          terminal = 10;
+        };
+
         sansSerif = lib.mkDefault {
           package = pkgs.lexend;
           name = "Lexend";
