@@ -7,7 +7,11 @@
       inputs,
       ...
     }:
+    let
+      creeper = inputs.self.packages.${pkgs.system}.creeper;
+    in
     {
+      environment.systemPackages = [ creeper ];
       fonts = {
         enableDefaultPackages = true;
         fontDir.enable = true;
@@ -26,7 +30,7 @@
         serif = lib.mkDefault config.stylix.fonts.sansSerif;
 
         monospace = {
-          package = inputs.self.packages.${pkgs.system}.creeper;
+          package = creeper;
           name = "Creeper";
         };
 
