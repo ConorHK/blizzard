@@ -35,6 +35,7 @@
                 "absolute-enable-right-click"
                 "bitwarden-password-manager"
                 "darkreader"
+                "sidebery"
               ];
             in
             builtins.listToAttrs (map mkFirefoxExtension extensions);
