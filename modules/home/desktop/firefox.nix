@@ -30,12 +30,14 @@
               };
 
               extensions = [
-                "uBlock0@raymondhill.net"
+                "d7742d87-e61d-4b78-b8a1-b469842139fa"  # vimium
                 "vimium-ff"
-                "absolute-enable-right-click"
-                "bitwarden-password-manager"
-                "darkreader"
+                "9350bc42-47fb-4598-ae0f-825e3dd9ceba"  # enable-right-click
+                "446900e4-71c2-419f-a6a7-df9c091e268b"  # bitwarden
+                "addon@darkreader.org"
                 "sidebery"
+                "skipredirect@sblask"
+                "idcac-pub@guus.ninja"
               ];
             in
             builtins.listToAttrs (map mkFirefoxExtension extensions);
