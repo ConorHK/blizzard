@@ -54,7 +54,7 @@
         };
 
         emoji = {
-          package = pkgs.google-fonts;
+          package = pkgs.noto-fonts-emoji;
           name = "Noto Color Emoji";
         };
       };
