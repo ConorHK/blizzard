@@ -1,4 +1,4 @@
-name: build and push
+name: build
 on:
   check_suite:
     types: [completed]
@@ -17,6 +17,7 @@ jobs:
           # - ubuntu-24.04-arm
 
     runs-on: ${{ matrix.os }}
+    environment: production
     steps:
       - name: Cleanup host
         uses: wimpysworld/nothing-but-nix@main
