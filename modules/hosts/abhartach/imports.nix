@@ -8,6 +8,7 @@
     amdgpu
 
     cnvim
+    cachix
 
     desktop
     gaming

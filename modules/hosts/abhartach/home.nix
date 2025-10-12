@@ -8,8 +8,11 @@ topLevel: {
           localStorageDir = ../../../.secrets/abhartach/goose;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
         };
-        secrets.git-name.rekeyFile = ./secrets/git-name.age;
-        secrets.git-email.rekeyFile = ./secrets/git-email.age;
+        secrets = {
+          cachix.rekeyFile = ./secrets/cachix.age;
+          git-name.rekeyFile = ./secrets/git-name.age;
+          git-email.rekeyFile = ./secrets/git-email.age;
+        };
       };
 
       home.sessionVariables = {
@@ -17,6 +20,8 @@ topLevel: {
         GIT_AUTHOR_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
         GIT_COMMITTER_NAME = "$(cat ${config.age.secrets.git-name.path})";
         GIT_COMMITTER_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
+
+        CACHIX_AUTH_TOKEN = "$(cat ${config.age.secrets.cachix.path})";
       };
 
       programs.waybar.settings.main.output = "DP-1";
