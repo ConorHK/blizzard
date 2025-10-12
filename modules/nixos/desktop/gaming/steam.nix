@@ -4,6 +4,7 @@ let
     gamescope
     mangohud
     steam
+    inputs.nix-gaming.nixosModules.platformOptimizations
   ];
 
   gamescope = {
@@ -33,6 +34,7 @@ let
       remotePlay.openFirewall = true;
       localNetworkGameTransfers.openFirewall = true;
       gamescopeSession.enable = true;
+      platformOptimizations.enable = true;
     };
   };
 in
