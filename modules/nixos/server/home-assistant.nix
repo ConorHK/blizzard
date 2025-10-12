@@ -3,7 +3,7 @@
     { config, lib, ... }:
     let
       homeAssistantVersion = "stable";
-      configPath = "/home/${config.user.name}/storage/homeassistant/";
+      configPath = "/home/driver/storage/homeassistant/";
       timezone = "Europe/Dublin";
       usbDevice = "/dev/ttyUSB0";
       # TODO: initial load requires mkdir ~/storage/homeassistant and reboot

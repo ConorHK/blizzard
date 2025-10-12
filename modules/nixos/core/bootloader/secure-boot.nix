@@ -8,7 +8,10 @@
       ...
     }:
     {
-      imports = [ inputs.lanzaboote.nixosModules.lanzaboote ];
+      imports = [
+        inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.self.modules.nixos.efi
+      ];
 
       environment.systemPackages = [
         pkgs.sbctl
