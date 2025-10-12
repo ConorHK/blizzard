@@ -29,10 +29,6 @@
           '';
           plugins = [
             {
-              name = "fish-you-should-use";
-              inherit (pkgs.fishPlugins.fish-you-should-use) src;
-            }
-            {
               name = "puffer-fish";
               inherit (pkgs.fishPlugins.puffer) src;
             }
