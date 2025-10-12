@@ -1,29 +1,37 @@
-name: Build & push
+name: build and push
 on:
+  check_suite:
+    types: [completed]
+  # workflow_dispatch:
   push:
-    branches: [ main ]
-  pull_request:
-
-env:
-  USER: root
-
+  # pull_request:
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-machines:
     strategy:
       matrix:
-        host:
+        machine:
           - abhartach
+        os:
+          - ubuntu-latest
+          # - macos-latest
+          # - ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: wimpysworld/nothing-but-nix@main
-      - uses: cachix/install-nix-action@v31
-      - name: Cachix
-        uses: cachix/cachix-action@v16
+      - name: Cleanup host
+        uses: wimpysworld/nothing-but-nix@main
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Sync repository
+        uses: actions/checkout@v4
+
+      - uses: cachix/cachix-action@v14
         with:
           name: conorhk
-          extraPullNames: "nix-community"
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-          skipPush: true
-      - run: nix build -L --no-link .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
-      - run: nix eval --json ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath" | sed 's/"\(.*\)"/\1/' | cachix push conorhk
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          useDaemon: false
+          installCommand: nix profile install nixpkgs#cachix
+
+      - run: nix build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
