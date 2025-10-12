@@ -1,0 +1,37 @@
+name: Build & push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and push Config
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+        include:
+          - os: ubuntu-latest
+            release_suffix: ubuntu
+          - os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - run: sudo rm -rf /opt&
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
+      - uses: cachix/cachix-action@v15
+        with:
+          name: conorhk
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: x86_64-linux Build
+        if: matrix.os == 'ubuntu-latest'
+        run: nix build -L .nix#{navidad,nixvm,usb,archpc,devShell.x86_64-linux}
+
+      - name: aarch64 Build
+        if: matrix.os == 'ubuntu-24.04-arm'
+        run: nix build -L .nix#{nixrpi,devShell.aarch64-linux}
+
+      - name: Deploy
+        run: |
+          cachix push conorhk ./result*
