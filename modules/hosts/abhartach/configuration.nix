@@ -7,6 +7,8 @@
       networking.hostName = "abhartach";
       networking.ipv4.address = "192.168.0.58";
 
+      security.sudo.wheelNeedsPassword = false;
+
       system = {
         autoUpgrade.enable = false;
         stateVersion = "25.05";

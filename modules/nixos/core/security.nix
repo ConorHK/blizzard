@@ -1,21 +1,12 @@
 {
   flake.modules.nixos.security =
-    { pkgs, ... }:
+    { lib, ... }:
     {
       security = {
-        sudo.enable = false;
-        doas = {
-          enable = true;
-          extraRules = [
-            {
-              groups = [ "wheel" ];
-              keepEnv = true;
-              persist = true;
-            }
-          ];
+        sudo = {
+          wheelNeedsPassword = lib.mkDefault true;
+          execWheelOnly = true;
         };
       };
-
-      environment.systemPackages = [ pkgs.doas-sudo-shim ];
     };
 }
