@@ -1,31 +1,29 @@
 name: Build & push
-
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+
+env:
+  USER: root
 
 jobs:
   build:
-    name: Build and push Config
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        include:
-          - os: ubuntu-latest
-            release_suffix: ubuntu
-    runs-on: ${{ matrix.os }}
+        host:
+          - abhartach
     steps:
       - uses: actions/checkout@v4
       - uses: wimpysworld/nothing-but-nix@main
-      - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
-      - uses: cachix/cachix-action@v15
-        env:
-          CACHIX_AUTH_TOKEN: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: x86_64-linux Build
-        if: matrix.os == 'ubuntu-latest'
-        run: nix --extra-experimental-features pipe-operators build -L .#nixosConfigurations.abhartach.config.system.build.toplevel
-
-      - name: Deploy
-        run: |
-          cachix push conorhk ./result*
+      - uses: https://github.com/cachix/install-nix-action@v31
+      - name: Cachix
+        uses: https://github.com/cachix/cachix-action@v16
+        with:
+          name: conorhk
+          extraPullNames: "nix-community"
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          skipPush: true
+      - run: nix build -L --no-link .#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      - run: nix eval --json ".#nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel.outPath" | sed 's/"\(.*\)"/\1/' | cachix push conorhk
