@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.waybar = {
+  flake.modules.homeManager.waybar = { lib, ...}: {
 
     wayland.windowManager.hyprland.settings.exec-once = [
       "systemctl --user start waybar"
@@ -13,8 +13,7 @@
           all: unset;
         }
       '';
-      settings = [
-        {
+      settings.main = {
           name = "sidebar";
           layer = "top";
           position = "left";
@@ -73,8 +72,7 @@
             format = "b:{capacity}%";
             format-charging = "c:{capacity}%";
           };
-        }
-      ];
+        };
     };
   };
 }
