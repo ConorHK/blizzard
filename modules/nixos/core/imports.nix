@@ -7,8 +7,8 @@
     agenix
     network
     nix
+    root
     security
     substituters
-    users
   ];
 }

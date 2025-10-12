@@ -7,6 +7,7 @@
     keyring
     plymouth
     sound
+    users
     yubikey
   ];
 }
