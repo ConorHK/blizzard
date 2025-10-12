@@ -1,19 +1,21 @@
 {
-  flake.modules.homeManager.waybar = { lib, ...}: {
+  flake.modules.homeManager.waybar =
+    { lib, ... }:
+    {
 
-    wayland.windowManager.hyprland.settings.exec-once = [
-      "systemctl --user start waybar"
-    ];
+      wayland.windowManager.hyprland.settings.exec-once = [
+        "systemctl --user start waybar"
+      ];
 
-    programs.waybar = {
-      enable = true;
-      systemd.enable = true;
-      style = ''
-        *{
-          all: unset;
-        }
-      '';
-      settings.main = {
+      programs.waybar = {
+        enable = true;
+        systemd.enable = true;
+        style = ''
+          *{
+            all: unset;
+          }
+        '';
+        settings.main = {
           name = "sidebar";
           layer = "top";
           position = "left";
@@ -73,6 +75,6 @@
             format-charging = "c:{capacity}%";
           };
         };
+      };
     };
-  };
 }

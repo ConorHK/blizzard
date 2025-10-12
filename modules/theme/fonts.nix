@@ -36,7 +36,7 @@
               </acceptfont>
              </selectfont>
             </fontconfig>
-              '';
+          '';
         };
       };
 
