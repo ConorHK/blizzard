@@ -1,7 +1,5 @@
 {
-  flake.modules.homeManager.waybar =
-    { lib, ... }:
-    {
+  flake.modules.homeManager.waybar ={
 
       wayland.windowManager.hyprland.settings.exec-once = [
         "systemctl --user start waybar"

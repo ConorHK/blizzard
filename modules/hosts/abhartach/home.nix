@@ -1,8 +1,6 @@
 { config, ... }:
 {
   flake.modules.homeManager."homeConfigurations/abhartach" = {
-    programs.git.userName = "Conor Knowles";
-    programs.git.userEmail = "dev@conorknowles.com";
 
     programs.waybar.settings.main.output = "DP-1";
     wayland.windowManager.hyprland.settings = {
