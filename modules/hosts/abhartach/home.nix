@@ -8,8 +8,8 @@ topLevel: {
           localStorageDir = ../../../.secrets/abhartach/goose;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
         };
-        secrets.git-name.rekeyFile = ./git-name.age;
-        secrets.git-email.rekeyFile = ./git-email.age;
+        secrets.git-name.rekeyFile = ./secrets/git-name.age;
+        secrets.git-email.rekeyFile = ./secrets/git-email.age;
       };
 
       home.sessionVariables = {
