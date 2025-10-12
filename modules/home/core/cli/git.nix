@@ -8,7 +8,7 @@
 
         difftastic = {
           enable = true;
-          background = "dark";
+          options.background = "dark";
         };
 
         extraConfig = lib.mkDefault {
