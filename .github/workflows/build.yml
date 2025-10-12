@@ -11,6 +11,8 @@ jobs:
       matrix:
         machine:
           - abhartach
+          - bananach
+          - puca
         os:
           - ubuntu-latest
           # - macos-latest
