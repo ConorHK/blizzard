@@ -7,6 +7,7 @@
         inputs.textfox.homeManagerModules.default
       ];
       home.sessionVariables.BROWSER = "firefox";
+      stylix.targets.firefox.profileNames = [ "primary" ];
       programs.firefox = {
         enable = true;
         policies = {
