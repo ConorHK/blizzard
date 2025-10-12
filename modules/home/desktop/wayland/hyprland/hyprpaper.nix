@@ -9,6 +9,10 @@
     {
       stylix.targets.hyprpaper.enable = lib.mkForce false;
 
+      wayland.windowManager.hyprland.settings.exec-once = [
+        "systemctl --user start hyprpaper"
+      ];
+
       services.hyprpaper = {
         enable = true;
         settings = {
