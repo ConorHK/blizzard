@@ -26,7 +26,7 @@
             XDG_SCREENSHOTS_DIR = "${config.home.homeDirectory}/media/pictures/screenshots";
             XDG_REPOSITORIES_DIR = "${config.home.homeDirectory}/repositories";
           };
-    };
-    };
+        };
+      };
     };
 }
