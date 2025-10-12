@@ -34,4 +34,4 @@ jobs:
           useDaemon: false
           installCommand: nix profile install nixpkgs#cachix
 
-      - run: nix build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
+      - run: nix --extra-experimental-features pipe-operators build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
