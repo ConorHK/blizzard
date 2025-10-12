@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.boot =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
         efibootmgr
@@ -9,6 +9,6 @@
         fwupd
       ];
       initrd.systemd.enable = true;
-      loader.efi.canTouchEfiVariables = true;
+      loader.efi.canTouchEfiVariables = lib.mkDefault true;
     };
 }

@@ -1,25 +1,13 @@
 {
-  flake.modules.nixos.sound =
-    { pkgs, ... }:
-    {
-      services.pipewire = {
+  flake.modules.nixos.sound = {
+    services.pipewire = {
+      enable = true;
+      alsa = {
         enable = true;
-        alsa = {
-          enable = true;
-          support32Bit = true;
-        };
-        pulse.enable = true;
+        support32Bit = true;
       };
-      security.rtkit.enable = true;
-
-      home-manager.sharedModules = [
-        {
-          home.packages = [
-            pkgs.pwvucontrol
-            pkgs.qpwgraph
-            pkgs.wiremix
-          ];
-        }
-      ];
+      pulse.enable = true;
     };
+    security.rtkit.enable = true;
+  };
 }

@@ -1,7 +1,16 @@
 {
   flake.modules.nixos.spotifyd =
-    { config, lib, ... }:
     {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      services.pulseaudio.extraConfig = ''
+        unload-module module-suspend-on-idle
+      '';
+
       # force use of fallback resolvers
       networking.extraHosts = ''
         0.0.0.0 apresolve.spotify.com
