@@ -16,8 +16,8 @@ jobs:
             release_suffix: ubuntu
     runs-on: ${{ matrix.os }}
     steps:
-      - run: sudo rm -rf /opt&
       - uses: actions/checkout@v4
+      - uses: wimpysworld/nothing-but-nix@main
       - uses: cachix/install-nix-action@08dcb3a5e62fa31e2da3d490afc4176ef55ecd72 # v30
       - uses: cachix/cachix-action@v15
         with:
