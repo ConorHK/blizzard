@@ -16,5 +16,6 @@
     secure-boot
     sunshine
     virtualization
+    nixbuild
   ];
 }
