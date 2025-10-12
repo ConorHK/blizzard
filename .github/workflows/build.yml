@@ -17,9 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: wimpysworld/nothing-but-nix@main
-      - uses: https://github.com/cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@v31
       - name: Cachix
-        uses: https://github.com/cachix/cachix-action@v16
+        uses: cachix/cachix-action@v16
         with:
           name: conorhk
           extraPullNames: "nix-community"
