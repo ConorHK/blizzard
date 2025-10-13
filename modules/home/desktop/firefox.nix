@@ -6,6 +6,11 @@
       imports = [
         inputs.textfox.homeManagerModules.default
       ];
+
+      wayland.windowManager.hyprland.settings.bind = [
+        "SUPER_SHIFT, F, exec, firefox"
+      ];
+
       home.sessionVariables.BROWSER = "firefox";
       stylix.targets.firefox.profileNames = [ "primary" ];
       programs.firefox = {

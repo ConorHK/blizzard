@@ -46,10 +46,6 @@
         in
         {
           bind = [
-            "SUPER, Space, exec, rofi -show drun -mode drun"
-            "SUPER, Return, exec, alacritty"
-            "SUPER, x, exec, wlogout"
-            "SUPER_SHIFT, F, exec, firefox"
             "SUPER, R, exec, ${resize}/bin/resize"
             "SUPER, Q, killactive,"
             "SUPER, F, Fullscreen,0"
