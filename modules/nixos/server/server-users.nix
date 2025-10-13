@@ -11,6 +11,11 @@
       keysList = builtins.filter (x: x != "") (lib.splitString "\n" keysFile);
     in
     {
+      nix.settings = {
+        trusted-users = [ "driver" ];
+        builders-use-substitutes = true;
+      };
+
       users.users.driver = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
