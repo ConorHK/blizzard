@@ -26,8 +26,6 @@
               |> head;
 
             hostname = value.config.networking.ipv4.address;
-
-            port = head value.config.services.openssh.ports;
           }
         );
     in
