@@ -16,7 +16,7 @@
         settings = {
           # TODO: lockdown
           KbdInteractiveAuthentication = true;
-          PasswordAuthentication = true;
+          PasswordAuthentication = false;
 
           AcceptEnv = "SHELLS COLORTERM";
         };
