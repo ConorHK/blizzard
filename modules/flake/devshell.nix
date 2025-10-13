@@ -6,10 +6,14 @@
 
   perSystem =
     {
+      inputs',
       ...
     }:
     {
       devshells.default = {
+        packages = [
+          inputs'.home-manager.packages.default
+        ];
         commands = [
           {
             name = "rebuild";
@@ -21,6 +25,16 @@
                   --hostname $hostname \
                   --target-host root@$hostname \
                   --build-host root@$hostname
+            '';
+          }
+          {
+            name = "rebuild-home";
+            command = ''
+              home=$1
+
+              echo -e "\n=> Deploying home configuration '$home'"
+              home-manager switch --flake .#$home \
+                  --extra-experimental-features pipe-operators
             '';
           }
         ];
