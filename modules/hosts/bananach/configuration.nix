@@ -5,6 +5,9 @@
     networking.hostName = "bananach";
 
     services.uptime-kuma.settings.HOST = "100.96.40.127";
+    programs.mosh.enable = false;
+    programs.mosh.openFirewall = false;
+    services.openssh.enable = false;
 
     system = {
       autoUpgrade.enable = true;

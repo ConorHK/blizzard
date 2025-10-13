@@ -1,25 +1,59 @@
 {
   flake.modules.nixos.sshd =
-    { ... }:
+    { lib, ... }:
     let
       port = 2222;
     in
     {
       programs.mosh = {
-        enable = true;
-        openFirewall = true;
+        enable = lib.mkDefault true;
+        openFirewall = lib.mkDefault true;
       };
       services.openssh = {
-        enable = true;
+        enable = lib.mkDefault true;
         ports = [ port ];
+        allowSFTP = false;
 
         settings = {
-          # TODO: lockdown
           KbdInteractiveAuthentication = true;
           PasswordAuthentication = false;
-
+          KexAlgorithms = [
+            "curve25519-sha256@libssh.org"
+            "ecdh-sha2-nistp521"
+            "ecdh-sha2-nistp384"
+            "ecdh-sha2-nistp256"
+            "diffie-hellman-group-exchange-sha256"
+          ];
+          Ciphers = [
+            "chacha20-poly1305@openssh.com"
+            "aes256-gcm@openssh.com"
+            "aes128-gcm@openssh.com"
+            "aes256-ctr"
+            "aes192-ctr"
+            "aes128-ctr"
+          ];
+          Macs = [
+            "hmac-sha2-512-etm@openssh.com"
+            "hmac-sha2-256-etm@openssh.com"
+            "umac-128-etm@openssh.com"
+            "hmac-sha2-512"
+            "hmac-sha2-256"
+            "umac-128@openssh.com"
+          ];
           AcceptEnv = "SHELLS COLORTERM";
         };
+
+        extraConfig = ''
+          ClientAliveCountMax 0
+          ClientAliveInterval 300
+
+          AllowTcpForwarding no
+          AllowAgentForwarding no
+          MaxAuthTries 3
+          MaxSessions 2
+          TCPKeepAlive no
+        '';
+
       };
     };
 }
