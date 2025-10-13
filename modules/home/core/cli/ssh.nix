@@ -7,7 +7,10 @@
         attrNames
         filterAttrs
         head
+        listToAttrs
         mapAttrs
+        mapAttrsToList
+        nameValuePair
         remove
         ;
 
@@ -24,10 +27,27 @@
               |> attrNames
               |> remove "root"
               |> head;
-
-            hostname = value.config.networking.ipv4.address;
           }
         );
+      localHosts =
+        config.flake.nixosConfigurations
+        |> filterAttrs (_: value: value.config.services.openssh.enable)
+        |> mapAttrs (
+          name: value: {
+            user =
+              value.config.users.users
+              |> filterAttrs (_: value: value.isNormalUser)
+              |> attrNames
+              |> remove "root"
+              |> head;
+
+            hostname = value.config.networking.ipv4.address;
+
+            port = head value.config.services.openssh.ports;
+          }
+        )
+        |> mapAttrsToList (name: value: nameValuePair "${name}-local" value)
+        |> listToAttrs;
     in
     {
       home.activation.createControlPath = {
@@ -39,17 +59,20 @@
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
-        matchBlocks = hosts // {
-          "*" = {
-            setEnv.COLORTERM = "truecolor";
-            setEnv.TERM = "xterm-256color";
-            controlMaster = "auto";
-            controlPath = "${controlDir}/%r@%n:%p";
-            controlPersist = "60m";
-            serverAliveCountMax = 2;
-            serverAliveInterval = 60;
+        matchBlocks =
+          hosts
+          // localHosts
+          // {
+            "*" = {
+              setEnv.COLORTERM = "truecolor";
+              setEnv.TERM = "xterm-256color";
+              controlMaster = "auto";
+              controlPath = "${controlDir}/%r@%n:%p";
+              controlPersist = "60m";
+              serverAliveCountMax = 2;
+              serverAliveInterval = 60;
+            };
           };
-        };
       };
     };
 }
