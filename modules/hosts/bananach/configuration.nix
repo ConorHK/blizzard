@@ -10,7 +10,6 @@
     services.openssh.enable = false;
 
     system = {
-      autoUpgrade.enable = true;
       stateVersion = "25.05";
     };
   };

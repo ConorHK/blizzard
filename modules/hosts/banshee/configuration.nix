@@ -6,7 +6,6 @@
     networking.ipv4.address = "192.168.0.252";
 
     system = {
-      autoUpgrade.enable = true;
       stateVersion = "25.05";
     };
   };

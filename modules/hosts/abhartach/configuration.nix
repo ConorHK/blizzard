@@ -10,7 +10,6 @@
       security.sudo.wheelNeedsPassword = false;
 
       system = {
-        autoUpgrade.enable = false;
         stateVersion = "25.05";
       };
     };
