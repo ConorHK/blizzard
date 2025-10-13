@@ -3,11 +3,11 @@
     services.gammastep = {
       enable = true;
       provider = "manual";
-      dawnTime = "6:30-7:45";
-      duskTime = "19:45-21:00";
+      latitude = 53.26;
+      longitude = 6.15;
       temperature.day = 5500;
       temperature.night = 1900;
-      tray = true;
+      tray = false;
     };
   };
 }
