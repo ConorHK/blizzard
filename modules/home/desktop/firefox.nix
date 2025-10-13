@@ -39,7 +39,7 @@
                 "d7742d87-e61d-4b78-b8a1-b469842139fa" # vimium
                 "vimium-ff"
                 "9350bc42-47fb-4598-ae0f-825e3dd9ceba" # enable-right-click
-                "446900e4-71c2-419f-a6a7-df9c091e268b" # bitwarden
+                "bitwarden-password-manager"
                 "addon@darkreader.org"
                 "sidebery"
                 "skipredirect@sblask"
