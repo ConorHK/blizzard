@@ -21,6 +21,9 @@ topLevel: {
         GIT_COMMITTER_NAME = "$(cat ${config.age.secrets.git-name.path})";
         GIT_COMMITTER_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
 
+        JJ_USER = "$(cat ${config.age.secrets.git-name.path})";
+        JJ_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
+
         CACHIX_AUTH_TOKEN = "$(cat ${config.age.secrets.cachix.path})";
       };
 
@@ -48,6 +51,7 @@ topLevel: {
         desktop
         xdg
         agenix
+        jujutsu
       ];
     };
 }
