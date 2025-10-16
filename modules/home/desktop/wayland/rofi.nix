@@ -3,7 +3,7 @@
     { pkgs, ... }:
     {
       wayland.windowManager.hyprland.settings.bind = [
-        "SUPER, Space, exec, rofi -show drun -mode drun"
+        "SUPER, Space, exec, uwsm app -- rofi -show drun -mode drun"
       ];
       programs.rofi = {
         enable = true;

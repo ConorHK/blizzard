@@ -8,7 +8,7 @@
       ];
 
       wayland.windowManager.hyprland.settings.bind = [
-        "SUPER_SHIFT, F, exec, firefox"
+        "SUPER_SHIFT, F, exec, uwsm app -- firefox"
       ];
 
       home.sessionVariables.BROWSER = "firefox";

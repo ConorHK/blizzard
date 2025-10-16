@@ -1,7 +1,7 @@
 {
   flake.modules.homeManager.alacritty = {
     wayland.windowManager.hyprland.settings.bind = [
-      "SUPER, Return, exec, alacritty"
+      "SUPER, Return, exec, uwsm app -- alacritty"
     ];
 
     programs = {
