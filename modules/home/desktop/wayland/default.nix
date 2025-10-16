@@ -9,7 +9,6 @@
     {
       imports = with config.flake.modules.homeManager; [
         gammastep
-        rofi
         swayosd
         dunst
       ];
