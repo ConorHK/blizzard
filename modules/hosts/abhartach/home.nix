@@ -48,10 +48,11 @@ topLevel: {
       };
 
       imports = with topLevel.config.flake.modules.homeManager; [
-        desktop
-        xdg
         agenix
+        desktop
         jujutsu
+        cnvim
+        xdg
       ];
     };
 }
