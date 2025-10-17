@@ -19,6 +19,11 @@
           ];
         };
 
+      systemd.user.services.gammastep = {
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
+      };
       services.gammastep = {
         enable = true;
         provider = "manual";

@@ -5,7 +5,6 @@
     auto-login
     bluetooth
     keyring
-    plymouth
     sound
     users
     yubikey

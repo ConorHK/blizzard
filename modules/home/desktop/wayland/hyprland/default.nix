@@ -13,7 +13,6 @@
         hyprpaper
         waybar
         wayland
-        wleave
       ];
 
       xdg.portal = {

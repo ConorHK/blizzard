@@ -9,13 +9,18 @@
       wayland.windowManager.hyprland.settings.bind = [
         "SUPER, Space, exec, vicinae toggle"
       ];
+      systemd.user.services.vicinae = {
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
+      };
       services.vicinae = {
         enable = true;
         autoStart = true;
         settings = {
           font = {
             size = 10;
-            normal = "creeper";
+            normal = "Lexend";
           };
           keybinding = "defaut";
           # keybinds = {};
