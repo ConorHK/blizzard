@@ -9,6 +9,8 @@
         "center, title:^(File Upload)"
 
         "float, class:^(steam)$"
+        "float, class:com.saivert.pwvucontrol"
+        "center, class:com.saivert.pwvucontrol"
       ];
     };
   };

@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.waybar = {
+  flake.modules.homeManager.waybar = { lib, pkgs, ... }: {
 
     wayland.windowManager.hyprland.settings.exec-once = [
       "systemctl --user start waybar"
@@ -39,8 +39,7 @@
             "1" = [ ];
             "2" = [ ];
             "3" = [ ];
-            "4" = [ ];
-            "5" = [ ];
+            "9" = [ ];
           };
           sort-by-number = true;
         };
@@ -59,9 +58,11 @@
         };
         wireplumber = {
           format = "v:{volume}%";
+          format-muted = "m:{volume}%";
           max-volume = 100;
           scroll-step = 5;
-          on-click = "pavucontrol";
+          on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+          on-click-right = "${lib.getExe pkgs.pwvucontrol}";
         };
         battery = {
           states = {
