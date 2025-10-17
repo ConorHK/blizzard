@@ -24,6 +24,7 @@
           "niri/workspaces"
         ];
         modules-right = [
+          "privacy"
           "wireplumber"
           "network"
         ];
@@ -72,6 +73,14 @@
           };
           format = "b:{capacity}%";
           format-charging = "c:{capacity}%";
+        };
+        privacy = {
+          modules = [
+            {
+              type = "screenshare";
+              tooltip = true;
+            }
+          ];
         };
       };
     };
