@@ -11,6 +11,7 @@
         gammastep
         swayosd
         dunst
+        screenshot
       ];
 
       home = {
