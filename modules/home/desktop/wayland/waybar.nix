@@ -49,6 +49,7 @@
           };
           clock = {
             format = "{:%H\n%M\n--\n%d\n%m}";
+            tooltip-format = "<big>{:%A %B %d}</big>\n<tt><small>{calendar}</small></tt>";
           };
           network = {
             interval = 1;
