@@ -44,8 +44,8 @@
           animation = [
             "border    , 1, 2, material_decelerate"
             "fade      , 1, 2, material_decelerate"
-            "layers    , 1, 2, material_decelerate"
-            "windows   , 1, 2, material_decelerate, popin 80%"
+            "layers    , 1, 2, material_decelerate, gnomed"
+            "windows   , 1, 1, default, gnomed"
             "workspaces, 1, 2, material_decelerate, slidevert"
           ];
         };
