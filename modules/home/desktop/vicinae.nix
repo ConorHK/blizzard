@@ -10,9 +10,9 @@
         "SUPER, Space, exec, vicinae toggle"
       ];
       systemd.user.services.vicinae = {
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
+        Install = {
+          WantedBy = [ "default.target" ];
+        };
       };
       services.vicinae = {
         enable = true;

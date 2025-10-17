@@ -20,9 +20,9 @@
         };
 
       systemd.user.services.gammastep = {
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
+        Install = {
+          WantedBy = [ "default.target" ];
+        };
       };
       services.gammastep = {
         enable = true;
