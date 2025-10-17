@@ -15,10 +15,16 @@
         settings = {
           font = {
             size = 10;
-            name = "creeper";
+            normal = "creeper";
           };
+          keybinding = "defaut";
+          # keybinds = {};
+          popToRootOnClose = false;
+          rootSearch.searchFiles = true;
+          theme.name = "vicinae-dark";
 
           window = {
+            csd = true;
             rounding = 0;
             opacity = 1;
           };
