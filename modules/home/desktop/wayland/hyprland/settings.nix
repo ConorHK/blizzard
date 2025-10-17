@@ -46,7 +46,7 @@
             "fade      , 1, 2, material_decelerate"
             "layers    , 1, 2, material_decelerate"
             "windows   , 1, 2, material_decelerate, popin 80%"
-            "workspaces, 1, 2, material_decelerate"
+            "workspaces, 1, 2, material_decelerate, slidevert"
           ];
         };
 
