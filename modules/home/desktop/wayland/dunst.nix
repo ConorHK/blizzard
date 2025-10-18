@@ -3,7 +3,7 @@
   flake.modules.homeManager.dunst = {
     systemd.user.services.dunst = {
       Install = {
-        WantedBy = [ "default.target" ];
+        WantedBy = [ "graphical-session.target" ];
       };
     };
     services.dunst = {

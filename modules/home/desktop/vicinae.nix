@@ -11,7 +11,7 @@
       ];
       systemd.user.services.vicinae = {
         Install = {
-          WantedBy = [ "default.target" ];
+          WantedBy = [ "graphical-session.target" ];
         };
       };
       services.vicinae = {

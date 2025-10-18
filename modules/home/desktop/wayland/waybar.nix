@@ -3,9 +3,11 @@
     { lib, pkgs, ... }:
     {
 
-      wayland.windowManager.hyprland.settings.exec-once = [
-        "systemctl --user start waybar"
-      ];
+      systemd.user.services.waybar = {
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+      };
 
       programs.waybar = {
         enable = true;

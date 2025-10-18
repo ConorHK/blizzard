@@ -21,7 +21,7 @@
 
       systemd.user.services.gammastep = {
         Install = {
-          WantedBy = [ "default.target" ];
+          WantedBy = [ "graphical-session.target" ];
         };
       };
       services.gammastep = {

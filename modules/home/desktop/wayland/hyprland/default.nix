@@ -43,6 +43,10 @@
           ;
       };
 
+      wayland.windowManager.hyprland.settings.exec-once = [
+        "systemctl --user start graphical-session.target"
+      ];
+
       wayland.windowManager.hyprland = {
         enable = true;
         systemd.enable = false; # conflicts with UWSM
