@@ -4,6 +4,12 @@
       "SUPER, Return, exec, uwsm app -- alacritty"
     ];
 
+    wayland.windowManager.hyprland.settings = {
+      windowrule = [
+        "float, class:alacritty-popup"
+        "center, class:alacritty-popup"
+      ];
+    };
     programs = {
       alacritty = {
         enable = true;

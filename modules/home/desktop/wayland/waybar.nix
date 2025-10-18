@@ -88,13 +88,31 @@
               }
             ];
           };
-          systemd-failed-units = {
-            hide-on-ok = false;
-            format-ok = "SYSOK";
-            format = "SYSF:{nr_failed}";
-            system = true;
-            user = true;
-          };
+          systemd-failed-units =
+            let
+              check-failing-units = pkgs.writeShellScriptBin "check-failing-units" ''
+                #!/usr/bin/env bash
+
+
+                BLUE_BOLD="\033[1;34m"
+                RESET="\033[0m"
+
+                echo -e "''${BLUE_BOLD}User units:''${RESET}"
+                systemctl --user list-units --state=failed
+                echo -e "''${BLUE_BOLD}System units:''${RESET}"
+                systemctl list-units --state=failed
+
+                read -n 1 -s -r -p "Press any key to exit"
+              '';
+            in
+            {
+              hide-on-ok = false;
+              format-ok = "SYSOK";
+              format = "SYSF:{nr_failed}";
+              system = true;
+              user = true;
+              on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe check-failing-units}";
+            };
         };
       };
     };
