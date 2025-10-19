@@ -10,5 +10,6 @@
     root
     security
     substituters
+    syncthing
   ];
 }
