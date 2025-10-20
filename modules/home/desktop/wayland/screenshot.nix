@@ -6,7 +6,7 @@
         let
           screenshot = pkgs.writeShellScriptBin "screenshot" ''
             #!/usr/bin/env bash
-            ${lib.getExe pkgs.grimblast} save area - | ${lib.getExe pkgs.satty} --actions-on-enter save-to-clipboard,exit --actions-on-escape exit -f -
+            ${lib.getExe pkgs.grimblast} save area - | ${lib.getExe pkgs.satty} --actions-on-escape exit -f -
           '';
         in
         [

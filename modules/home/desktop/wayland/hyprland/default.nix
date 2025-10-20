@@ -43,8 +43,25 @@
           ;
       };
 
+      systemd.user.services.hyprland-session = {
+        Unit = {
+          Description = "Hyprland session marker";
+          BindsTo = "graphical-session.target";
+          After = "graphical-session-pre.target";
+          Before = "graphical-session.target";
+        };
+        Service = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.coreutils}/bin/true";
+        };
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+      };
+
       wayland.windowManager.hyprland.settings.exec-once = [
-        "systemctl --user start graphical-session.target"
+        "systemctl --user start hyprland-session.service"
       ];
 
       wayland.windowManager.hyprland = {
