@@ -2,45 +2,48 @@
   flake.modules.homeManager.core =
     { lib, ... }:
     {
-      programs.git = {
-        enable = true;
-        lfs.enable = true;
-
+      programs = {
         difftastic = {
           enable = true;
+          git.enable = true;
           options.background = "dark";
         };
 
-        extraConfig = lib.mkDefault {
-          init.defaultBranch = lib.mkDefault "main";
+        git = {
+          enable = true;
+          lfs.enable = true;
 
-          commit.verbose = true;
+          settings = lib.mkDefault {
+            init.defaultBranch = lib.mkDefault "main";
 
-          log.date = "iso";
-          column.ui = "auto";
+            commit.verbose = true;
 
-          branch.sort = "-committerdate";
-          tag.sort = "version:refname";
+            log.date = "iso";
+            column.ui = "auto";
 
-          diff.algorithm = "histogram";
-          diff.colorMoved = "default";
+            branch.sort = "-committerdate";
+            tag.sort = "version:refname";
 
-          pull.rebase = true;
-          push.autoSetupRemote = true;
+            diff.algorithm = "histogram";
+            diff.colorMoved = "default";
 
-          merge.conflictStyle = "zdiff3";
+            pull.rebase = true;
+            push.autoSetupRemote = true;
 
-          rebase.autoSquash = true;
-          rebase.autoStash = true;
-          rebase.updateRefs = true;
-          rerere.enabled = true;
+            merge.conflictStyle = "zdiff3";
 
-          fetch.fsckObjects = true;
-          receive.fsckObjects = true;
-          transfer.fsckobjects = true;
+            rebase.autoSquash = true;
+            rebase.autoStash = true;
+            rebase.updateRefs = true;
+            rerere.enabled = true;
 
-          # https://bernsteinbear.com/git
-          alias.recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
+            fetch.fsckObjects = true;
+            receive.fsckObjects = true;
+            transfer.fsckobjects = true;
+
+            # https://bernsteinbear.com/git
+            alias.recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
+          };
         };
       };
 
