@@ -9,15 +9,16 @@ jobs:
   build-machines:
     strategy:
       matrix:
-        machine:
-          - abhartach
-          - bananach
-          - banshee
-          - puca
-        os:
-          - ubuntu-latest
+        include:
           # - macos-latest
-          - ubuntu-24.04-arm
+          - machine: abhartach
+            os: ubuntu-latest
+          - machine: bananach
+            os: ubuntu-latest
+          - machine: banshee
+            os: ubuntu-24.04-arm
+          - machine: puca
+            os: ubuntu-latest
 
     runs-on: ${{ matrix.os }}
     environment: production
