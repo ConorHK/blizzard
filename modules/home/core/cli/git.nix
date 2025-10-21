@@ -41,37 +41,10 @@
             receive.fsckObjects = true;
             transfer.fsckobjects = true;
 
-            alias =
-              let
-                switch-branch = pkgs.writeScriptBin "switch-branch" ''
-                  #!${pkgs.bash}/bin/bash
-                  set -o errexit
-                  set -o nounset
-
-                  selected_branch_ref=$(git branch --all --format='%(refname)' --sort='committerdate' | fzf --reverse)
-                  selected_branch_ref_prefix=''${selected_branch_ref#*/}
-                  selected_branch_source=''${selected_branch_ref_prefix%%/*}
-
-                  if test "$selected_branch_source" = 'remotes'; then
-                    branch_with_remote=''${selected_branch_ref#refs/remotes/}
-                    branch_without_remote=''${branch_with_remote#*/}
-                    (
-                      set -x
-                      git switch "$branch_without_remote" || git switch -t "$branch_with_remote"
-                    )
-                  else
-                    branch_name=''${selected_branch_ref#refs/heads/}
-                    (
-                      set -x
-                      git switch "$branch_name"
-                    )
-                  fi
-                '';
-              in
-              {
+            alias = {
                 # https://bernsteinbear.com/git
                 recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
-                switch-branch = "! ${lib.getExe switch-branch}";
+                switch-branch = "! git branch --sort=committerdate | ${lib.getExe pkgs.fzf} --reverse | xargs -I {} git checkout {}";
               };
           };
         };
