@@ -12,11 +12,12 @@ jobs:
         machine:
           - abhartach
           - bananach
+          - banshee
           - puca
         os:
           - ubuntu-latest
           # - macos-latest
-          # - ubuntu-24.04-arm
+          - ubuntu-24.04-arm
 
     runs-on: ${{ matrix.os }}
     environment: production
