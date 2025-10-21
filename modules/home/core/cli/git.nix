@@ -42,10 +42,10 @@
             transfer.fsckobjects = true;
 
             alias = {
-                # https://bernsteinbear.com/git
-                recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
-                switch-branch = "! git branch --sort=committerdate | ${lib.getExe pkgs.fzf} --reverse | xargs -I {} git checkout {}";
-              };
+              # https://bernsteinbear.com/git
+              recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
+              switch-branch = "! git branch --sort=committerdate | ${lib.getExe pkgs.fzf} --reverse | xargs -I {} git checkout {}";
+            };
           };
         };
       };
