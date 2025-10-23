@@ -7,5 +7,6 @@
     media
     network-manager
     social
+    vicinae
   ];
 }

@@ -6,6 +6,5 @@
     nix
     nix-index-database
     syncthing
-    vicinae
   ];
 }
