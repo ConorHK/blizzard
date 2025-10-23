@@ -54,9 +54,10 @@ topLevel: {
 
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
+        cnvim
         desktop
         jujutsu
-        cnvim
+        ssh
         xdg
       ];
     };

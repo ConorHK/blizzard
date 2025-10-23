@@ -1,6 +1,6 @@
 { config, ... }:
 {
-  flake.modules.homeManager.core =
+  flake.modules.homeManager.ssh =
     { lib, ... }:
     let
       inherit (lib)
