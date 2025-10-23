@@ -6,6 +6,12 @@
         sessionVariables.SHELLS = lib.getExe pkgs.fish;
         shell.enableFishIntegration = true;
       };
+      xdg.configFile."zellij/config.kdl".text = lib.concatStringsSep "\n" [
+        ''
+          default_shell "fish"
+        ''
+      ];
+
       programs = {
         zoxide.enableFishIntegration = true;
         fzf.enableFishIntegration = true;
