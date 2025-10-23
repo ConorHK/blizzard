@@ -57,6 +57,7 @@ topLevel: {
         cnvim
         desktop
         jujutsu
+        ntfy
         ssh
         xdg
         zellij

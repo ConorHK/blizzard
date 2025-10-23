@@ -1,6 +1,6 @@
 { config, ... }:
 {
-  flake.modules.homeManager.core =
+  flake.modules.homeManager.ntfy =
     { config, pkgs, ... }:
     {
       age.secrets.ntfy-topic.rekeyFile = ./ntfy-topic.age;
