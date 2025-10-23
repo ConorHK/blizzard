@@ -59,6 +59,7 @@ topLevel: {
         jujutsu
         ssh
         xdg
+        zellij
       ];
     };
 }
