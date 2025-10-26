@@ -11,8 +11,8 @@ topLevel: {
       };
 
       services.syncthing.settings = {
-        devices.abhartach.id = "6UC67WT-CMLMJIP-JA6Z2H2-2H2ICCF-N7VRJBY-4XOMVIO-A6E7TN4-JVSW4A4";
-        folders.share.devices = [ "abhartach" ];
+        devices.dullahan.id = "LAIGIVW-EIN4X7E-NTWJJ7D-XE6UBDQ-LXALLB6-UR77FXM-JZJMQJ7-5TKPNAX";
+        folders.share.devices = [ "dullahan" ];
       };
 
       home.sessionVariables = {
