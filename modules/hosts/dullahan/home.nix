@@ -20,8 +20,6 @@ topLevel: {
         GIT_AUTHOR_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
         GIT_COMMITTER_NAME = "$(cat ${config.age.secrets.git-name.path})";
         GIT_COMMITTER_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
-
-        CACHIX_AUTH_TOKEN = "$(cat ${config.age.secrets.cachix.path})";
       };
 
       programs.waybar.settings.main.output = "eDP-1";
