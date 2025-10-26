@@ -24,6 +24,7 @@ topLevel: {
 
       programs.waybar.settings.main.output = "eDP-1";
       wayland.windowManager.hyprland.settings = {
+        input.kb_layout = "gb";
         workspace = [
           "1,monitor:eDP-1"
           "2,monitor:eDP-1"
