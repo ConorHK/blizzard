@@ -7,6 +7,8 @@
   flake.modules.nixos."nixosConfigurations/abhartach".imports = with inputs.self.modules.nixos; [
     amdgpu
 
+    beeper
+
     cnvim
     cachix
 
