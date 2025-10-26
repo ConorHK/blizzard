@@ -12,12 +12,14 @@
   perSystem =
     {
       inputs',
+      pkgs,
       ...
     }:
     {
       devshells.default = {
         packages = [
           inputs'.agenix-rekey.packages.default
+          pkgs.age-plugin-yubikey
         ];
         env = [
           {

@@ -2,6 +2,10 @@
   flake.modules.homeManager.core =
     { lib, pkgs, ... }:
     {
+      age.secrets = {
+        git-name.rekeyFile = ./secrets/git-name.age;
+        git-email.rekeyFile = ./secrets/git-email.age;
+      };
       programs = {
         difftastic = {
           enable = true;
