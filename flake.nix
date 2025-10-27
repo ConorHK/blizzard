@@ -15,6 +15,8 @@
     disko.url = "github:nix-community/disko";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    git-hooks-nix.inputs.nixpkgs.follows = "nixpkgs";
+    git-hooks-nix.url = "github:cachix/git-hooks.nix";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     impermanence.url = "github:nix-community/impermanence";
@@ -34,8 +36,8 @@
     textfox.url = "github:adriankarlen/textfox";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    vicinae.url = "github:vicinaehq/vicinae";
     vicinae.inputs.nixpkgs.follows = "nixpkgs";
+    vicinae.url = "github:vicinaehq/vicinae";
   };
 
   outputs =

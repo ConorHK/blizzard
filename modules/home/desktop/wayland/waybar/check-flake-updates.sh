@@ -35,11 +35,11 @@ REMOTE_DATE=$(git log -1 --format=%ai "$REMOTE/$BRANCH" 2>/dev/null | cut -d' ' 
 COMMITS_BEHIND=$(git rev-list --count "$REMOTE/$BRANCH"..HEAD 2>/dev/null)
 
 if [ "$LOCAL_LOCK_HASH" = "$REMOTE_LOCK_HASH" ]; then
-    TOOLTIP="✓ Up to date ($(echo $LOCAL_DATE | cut -d' ' -f1))"
+    TOOLTIP="✓ Up to date ($(echo "$LOCAL_DATE" | cut -d' ' -f1))"
     TEXT="$ICON_UP_TO_DATE"
     CLASS="up-to-date"
 elif [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ]; then
-    TOOLTIP="󰔄 Updates available ($(echo $REMOTE_DATE | cut -d' ' -f1))"
+    TOOLTIP="󰔄 Updates available ($(echo "$REMOTE_DATE" | cut -d' ' -f1))"
     TEXT="$ICON_OUTDATED"
     CLASS="needs-update"
 else
@@ -56,3 +56,4 @@ else
 fi
 
 echo "{\"text\": \"$TEXT\", \"tooltip\": \"$TOOLTIP\", \"class\": \"$CLASS\"}"
+
