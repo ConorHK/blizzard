@@ -11,5 +11,6 @@
     security
     substituters
     syncthing
+    update
   ];
 }
