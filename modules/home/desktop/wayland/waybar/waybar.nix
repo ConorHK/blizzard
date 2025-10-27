@@ -94,6 +94,12 @@
               check-flake-updates = pkgs.writeShellScriptBin "check-flake-updates" (
                 builtins.readFile ./check-flake-updates.sh
               );
+              git-status = pkgs.writeShellScriptBin "gitstatus" ''
+                #!/usr/bin/env bash
+
+                cd /home/goose/repositories/blizzard && git fetch origin && git status
+                read -n 1 -s -r -p "Press any key to exit"
+              '';
             in
             {
               format = "{}";
@@ -101,6 +107,7 @@
               exec-if = "test -d $HOME/repositories/blizzard/.git";
               interval = 300;
               tooltip = true;
+              on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe git-status}";
               return-type = "json";
             };
           systemd-failed-units =
