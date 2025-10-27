@@ -30,6 +30,7 @@
           modules-right = [
             "privacy"
             "systemd-failed-units"
+            "custom/system-up-to-date"
             "wireplumber"
             "network"
           ];
@@ -88,6 +89,20 @@
               }
             ];
           };
+          "custom/system-up-to-date" =
+            let
+              check-flake-updates = pkgs.writeShellScriptBin "check-flake-updates" (
+                builtins.readFile ./check-flake-updates.sh
+              );
+            in
+            {
+              format = "{}";
+              exec = "${lib.getExe check-flake-updates} $HOME/repositories/blizzard origin";
+              exec-if = "test -d $HOME/repositories/blizzard/.git";
+              interval = 300;
+              tooltip = true;
+              return-type = "json";
+            };
           systemd-failed-units =
             let
               check-failing-units = pkgs.writeShellScriptBin "check-failing-units" ''
