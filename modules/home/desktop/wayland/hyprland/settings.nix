@@ -12,7 +12,7 @@
 
         general = {
           gaps_in = 0;
-          gaps_out = 10;
+          gaps_out = 0;
           border_size = 2;
           "col.active_border" = lib.mkForce "0xFFAF875F";
           resize_on_border = true;
@@ -44,7 +44,7 @@
           animation = [
             "border    , 1, 2, material_decelerate"
             "fade      , 1, 2, material_decelerate"
-            "layers    , 1, 2, material_decelerate, gnomed"
+            "layers    , 1, 2, default, slide"
             "windows   , 1, 1, default, gnomed"
             "workspaces, 1, 2, material_decelerate, slidevert"
           ];
