@@ -22,15 +22,18 @@
           layer = "top";
           position = "left";
           spacing = 5;
-          modules-left = [ "clock" ];
+          modules-left = [
+            "clock"
+            "custom/separator"
+            "systemd-failed-units"
+            "custom/system-up-to-date"
+          ];
           modules-center = [
             "hyprland/workspaces"
             "niri/workspaces"
           ];
           modules-right = [
             "privacy"
-            "systemd-failed-units"
-            "custom/system-up-to-date"
             "wireplumber"
             "network"
           ];
@@ -135,6 +138,11 @@
               user = true;
               on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe check-failing-units}";
             };
+          "custom/separator" = {
+            format = "﹏﹏﹏";
+            nterval = "once";
+            tooltip = false;
+          };
         };
       };
     };

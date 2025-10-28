@@ -50,6 +50,7 @@ topLevel: {
         agenix
         cnvim
         desktop
+        laptop
         ntfy
         ssh
         xdg
