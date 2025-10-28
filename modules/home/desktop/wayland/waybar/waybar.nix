@@ -24,9 +24,6 @@
           spacing = 5;
           modules-left = [
             "clock"
-            "custom/separator"
-            "systemd-failed-units"
-            "custom/system-up-to-date"
           ];
           modules-center = [
             "hyprland/workspaces"
@@ -36,6 +33,9 @@
             "privacy"
             "wireplumber"
             "network"
+            "custom/separator"
+            "systemd-failed-units"
+            "custom/system-up-to-date"
           ];
           "hyprland/workspaces" = {
             disable-scroll = true;
