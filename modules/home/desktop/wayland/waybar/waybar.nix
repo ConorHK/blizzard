@@ -9,14 +9,11 @@
         };
       };
 
+      stylix.targets.waybar.enable = lib.mkForce false;
       programs.waybar = {
         enable = true;
         systemd.enable = true;
-        style = ''
-          *{
-            all: unset;
-          }
-        '';
+        style = builtins.readFile ./style.css;
         settings.main = {
           name = "sidebar";
           layer = "top";
