@@ -8,6 +8,10 @@ topLevel: {
           localStorageDir = ../../../.secrets/dullahan/goose;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvnibFml4dw8uL++ghBdXSCfEfb4ZDAPD6uLcXZBvWn";
         };
+        secrets = {
+          git-name.rekeyFile = ../.secrets/git-name.age;
+          git-email.rekeyFile = ../.secrets/git-email.age;
+        };
       };
 
       # services.syncthing.settings = {

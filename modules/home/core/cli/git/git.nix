@@ -2,10 +2,6 @@
   flake.modules.homeManager.core =
     { lib, pkgs, ... }:
     {
-      age.secrets = {
-        git-name.rekeyFile = ./secrets/git-name.age;
-        git-email.rekeyFile = ./secrets/git-email.age;
-      };
       home.packages = [ pkgs.pre-commit ];
       programs = {
         difftastic = {
