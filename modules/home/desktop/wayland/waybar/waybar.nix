@@ -45,12 +45,6 @@
               active = "•";
               default = "•";
             };
-            persistent-workspaces = {
-              "1" = [ ];
-              "2" = [ ];
-              "3" = [ ];
-              "9" = [ ];
-            };
             sort-by-number = true;
           };
           clock = {

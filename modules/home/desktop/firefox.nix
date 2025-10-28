@@ -72,7 +72,7 @@
             id = 0;
             settings."toolkit.legacyUserProfileCustomizations.stylesheets" = true;
             settings."browser.ctrlTab.sortByRecentlyUsed" = true;
-            settings."browser.tabs.closeWindowWithLastTab" = false;
+            settings."browser.fullscreen.autohide" = false;
             userChrome = ''
               #TabsToolbar
               {
