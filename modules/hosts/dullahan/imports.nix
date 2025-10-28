@@ -5,6 +5,7 @@
   };
 
   flake.modules.nixos."nixosConfigurations/dullahan".imports = with inputs.self.modules.nixos; [
+    battery
 
     cnvim
     cachix
