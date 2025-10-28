@@ -11,8 +11,8 @@
         };
 
         general = {
-          gaps_in = 10;
-          gaps_out = 8;
+          gaps_in = 0;
+          gaps_out = 10;
           border_size = 2;
           "col.active_border" = lib.mkForce "0xFFAF875F";
           resize_on_border = true;
