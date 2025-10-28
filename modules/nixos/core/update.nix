@@ -12,7 +12,7 @@
 
         allowReboot = true;
         rebootWindow = {
-          lower = "05:00";
+          lower = "04:25";
           upper = "05:45";
         };
         operation = "boot";
