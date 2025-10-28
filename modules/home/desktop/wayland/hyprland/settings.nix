@@ -29,7 +29,7 @@
           touchpad = {
             clickfinger_behavior = true;
             drag_lock = true;
-            natural_scroll = true;
+            natural_scroll = false;
             scroll_factor = 0.7;
           };
         };
