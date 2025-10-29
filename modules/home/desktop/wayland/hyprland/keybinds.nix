@@ -1,6 +1,6 @@
 {
   flake.modules.homeManager.hyprland =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       home.packages = with pkgs; [
         slurp
@@ -42,6 +42,38 @@
             grep "floating: 0" $windowinfo && hyprctl dispatch togglefloating
             hyprctl dispatch moveactive exact $pos_x $pos_y
             hyprctl dispatch resizeactive exact $size_x $size_y
+          '';
+          workspace-nav = pkgs.writeShellScriptBin "workspace-nav" ''
+            #!/usr/bin/env bash
+
+            # Get the direction (left/right for Left/Right arrow)
+            direction=$1
+
+            # Get current workspace ID
+            current_ws=$(hyprctl activeworkspace -j | ${pkgs.jq}/bin/jq -r '.id')
+            is_populated=$(hyprctl activeworkspace -j | jq -r '.windows')
+
+            # Get list of all workspace IDs
+            all_workspaces=$(hyprctl workspaces -j | ${pkgs.jq}/bin/jq -r '.[].id' | sort -n)
+            hyprctl keyword animation "workspaces,1,2,material_decelerate,slide"
+
+            if [ "$direction" == "right" ]; then
+                # Calculate adjacent workspace (append a digit)
+                # For workspace 1 -> 11, for workspace 11 -> 111, etc.
+                # We append 1 to the current workspace number
+                next_ws="''${current_ws}1"
+                if [ "$is_populated" != "0" ]; then
+                  hyprctl dispatch workspace "$next_ws"
+                fi
+            elif [ "$direction" == "left" ]; then
+                # Go back to parent workspace by removing last digit
+                # For workspace 111 -> 11, for workspace 11 -> 1
+                if [ ''${#current_ws} -gt 1 ]; then
+                    prev_ws="''${current_ws%?}"
+                    hyprctl dispatch workspace "$prev_ws"
+                fi
+            fi
+            hyprctl keyword animation "workspaces,1,2,material_decelerate,slidevert"
           '';
         in
         {
@@ -88,6 +120,8 @@
             "SUPER_SHIFT, 0, movetoworkspacesilent,10"
             "SUPER,u, togglespecialworkspace"
             "SUPERSHIFT,u, movetoworkspace,special"
+            "SUPER_CTRL, Left, exec, ${lib.getExe workspace-nav} left"
+            "SUPER_CTRL, Right, exec, ${lib.getExe workspace-nav} right"
           ];
           bindm = [
             "SUPER, mouse:272, movewindow"
