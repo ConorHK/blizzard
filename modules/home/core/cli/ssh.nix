@@ -14,8 +14,6 @@
         remove
         ;
 
-      controlDir = "~/.ssh/control";
-
       hosts =
         config.flake.nixosConfigurations
         |> filterAttrs (_: value: value.config.services.openssh.enable)
@@ -50,12 +48,6 @@
         |> listToAttrs;
     in
     {
-      home.activation.createControlPath = {
-        after = [ "writeBoundary" ];
-        before = [ ];
-        data = "mkdir --parents ${controlDir}";
-      };
-
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
@@ -66,11 +58,6 @@
             "*" = {
               setEnv.COLORTERM = "truecolor";
               setEnv.TERM = "xterm-256color";
-              controlMaster = "auto";
-              controlPath = "${controlDir}/%r@%n:%p";
-              controlPersist = "60m";
-              serverAliveCountMax = 2;
-              serverAliveInterval = 60;
             };
           };
       };
