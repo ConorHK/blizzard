@@ -3,7 +3,7 @@
     { pkgs, ... }:
     {
       home = {
-        packages = [ pkgs.du-dust ];
+        packages = [ pkgs.dust ];
         shellAliases.du = "dust";
       };
     };
