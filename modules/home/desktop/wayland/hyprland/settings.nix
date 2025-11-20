@@ -72,7 +72,7 @@
 
         dwindle = {
           preserve_split = true;
-          smart_resizing = true;
+          smart_resizing = false;
         };
 
         ecosystem = {
