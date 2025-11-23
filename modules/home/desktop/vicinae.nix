@@ -14,6 +14,8 @@
           WantedBy = [ "graphical-session.target" ];
         };
       };
+      # TODO: bisect and find why this causes infinite recursion
+      stylix.targets.vicinae.enable = false;
       services.vicinae = {
         enable = true;
         autoStart = true;
@@ -22,7 +24,7 @@
             size = 10;
             normal = "Lexend";
           };
-          keybinding = "defaut";
+          keybinding = "default";
           # keybinds = {};
           popToRootOnClose = false;
           rootSearch.searchFiles = true;
