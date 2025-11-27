@@ -8,7 +8,6 @@
     }:
     {
       imports = with config.flake.modules.homeManager; [
-        gammastep
         swayosd
         dunst
         screenshot
