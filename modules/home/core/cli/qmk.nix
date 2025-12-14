@@ -11,7 +11,9 @@
 
             qmk userspace-compile
 
-            read -p 'Enter boot mode on left side and press any key to continue...'
+            echo 'Enter boot mode on left side and wait 30 seconds...'
+            sleep 30
+            echo "Attempting to flash"
 
             sudo mount /dev/sda1 /mnt
 
@@ -25,7 +27,9 @@
 
             sudo umount /mnt
 
-            read -p 'Enter boot mode on right side and press any key to continue...'
+            echo 'Enter boot mode on left side and wait 30 seconds...'
+            sleep 30
+            echo "Attempting to flash"
 
             sudo mount /dev/sda1 /mnt
 
