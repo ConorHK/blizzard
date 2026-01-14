@@ -2,7 +2,6 @@
   flake.modules.homeManager.core =
     {
       lib,
-      inputs,
       pkgs,
       ...
     }:
@@ -12,7 +11,7 @@
         homeDirectory = lib.mkDefault "/home/goose";
       };
       home.packages = [
-        (inputs.self or inputs.blizzard).packages.${pkgs.system}.serve-here
+        pkgs.serve-here
       ];
     };
 }

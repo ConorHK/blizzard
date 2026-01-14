@@ -8,7 +8,8 @@
       ...
     }:
     let
-      creeper = (inputs.self or inputs.blizzard).packages.${pkgs.system}.creeper;
+      # Try pkgs first (for downstream with overlay), fallback to inputs.self.packages (for blizzard itself)
+      creeper = pkgs.creeper or inputs.self.packages.${pkgs.system}.creeper;
     in
     {
       fonts = {

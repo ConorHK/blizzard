@@ -4,23 +4,27 @@
     unstable = true;
   };
 
-  flake.modules.nixos."nixosConfigurations/abhartach".imports = with inputs.self.modules.nixos; [
-    amdgpu
+  flake.modules.nixos."nixosConfigurations/abhartach" = {
+    imports = with inputs.self.modules.nixos; [
+      amdgpu
 
-    beeper
+      beeper
 
-    cnvim
-    cachix
+      cnvim
+      cachix
 
-    desktop
-    gaming
+      desktop
+      gaming
 
-    home-manager
+      home-manager
 
-    kvm-amd
-    secure-boot
-    sunshine
-    virtualization
-    nixbuild
-  ];
+      kvm-amd
+      secure-boot
+      sunshine
+      virtualization
+      nixbuild
+    ];
+
+    nixpkgs.overlays = [ inputs.self.overlays.default ];
+  };
 }

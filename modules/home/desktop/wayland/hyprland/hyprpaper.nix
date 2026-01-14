@@ -19,12 +19,10 @@
           ipc = "on";
           splash = false;
           preload = lib.mkDefault [
-            "${(inputs.self or inputs.blizzard).packages.${pkgs.system}.wallpapers}/wallpapers/hashwall.png"
+            "${pkgs.wallpapers}/wallpapers/hashwall.png"
           ];
           wallpaper = lib.mkDefault [
-            ",tile:${
-              (inputs.self or inputs.blizzard).packages.${pkgs.system}.wallpapers
-            }/wallpapers/hashwall.png"
+            ",tile:${pkgs.wallpapers}/wallpapers/hashwall.png"
           ];
         };
       };
