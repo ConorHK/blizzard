@@ -12,7 +12,7 @@
         homeDirectory = lib.mkDefault "/home/goose";
       };
       home.packages = [
-        inputs.self.packages.${pkgs.system}.serve-here
+        (inputs.self or inputs.blizzard).packages.${pkgs.system}.serve-here
       ];
     };
 }

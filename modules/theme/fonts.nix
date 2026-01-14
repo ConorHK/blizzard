@@ -8,7 +8,7 @@
       ...
     }:
     let
-      creeper = inputs.self.packages.${pkgs.system}.creeper;
+      creeper = (inputs.self or inputs.blizzard).packages.${pkgs.system}.creeper;
     in
     {
       fonts = {
