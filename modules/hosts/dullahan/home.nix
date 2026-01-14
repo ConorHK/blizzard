@@ -1,6 +1,6 @@
 topLevel: {
   flake.modules.homeManager."homeConfigurations/dullahan" =
-    { config, ... }:
+    { config, pkgs, ... }:
     {
 
       age = {
@@ -43,6 +43,12 @@ topLevel: {
         ];
         monitor = [
           "eDP-1,1920x1080@60Hz,0x0,1"
+        ];
+      };
+
+      services.hyprpaper = {
+        settings.wallpaper = [
+          "eDP-1,${pkgs.wallpapers}/wallpapers/hashwall.png,tile"
         ];
       };
 

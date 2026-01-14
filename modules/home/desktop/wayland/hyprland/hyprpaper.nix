@@ -21,9 +21,6 @@
           preload = lib.mkDefault [
             "${pkgs.wallpapers}/wallpapers/hashwall.png"
           ];
-          wallpaper = lib.mkDefault [
-            ",tile:${pkgs.wallpapers}/wallpapers/hashwall.png"
-          ];
         };
       };
     };
