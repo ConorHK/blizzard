@@ -8,7 +8,7 @@
           package = pkgs.quintom-cursor-theme;
           size = 20;
         };
-        iconTheme = {
+        icons = {
           enable = true;
           package = pkgs.tela-icon-theme;
           light = "Tela";

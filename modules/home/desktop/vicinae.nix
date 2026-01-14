@@ -18,7 +18,6 @@
       stylix.targets.vicinae.enable = false;
       services.vicinae = {
         enable = true;
-        autoStart = true;
         settings = {
           font = {
             size = 10;

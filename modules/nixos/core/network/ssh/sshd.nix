@@ -40,7 +40,6 @@
             "hmac-sha2-256"
             "umac-128@openssh.com"
           ];
-          AcceptEnv = "SHELLS COLORTERM";
         };
 
         extraConfig = ''

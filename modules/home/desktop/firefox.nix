@@ -89,7 +89,7 @@
 
       textfox = {
         enable = true;
-        profile = "primary";
+        profiles = [ "primary" ];
         useLegacyExtensions = false;
         config = {
           displayNavButtons = true;
