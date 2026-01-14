@@ -6,8 +6,8 @@
 
     wayland.windowManager.hyprland.settings = {
       windowrule = [
-        "float, class:alacritty-popup"
-        "center, class:alacritty-popup"
+        "float on, match:class alacritty-popup"
+        "center on, match:class alacritty-popup"
       ];
     };
     programs = {

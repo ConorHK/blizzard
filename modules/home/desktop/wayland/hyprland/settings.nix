@@ -51,7 +51,7 @@
         };
 
         layerrule = [
-          "noanim, selection"
+          "no_anim on, match:namespace selection"
         ];
 
         misc = {

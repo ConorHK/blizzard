@@ -7,8 +7,8 @@
       ];
       wayland.windowManager.hyprland.settings = {
         windowrule = [
-          "float, class:nm-connection-editor"
-          "center, class:nm-connection-editor"
+          "float on, match:class nm-connection-editor"
+          "center on, match:class nm-connection-editor"
         ];
       };
       programs.waybar.settings.main.network.on-click =
