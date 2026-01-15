@@ -1,7 +1,7 @@
 {
-  flake.modules.homeManager.syncthing = {
+  flake.modules.homeManager.syncthing = { lib, ... }: {
     services.syncthing = {
-      enable = true;
+      enable = lib.mkDefault true;
       settings = {
         # Add more in home files
         devices = {
