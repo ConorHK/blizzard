@@ -18,11 +18,11 @@
         enable = true;
         settings = {
           default_session = {
-            command = "${lib.getExe pkgs.tuigreet} --remember --cmd ${lib.getExe pkgs.hyprland}";
+            command = "${lib.getExe pkgs.tuigreet} --remember --cmd ${pkgs.hyprland}/bin/start-hyprland";
             user = "greeter";
           };
           initial_session = {
-            command = "${lib.getExe pkgs.hyprland}";
+            command = "${pkgs.hyprland}/bin/start-hyprland";
             user = "goose";
           };
         };
