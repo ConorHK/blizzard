@@ -1,7 +1,6 @@
 {
   flake.modules.homeManager.hyprpaper =
     {
-      inputs,
       pkgs,
       lib,
       ...
@@ -16,13 +15,14 @@
       services.hyprpaper = {
         enable = true;
         settings = {
-          ipc = "on";
+          ipc = true;
           splash = false;
-          preload = lib.mkDefault [
-            "${pkgs.wallpapers}/wallpapers/hashwall.png"
-          ];
           wallpaper = lib.mkDefault [
-            ",tile:${pkgs.wallpapers}/wallpapers/hashwall.png"
+            {
+              monitor = "";
+              path = "${pkgs.wallpapers}/wallpapers/hashwall.png";
+              fit_mode = "tile";
+            }
           ];
         };
       };
