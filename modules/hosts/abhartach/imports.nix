@@ -18,11 +18,12 @@
 
       home-manager
 
+      kubernetes
       kvm-amd
+      nixbuild
       secure-boot
       sunshine
       virtualization
-      nixbuild
     ];
 
     nixpkgs.overlays = [ inputs.self.overlays.default ];
