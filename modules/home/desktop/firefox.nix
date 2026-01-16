@@ -12,7 +12,6 @@
       ];
 
       home.sessionVariables.BROWSER = "firefox";
-      stylix.targets.firefox.profileNames = [ "primary" ];
       programs.firefox = {
         enable = true;
         policies = {
@@ -74,13 +73,39 @@
             settings."browser.ctrlTab.sortByRecentlyUsed" = true;
             settings."browser.fullscreen.autohide" = false;
             userChrome = ''
-              #TabsToolbar
-              {
-                  visibility: collapse;
+              /* Alduin Theme */
+              :root {
+                --alduin-bg: #1c1c1c;
+                --alduin-fg: #dfdfaf;
+                --alduin-black-soft: #262626;
+                --alduin-red: #8b5f61;
+                --alduin-green: #87875f;
+                --alduin-yellow: #fed975;
+                --alduin-blue: #87afaf;
+                --alduin-magenta: #af8787;
+                --alduin-orange: #d69f74;
+                --alduin-white: #f4f4f4;
+                --alduin-gray: #444444;
               }
-              #sidebar-header {
-                display: none;
-              }
+
+              /* Hide tabs (existing) */
+              #TabsToolbar { visibility: collapse !important; }
+
+              /* Hide sidebar header (existing) */
+              #sidebar-header { display: none !important; }
+
+              /* Alduin UI overrides */
+              #navigator-toolbox { background-color: var(--alduin-bg) !important; color: var(--alduin-fg) !important; }
+              #urlbar { background-color: var(--alduin-black-soft) !important; color: var(--alduin-fg) !important; border-color: var(--alduin-blue) !important; }
+              #urlbar-input { color: var(--alduin-fg) !important; }
+              #nav-bar { background-color: var(--alduin-bg) !important; }
+              #sidebar { background-color: var(--alduin-black-soft) !important; color: var(--alduin-fg) !important; }
+              .tab-background { background-color: var(--alduin-bg) !important; }
+              menubar-items, toolbarbutton { color: var(--alduin-fg) !important; }
+              #sidebar-splitter { border-color: var(--alduin-black-soft) !important; background-color: var(--alduin-black-soft) !important; }
+              /* Textfox compatibility: subtle accents */
+              toolbarbutton:hover { background-color: var(--alduin-black-soft) !important; }
+              toolbarbutton[checked="true"] { background-color: var(--alduin-blue) !important; color: var(--alduin-bg) !important; }
             '';
 
           };
