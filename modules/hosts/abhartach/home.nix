@@ -1,6 +1,6 @@
 topLevel: {
   flake.modules.homeManager."homeConfigurations/abhartach" =
-    { config, pkgs, ... }:
+    { config, ... }:
     {
 
       age = {
@@ -17,13 +17,6 @@ topLevel: {
       services.syncthing.settings = {
         devices.dullahan.id = "LAIGIVW-EIN4X7E-NTWJJ7D-XE6UBDQ-LXALLB6-UR77FXM-JZJMQJ7-5TKPNAX";
         folders.share.devices = [ "dullahan" ];
-      };
-
-      services.hyprpaper = {
-        settings.wallpaper = [
-          "DP-1,${pkgs.wallpapers}/wallpapers/hashwall.png,tile"
-          "DP-2,${pkgs.wallpapers}/wallpapers/hashwall.png,tile"
-        ];
       };
 
       home.sessionVariables = {
