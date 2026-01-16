@@ -10,7 +10,7 @@
       };
       programs = {
         gpg = {
-          enable = true;
+          enable = lib.mkDefault true;
           settings = {
             personal-cipher-preferences = "AES256 AES192 AES";
 
