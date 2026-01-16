@@ -32,6 +32,17 @@
             set fish_cursor_replace_one underscore blink
             set fish_cursor_visual      block
 
+            # syntax highlighting colors
+            set fish_color_command 87afaf
+            set fish_color_param dfdfaf
+            set fish_color_error af5f5f
+            set fish_color_comment 878787
+            set fish_color_quote 87875f
+            set fish_color_redirection dfdfaf
+            set fish_color_end 878787
+            set fish_color_operator 87afaf
+            set fish_color_escape af875f
+            set fish_color_autosuggestion 626262
           '';
           plugins = [
             {
