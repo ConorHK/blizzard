@@ -1,0 +1,37 @@
+# paste theming into style section
+#root.root {--general-border-radius: 0px;}
+#root.root {--general-margin: 2px;}
+#root.root {--toolbarbutton-hover-background: #262626;}
+#root.root {--toolbarbutton-border-radius: 0px;}
+#root.root {--toolbar-scrollbar-color: rgba(223,223,175,0.3);}
+#root.root {--toolbar-el-overlay-selected-border: #87afaf;}
+#root.root {--toolbar-el-overlay-selected-bg: rgba(135,175,175,0.2);}
+#root.root {--toolbar-el-overlay-active-border: rgba(135,175,175,0.1);}
+#root.root {--toolbar-el-overlay-active-bg: rgba(38,38,38,0.5);}
+#root.root {--toolbar-el-overlay-clicked-bg: rgba(38,38,38,0.5);}
+#root.root {--toolbar-el-overlay-hover-bg: rgba(38,38,38,0.3);}
+#root.root {--toolbar-fg: #dfdfaf;}
+#root.root {--toolbar-bg: #262626;}
+#root.root {--frame-scrollbar-color: rgba(223,223,175,0.3);}
+#root.root {--frame-el-overlay-selected-border: #87afaf;}
+#root.root {--frame-el-overlay-selected-bg: rgba(135,175,175,0.2);}
+#root.root {--frame-el-overlay-clicked-bg: rgba(38,38,38,0.5);}
+#root.root {--frame-el-overlay-hover-bg: rgba(38,38,38,0.3);}
+#root.root {--frame-fg: #dfdfaf;}
+#root.root {--frame-bg: #1c1c1c;}
+#root.root {--nav-btn-accent: #87afaf;}
+#root.root {--nav-btn-fg: #dfdfaf;}
+#root.root {--tabs-activated-fg: #1c1c1c;}
+#root.root {--tabs-activated-bg: #87afaf;}
+#root.root {--tabs-normal-fg: #dfdfaf;}
+#root.root {--tabs-normal-bg: #1c1c1c;}
+#root.root {--tabs-activated-shadow: none;}
+#root.root {--popup-fg: #dfdfaf;}
+#root.root {--popup-bg: #262626;}
+#root.root {--ctx-menu-fg: #dfdfaf;}
+#root.root {--ctx-menu-bg: #262626;}
+#root.root {--status-active: #87afaf;}
+#root.root {--accent: #87afaf;}
+#root.root {--active-el-fg: #dfdfaf;}
+#root.root {--active-el-bg: #87afaf;}
+
