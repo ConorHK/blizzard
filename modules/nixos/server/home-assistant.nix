@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.home-assistant =
-    { config, lib, ... }:
+    { lib, ... }:
     let
       homeAssistantVersion = "stable";
       configPath = "/home/driver/storage/homeassistant/";
@@ -18,11 +18,14 @@
           volumes = [
             "${configPath}:/config"
             "/etc/localtime:/etc/localtime:ro"
+            "/run/dbus:/run/dbus:ro"
           ];
           environment.TZ = timezone;
           extraOptions = [
             "--network=host"
             "--device=${usbDevice}:${usbDevice}"
+            "--cap-add=NET_RAW"
+            "--cap-add=NET_ADMIN"
           ];
         };
       };
