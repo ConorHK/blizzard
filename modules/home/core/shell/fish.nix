@@ -13,6 +13,7 @@
       ];
 
       programs = {
+        zsh.initExtra = "exec fish";
         zoxide.enableFishIntegration = true;
         fzf.enableFishIntegration = true;
         carapace = {
