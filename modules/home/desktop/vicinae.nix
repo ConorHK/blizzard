@@ -14,9 +14,9 @@
           autoStart = true;
         };
         settings = {
-          window = {
-            csd = true;
-            rounding = 0;
+          pop_to_root_on_close = true;
+          close_on_focus_loss = true;
+          launcher_window = {
             opacity = 1;
           };
         };
