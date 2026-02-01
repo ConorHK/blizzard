@@ -36,6 +36,8 @@
     textfox.url = "github:adriankarlen/textfox";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
+    vicinae-extensions.inputs.nixpkgs.follows = "nixpkgs";
+    vicinae-extensions.url = "github:vicinaehq/extensions";
   };
 
   outputs =
