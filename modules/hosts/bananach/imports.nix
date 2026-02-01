@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
   nixosHosts.bananach = {
-    unstable = false;
+    unstable = true;
   };
 
   flake.modules.nixos."nixosConfigurations/bananach".imports = with inputs.self.modules.nixos; [

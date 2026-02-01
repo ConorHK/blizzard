@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
   nixosHosts.puca = {
-    unstable = false;
+    unstable = true;
   };
 
   flake.modules.nixos."nixosConfigurations/puca".imports = with inputs.self.modules.nixos; [

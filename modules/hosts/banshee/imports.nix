@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
   nixosHosts.banshee = {
-    unstable = false;
+    unstable = true;
   };
 
   flake.modules.nixos."nixosConfigurations/banshee".imports = with inputs.self.modules.nixos; [
