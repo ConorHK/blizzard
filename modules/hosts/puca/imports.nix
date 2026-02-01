@@ -9,6 +9,5 @@
     grub-boot
     home-assistant
     server-users
-    tsidp
   ];
 }
