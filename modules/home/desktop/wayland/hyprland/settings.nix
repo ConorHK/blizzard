@@ -38,11 +38,6 @@
           "3, vertical, workspace"
         ];
 
-        render = {
-          cm_enabled = true;
-          cm_auto_hdr = 1;
-        };
-
         animations = {
           bezier = [ "material_decelerate, 0.05, 0.7, 0.1, 1" ];
 
