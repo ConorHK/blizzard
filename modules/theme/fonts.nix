@@ -10,11 +10,13 @@
     let
       # Try pkgs first (for downstream with overlay), fallback to inputs.self.packages (for blizzard itself)
       creeper = pkgs.creeper or inputs.self.packages.${pkgs.system}.creeper;
+      gohu = pkgs.gohu or inputs.self.packages.${pkgs.system}.gohu;
     in
     {
       fonts = {
         packages = [
           creeper
+          gohu
           pkgs.lexend
         ];
         enableDefaultPackages = true;
@@ -54,8 +56,8 @@
         serif = lib.mkDefault config.stylix.fonts.sansSerif;
 
         monospace = {
-          package = creeper;
-          name = "Creeper";
+          package = gohu;
+          name = "gohu";
         };
 
         emoji = {
