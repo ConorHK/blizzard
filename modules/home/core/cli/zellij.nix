@@ -40,9 +40,7 @@
           default_layout "compact"
           show_startup_tips false
           theme "onedark"
-
-          pane_viewport_serialization false
-          scrollback_lines_to_serialize 5000
+          session_serialization false
 
           ui {
             pane_frames {
