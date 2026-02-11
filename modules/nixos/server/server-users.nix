@@ -4,7 +4,6 @@
     {
       nix.settings = {
         trusted-users = [ "driver" ];
-        builders-use-substitutes = true;
       };
 
       users.users.driver = {
