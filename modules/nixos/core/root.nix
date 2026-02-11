@@ -1,15 +1,6 @@
 {
   flake.modules.nixos.root =
-    { lib, ... }:
-    let
-      keysFile = builtins.readFile (
-        builtins.fetchurl {
-          url = "https://github.com/conorhk.keys";
-          sha256 = "0dcf44q55cqnsnkb4wls1blhzmykrla4kda9mf1v1yc6vpwqgsap";
-        }
-      );
-      keysList = builtins.filter (x: x != "") (lib.splitString "\n" keysFile);
-    in
+    { config, ... }:
     {
       services.userborn.enable = true;
       users = {
@@ -17,7 +8,7 @@
         users.root = {
           isSystemUser = true;
           hashedPassword = "$6$W1tE3/h9AFWOXaXi$pGpXeXFoE/Jyi2RzkuiTfr5dA6FQ.R6Mme8sxi5nWXLIrv7R9d5b0cDoqbb830MWkwwdKbGqBo6f3ZoIhCMjA0";
-          openssh.authorizedKeys.keys = keysList;
+          openssh.authorizedKeys.keys = config.blizzard.sshKeys;
         };
       };
     };

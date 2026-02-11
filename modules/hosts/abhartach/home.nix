@@ -3,15 +3,9 @@ topLevel: {
     { config, ... }:
     {
 
-      age = {
-        rekey = {
-          localStorageDir = ../../../.secrets/abhartach/goose;
-          hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
-        };
-        secrets = {
-          git-name.rekeyFile = ../.secrets/git-name.age;
-          git-email.rekeyFile = ../.secrets/git-email.age;
-        };
+      age.rekey = {
+        localStorageDir = ../../../.secrets/abhartach/goose;
+        hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
       };
 
       services.syncthing.settings = {
@@ -20,11 +14,6 @@ topLevel: {
       };
 
       home.sessionVariables = {
-        GIT_AUTHOR_NAME = "$(cat ${config.age.secrets.git-name.path})";
-        GIT_AUTHOR_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
-        GIT_COMMITTER_NAME = "$(cat ${config.age.secrets.git-name.path})";
-        GIT_COMMITTER_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
-
         JJ_USER = "$(cat ${config.age.secrets.git-name.path})";
         JJ_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
       };
@@ -53,6 +42,7 @@ topLevel: {
         agenix
         cnvim
         desktop
+        git-identity
         jujutsu
         ntfy
         ssh

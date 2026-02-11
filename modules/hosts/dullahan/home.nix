@@ -8,23 +8,12 @@ topLevel: {
           localStorageDir = ../../../.secrets/dullahan/goose;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvnibFml4dw8uL++ghBdXSCfEfb4ZDAPD6uLcXZBvWn";
         };
-        secrets = {
-          git-name.rekeyFile = ../.secrets/git-name.age;
-          git-email.rekeyFile = ../.secrets/git-email.age;
-        };
       };
 
       # services.syncthing.settings = {
       #   devices.abhartach.id = "6UC67WT-CMLMJIP-JA6Z2H2-2H2ICCF-N7VRJBY-4XOMVIO-A6E7TN4-JVSW4A4";
       #   folders.share.devices = [ "abhartach" ];
       # };
-
-      home.sessionVariables = {
-        GIT_AUTHOR_NAME = "$(cat ${config.age.secrets.git-name.path})";
-        GIT_AUTHOR_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
-        GIT_COMMITTER_NAME = "$(cat ${config.age.secrets.git-name.path})";
-        GIT_COMMITTER_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
-      };
 
       programs.waybar.settings.main.output = "eDP-1";
       wayland.windowManager.hyprland.settings = {
@@ -50,6 +39,7 @@ topLevel: {
         agenix
         cnvim
         desktop
+        git-identity
         laptop
         ntfy
         ssh

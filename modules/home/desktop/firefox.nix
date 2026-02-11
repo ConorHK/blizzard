@@ -115,7 +115,6 @@
       textfox = {
         enable = true;
         profiles = [ "primary" ];
-        useLegacyExtensions = false;
         config = {
           displayNavButtons = true;
         };
