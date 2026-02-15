@@ -23,8 +23,8 @@
           videos = lib.mkDefault "${config.home.homeDirectory}/media/videos";
 
           extraConfig = {
-            XDG_SCREENSHOTS_DIR = "${config.home.homeDirectory}/media/pictures/screenshots";
-            XDG_REPOSITORIES_DIR = "${config.home.homeDirectory}/repositories";
+            SCREENSHOTS = "${config.home.homeDirectory}/media/pictures/screenshots";
+            REPOSITORIES = "${config.home.homeDirectory}/repositories";
           };
         };
       };
