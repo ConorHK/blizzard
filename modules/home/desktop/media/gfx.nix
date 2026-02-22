@@ -19,7 +19,6 @@
           imagemagick
           inkscape
           jpeginfo
-          krita
           wl-color-picker
           ;
       };
