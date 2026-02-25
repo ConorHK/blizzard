@@ -1,11 +1,11 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 {
   nixosHosts.abhartach = {
     unstable = true;
   };
 
   flake.modules.nixos."nixosConfigurations/abhartach" = {
-    imports = with inputs.self.modules.nixos; [
+    imports = with config.flake.modules.nixos; [
       amdgpu
 
       beeper
@@ -26,6 +26,6 @@
       virtualization
     ];
 
-    nixpkgs.overlays = [ inputs.self.overlays.default ];
+    nixpkgs.overlays = [ config.flake.overlays.default ];
   };
 }

@@ -1,10 +1,10 @@
-{ inputs, ... }:
+{ config, ... }:
 {
   nixosHosts.banshee = {
     unstable = true;
   };
 
-  flake.modules.nixos."nixosConfigurations/banshee".imports = with inputs.self.modules.nixos; [
+  flake.modules.nixos."nixosConfigurations/banshee".imports = with config.flake.modules.nixos; [
     nixbuild
     pi-boot
     server-users

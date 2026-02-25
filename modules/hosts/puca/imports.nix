@@ -1,10 +1,10 @@
-{ inputs, ... }:
+{ config, ... }:
 {
   nixosHosts.puca = {
     unstable = true;
   };
 
-  flake.modules.nixos."nixosConfigurations/puca".imports = with inputs.self.modules.nixos; [
+  flake.modules.nixos."nixosConfigurations/puca".imports = with config.flake.modules.nixos; [
     bluetooth
     grub-boot
     home-assistant

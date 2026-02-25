@@ -1,11 +1,11 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 {
   nixosHosts.dullahan = {
     unstable = true;
   };
 
   flake.modules.nixos."nixosConfigurations/dullahan" = {
-    imports = with inputs.self.modules.nixos; [
+    imports = with config.flake.modules.nixos; [
       battery
 
       cnvim
@@ -19,6 +19,6 @@
       nixbuild
     ];
 
-    nixpkgs.overlays = [ inputs.self.overlays.default ];
+    nixpkgs.overlays = [ config.flake.overlays.default ];
   };
 }
