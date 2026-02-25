@@ -75,6 +75,17 @@
             fi
             hyprctl keyword animation "workspaces,1,2,material_decelerate,slidevert"
           '';
+          workspaceBinds = lib.concatMap (
+            i:
+            let
+              key = toString (lib.mod i 10);
+              ws = if i < 10 then "0${toString i}" else toString i;
+            in
+            [
+              "SUPER, ${key}, workspace,${ws}"
+              "SUPER_SHIFT, ${key}, movetoworkspacesilent,${ws}"
+            ]
+          ) (lib.range 1 10);
         in
         {
           bind = [
@@ -98,26 +109,9 @@
             "SUPER_SHIFT, Up, swapwindow, u"
             "SUPER_SHIFT, Down, swapwindow, d"
             "SUPER, S, togglefloating,"
-            "SUPER, 1, workspace,01"
-            "SUPER, 2, workspace,02"
-            "SUPER, 3, workspace,03"
-            "SUPER, 4, workspace,04"
-            "SUPER, 5, workspace,05"
-            "SUPER, 6, workspace,06"
-            "SUPER, 7, workspace,07"
-            "SUPER, 8, workspace,08"
-            "SUPER, 9, workspace,09"
-            "SUPER, 0, workspace,10"
-            "SUPER_SHIFT, 1, movetoworkspacesilent,01"
-            "SUPER_SHIFT, 2, movetoworkspacesilent,02"
-            "SUPER_SHIFT, 3, movetoworkspacesilent,03"
-            "SUPER_SHIFT, 4, movetoworkspacesilent,04"
-            "SUPER_SHIFT, 5, movetoworkspacesilent,05"
-            "SUPER_SHIFT, 6, movetoworkspacesilent,06"
-            "SUPER_SHIFT, 7, movetoworkspacesilent,07"
-            "SUPER_SHIFT, 8, movetoworkspacesilent,08"
-            "SUPER_SHIFT, 9, movetoworkspacesilent,09"
-            "SUPER_SHIFT, 0, movetoworkspacesilent,10"
+          ]
+          ++ workspaceBinds
+          ++ [
             "SUPER,u, togglespecialworkspace"
             "SUPERSHIFT,u, movetoworkspace,special"
             "SUPER_CTRL, Left, exec, ${lib.getExe workspace-nav} left"
