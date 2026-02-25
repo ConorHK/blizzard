@@ -2,15 +2,11 @@
   perSystem =
     { pkgs, ... }:
     {
-      packages.wallpapers = pkgs.stdenvNoCC.mkDerivation {
+      packages.wallpapers = import ../../../lib/mkAssetPackage.nix pkgs {
         name = "wallpapers";
-        version = "1.0";
         src = ./images;
-
-        installPhase = ''
-          mkdir -p $out/wallpapers/
-          cp -r $src/*.png $out/wallpapers/
-        '';
+        glob = "*.png";
+        outputDir = "wallpapers";
       };
     };
 }

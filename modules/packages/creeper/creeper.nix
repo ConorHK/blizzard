@@ -2,15 +2,10 @@
   perSystem =
     { pkgs, ... }:
     {
-      packages.creeper = pkgs.stdenvNoCC.mkDerivation {
+      packages.creeper = import ../../../lib/mkAssetPackage.nix pkgs {
         name = "creeper-bitmap";
-        version = "1.0";
         src = ./fonts;
-
-        installPhase = ''
-          mkdir -p $out/share/fonts
-          cp -r $src/*.otb $out/share/fonts/
-        '';
+        glob = "*.otb";
       };
     };
 }

@@ -2,15 +2,10 @@
   perSystem =
     { pkgs, ... }:
     {
-      packages.gohu = pkgs.stdenvNoCC.mkDerivation {
+      packages.gohu = import ../../../lib/mkAssetPackage.nix pkgs {
         name = "gohu-bitmap";
-        version = "1.0";
         src = ./fonts;
-
-        installPhase = ''
-          mkdir -p $out/share/fonts
-          cp -r $src/*.bdf $out/share/fonts/
-        '';
+        glob = "*.bdf";
       };
     };
 }
