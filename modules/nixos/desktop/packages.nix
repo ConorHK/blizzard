@@ -1,14 +1,15 @@
 {
   flake.modules.nixos.desktop =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
-      environment.systemPackages = with pkgs; [
-        # Multimedia
-        ffmpeg
-        ffmpegthumbnailer
-        gthumb
-        imagemagick
-        vlc
-      ];
+      environment.systemPackages = lib.attrValues {
+        inherit (pkgs)
+          ffmpeg
+          ffmpegthumbnailer
+          gthumb
+          imagemagick
+          vlc
+          ;
+      };
     };
 }
