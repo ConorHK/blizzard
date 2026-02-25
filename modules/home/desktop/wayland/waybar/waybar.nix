@@ -204,7 +204,7 @@
               };
             "custom/separator" = {
               format = "﹏﹏﹏";
-              nterval = "once";
+              interval = "once";
               tooltip = false;
             };
           };
