@@ -16,6 +16,11 @@
         style = builtins.readFile ./style.css;
         settings.main =
           let
+            workspaceIds = [
+              1
+              2
+              3
+            ];
             workspace-display = pkgs.writeShellScriptBin "workspace-display" ''
                   #!/usr/bin/env bash
 
@@ -70,11 +75,7 @@
             modules-left = [
               "clock"
             ];
-            modules-center = [
-              "custom/hyprland-workspace-1"
-              "custom/hyprland-workspace-2"
-              "custom/hyprland-workspace-3"
-            ];
+            modules-center = map (n: "custom/hyprland-workspace-${toString n}") workspaceIds;
             modules-right = [
               "privacy"
               "wireplumber"
@@ -87,11 +88,12 @@
               disable-scroll = true;
               on-click = "activate";
               persistent-only = true;
-              persistent-workspaces = {
-                "1" = [ ];
-                "2" = [ ];
-                "3" = [ ];
-              };
+              persistent-workspaces = builtins.listToAttrs (
+                map (n: {
+                  name = toString n;
+                  value = [ ];
+                }) workspaceIds
+              );
               format = "{icon}";
               format-icons = {
                 active = "•";
@@ -99,24 +101,19 @@
               };
               sort-by-number = true;
             };
-            "custom/hyprland-workspace-1" = {
-              format = "{}";
-              exec = "${lib.getExe workspace-display} 1";
-              interval = 1;
-              return-type = "";
-            };
-            "custom/hyprland-workspace-2" = {
-              format = "{}";
-              exec = "${lib.getExe workspace-display} 2";
-              interval = 1;
-              return-type = "";
-            };
-            "custom/hyprland-workspace-3" = {
-              format = "{}";
-              exec = "${lib.getExe workspace-display} 3";
-              interval = 1;
-              return-type = "";
-            };
+          }
+          // builtins.listToAttrs (
+            map (n: {
+              name = "custom/hyprland-workspace-${toString n}";
+              value = {
+                format = "{}";
+                exec = "${lib.getExe workspace-display} ${toString n}";
+                interval = 1;
+                return-type = "";
+              };
+            }) workspaceIds
+          )
+          // {
             clock = {
               format = "{:%H\n%M\n--\n%d\n%m}";
               tooltip-format = "<big>{:%A %B %d}</big>\n<tt><small>{calendar}</small></tt>";
