@@ -31,7 +31,7 @@
         config.flake.nixosConfigurations
         |> filterAttrs (_: value: value.config.services.openssh.enable)
         |> mapAttrs (
-          name: value: {
+          _name: value: {
             user =
               value.config.users.users
               |> filterAttrs (_: value: value.isNormalUser)

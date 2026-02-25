@@ -69,9 +69,11 @@
         profiles = {
           primary = {
             id = 0;
-            settings."toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-            settings."browser.ctrlTab.sortByRecentlyUsed" = true;
-            settings."browser.fullscreen.autohide" = false;
+            settings = {
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+              "browser.ctrlTab.sortByRecentlyUsed" = true;
+              "browser.fullscreen.autohide" = false;
+            };
             userChrome = ''
               /* Alduin Theme */
               :root {

@@ -32,9 +32,11 @@
 
             merge.conflictStyle = "zdiff3";
 
-            rebase.autoSquash = true;
-            rebase.autoStash = true;
-            rebase.updateRefs = true;
+            rebase = {
+              autoSquash = true;
+              autoStash = true;
+              updateRefs = true;
+            };
             rerere.enabled = true;
 
             fetch.fsckObjects = true;

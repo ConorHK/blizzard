@@ -1,5 +1,4 @@
-{ config, ... }:
-{
+_: {
   flake.modules.homeManager.ntfy =
     { config, pkgs, ... }:
     {

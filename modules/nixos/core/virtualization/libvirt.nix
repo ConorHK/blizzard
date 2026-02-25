@@ -1,11 +1,9 @@
 {
-  flake.modules.nixos.libvirt =
-    { pkgs, ... }:
-    {
-      virtualisation.libvirtd.enable = true;
+  flake.modules.nixos.libvirt = _: {
+    virtualisation.libvirtd.enable = true;
 
-      users.extraGroups.libvirtd.members = [ "goose" ];
+    users.extraGroups.libvirtd.members = [ "goose" ];
 
-      programs.virt-manager.enable = true;
-    };
+    programs.virt-manager.enable = true;
+  };
 }

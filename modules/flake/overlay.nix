@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.overlays.default = final: prev: {
+  flake.overlays.default = final: _prev: {
     # Reference packages from the flake output, not from config
     # This avoids infinite recursion
     serve-here = inputs.self.packages.${final.system}.serve-here or null;

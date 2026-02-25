@@ -1,4 +1,4 @@
-{ config, inputs, ... }:
+{ config, ... }:
 {
   nixosHosts.dullahan = {
     unstable = true;

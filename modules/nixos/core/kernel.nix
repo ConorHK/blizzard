@@ -1,8 +1,8 @@
 {
-  flake.modules.nixos.core = {
+  flake.modules.nixos.core.boot = {
     # Credits:
     # https://github.com/NotAShelf/nyx/blob/main/modules/core/common/system/security/kernel.nix
-    boot.kernel.sysctl = {
+    kernel.sysctl = {
       # The Magic SysRq key is a key combo that allows users connected to the
       # system console of a Linux kernel to perform some low-level commands.
       # Disable it, since we don't need it, and is a potential security concern.
@@ -38,7 +38,7 @@
     };
 
     # https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
-    boot.kernelParams = [
+    kernelParams = [
       # Make stack-based attacks on the kernel harder.
       "randomize_kstack_offset=on"
 
@@ -73,7 +73,7 @@
       "fbcon=nodefer"
     ];
 
-    boot.blacklistedKernelModules = [
+    blacklistedKernelModules = [
       # Obscure network protocols.
       "af_802154" # IEEE 802.15.4
       "appletalk" # Appletalk

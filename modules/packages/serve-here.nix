@@ -27,7 +27,7 @@
 
           trap '${pkgs.iptables}/bin/iptables -D nixos-fw -p tcp --dport "$PORT" -j ACCEPT 2>/dev/null || true' EXIT INT TERM
 
-          exec ${pkgs.python3.withPackages (ps: [ uploadserver ])}/bin/python -m uploadserver "''${@}"
+          exec ${pkgs.python3.withPackages (_: [ uploadserver ])}/bin/python -m uploadserver "''${@}"
         '';
     };
 }

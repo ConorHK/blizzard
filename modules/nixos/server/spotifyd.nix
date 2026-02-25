@@ -3,7 +3,6 @@
     {
       config,
       lib,
-      pkgs,
       ...
     }:
     {
@@ -11,10 +10,19 @@
         unload-module module-suspend-on-idle
       '';
 
-      # force use of fallback resolvers
-      networking.extraHosts = ''
-        0.0.0.0 apresolve.spotify.com
-      '';
+      networking = {
+        # force use of fallback resolvers
+        extraHosts = ''
+          0.0.0.0 apresolve.spotify.com
+        '';
+        firewall = {
+          allowedTCPPorts = [
+            57621
+            59382
+          ];
+          allowedUDPPorts = [ 5353 ];
+        };
+      };
 
       systemd.services.spotifyd = {
         environment = {
@@ -32,13 +40,6 @@
         group = "spotifyd";
       };
       users.groups.spotifyd = { };
-
-      networking.firewall.allowedTCPPorts = [
-        57621
-        59382
-      ];
-
-      networking.firewall.allowedUDPPorts = [ 5353 ];
       services.spotifyd = {
         enable = true;
         settings = {

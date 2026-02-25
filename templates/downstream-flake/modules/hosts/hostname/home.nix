@@ -1,4 +1,4 @@
-topLevel: {
+_topLevel: {
   flake.modules.homeManager."homeConfigurations/hostname" =
     { inputs, ... }:
     {

@@ -1,6 +1,6 @@
 topLevel: {
   flake.modules.homeManager."homeConfigurations/dullahan" =
-    { config, ... }:
+    { ... }:
     {
 
       age = {

@@ -1,4 +1,4 @@
-{ config, inputs, ... }:
+{ config, ... }:
 {
   nixosHosts.abhartach = {
     unstable = true;

@@ -31,21 +31,20 @@
           content = {
             type = "luks";
             name = "cryptroot";
-            settings =
-              {
-                allowDiscards = true;
-              }
-              // (
-                if fido2 then
-                  {
-                    crypttabExtraOpts = [
-                      "fido2-device=auto"
-                      "token-timeout=10"
-                    ];
-                  }
-                else
-                  { }
-              );
+            settings = {
+              allowDiscards = true;
+            }
+            // (
+              if fido2 then
+                {
+                  crypttabExtraOpts = [
+                    "fido2-device=auto"
+                    "token-timeout=10"
+                  ];
+                }
+              else
+                { }
+            );
             extraOpenArgs = [
               "--perf-no_read_workqueue"
               "--perf-no_write_workqueue"

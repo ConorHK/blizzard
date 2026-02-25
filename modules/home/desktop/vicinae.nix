@@ -1,8 +1,6 @@
 {
   flake.modules.homeManager.vicinae =
     {
-      config,
-      inputs,
       pkgs,
       ...
     }:
@@ -11,9 +9,6 @@
         url = "https://cli.raycast.com/1.86.0-alpha.65/linux/ray";
         sha256 = "sha256-UgDA2hIH7HwKl3j4UEGIlvh6eE+IWUlSML0wloHFPQw=";
       };
-      getVicinaeExtensions =
-        names:
-        map (name: inputs.vicinae-extensions.packages.${pkgs.stdenv.hostPlatform.system}.${name}) names;
       genRaycastExtensions =
         with pkgs;
         names:
@@ -62,11 +57,9 @@
           enable = true;
           autoStart = true;
         };
-        extensions = (
-          genRaycastExtensions [
-            "tailscale"
-          ]
-        );
+        extensions = genRaycastExtensions [
+          "tailscale"
+        ];
         settings = {
           providers."@samlinville/tailscale".preferences.tailscalePath =
             "/run/current-system/sw/bin/tailscale";

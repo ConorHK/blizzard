@@ -6,6 +6,28 @@ on:
   push:
   # pull_request:
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Cleanup host
+        uses: wimpysworld/nothing-but-nix@main
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+
+      - name: Sync repository
+        uses: actions/checkout@v4
+
+      - uses: cachix/cachix-action@v14
+        with:
+          name: conorhk
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          useDaemon: false
+          installCommand: nix profile install nixpkgs#cachix
+
+      - run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
+
   build-machines:
     strategy:
       matrix:
