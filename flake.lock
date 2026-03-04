@@ -120,15 +120,16 @@
         "nixpkgs": [
           "nixpkgs"
         ],
+        "plugins-99": "plugins-99",
         "plugins-alduin": "plugins-alduin",
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1771170739,
-        "narHash": "sha256-LO7XJtgExkBsTFfhNV1oUiAKt2lSJtROeOlYCBSAd4I=",
+        "lastModified": 1772637136,
+        "narHash": "sha256-XpX5i5WUQjI6U4mw0nArzHhlZwv/FoH2NXK5nBBlGc4=",
         "owner": "conorhk",
         "repo": "vimrc",
-        "rev": "865429187f9b55969780769d39ad1090a5084a28",
+        "rev": "87f51f9c8babffd7e08f120c5d96eb3de5637345",
         "type": "github"
       },
       "original": {
@@ -1235,6 +1236,22 @@
       "original": {
         "owner": "nix-community",
         "repo": "NUR",
+        "type": "github"
+      }
+    },
+    "plugins-99": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772554340,
+        "narHash": "sha256-z8hafm8EWS7dXoDXnZ/1ddvtpWKVUtJfvQmWT4zXIdg=",
+        "owner": "ThePrimeagen",
+        "repo": "99",
+        "rev": "ec9872f7df7f4eb8b319719c1c253eb3ea8877ed",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ThePrimeagen",
+        "repo": "99",
         "type": "github"
       }
     },
