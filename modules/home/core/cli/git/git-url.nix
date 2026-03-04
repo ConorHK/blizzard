@@ -11,14 +11,23 @@
       cfg = config.programs.git-url;
 
       defaultUrlBuilder = pkgs.writeShellScript "git-url-builder" ''
-        remote_url="$1" branch="$2" file="$3" line="$4"
+        remote_url="$1" branch="$2" file="$3" lines="$4"
 
         if echo "$remote_url" | grep -q "github\.com"; then
           path=$(echo "$remote_url" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
           base="https://github.com/''${path}"
           if [ -n "$file" ]; then
             url="''${base}/blob/''${branch}/''${file}"
-            [ -n "$line" ] && url="''${url}#L''${line}"
+            if [ -n "$lines" ]; then
+              if echo "$lines" | grep -q '-'; then
+                start="''${lines%%-*}" end="''${lines##*-}"
+                url="''${url}#L''${start}-L''${end}"
+              elif echo "$lines" | grep -q ','; then
+                for l in ''${lines//,/ }; do url="''${url}#L''${l}"; done
+              else
+                url="''${url}#L''${lines}"
+              fi
+            fi
           else
             url="$base"
           fi
@@ -27,7 +36,16 @@
           base="https://gitlab.com/''${path}"
           if [ -n "$file" ]; then
             url="''${base}/-/blob/''${branch}/''${file}"
-            [ -n "$line" ] && url="''${url}#L''${line}"
+            if [ -n "$lines" ]; then
+              if echo "$lines" | grep -q '-'; then
+                start="''${lines%%-*}" end="''${lines##*-}"
+                url="''${url}#L''${start}-''${end}"
+              elif echo "$lines" | grep -q ','; then
+                for l in ''${lines//,/ }; do url="''${url}#L''${l}"; done
+              else
+                url="''${url}#L''${lines}"
+              fi
+            fi
           else
             url="$base"
           fi
@@ -49,14 +67,14 @@
 
         branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="main"
 
-        file="" line=""
+        file="" lines=""
         if [ $# -ge 1 ]; then
           repo_root=$(git rev-parse --show-toplevel)
           file=$(realpath --relative-to="$repo_root" "$1" 2>/dev/null || echo "$1")
         fi
-        [ $# -ge 2 ] && line="$2"
+        [ $# -ge 2 ] && lines="$2"
 
-        url=$(${cfg.urlBuilder} "$remote_url" "$branch" "$file" "$line")
+        url=$(${cfg.urlBuilder} "$remote_url" "$branch" "$file" "$lines")
         echo "$url"
       '';
     in
@@ -64,7 +82,7 @@
       options.programs.git-url.urlBuilder = lib.mkOption {
         type = lib.types.path;
         default = defaultUrlBuilder;
-        description = "Script that takes (remote_url, branch, file, line) and outputs a URL";
+        description = "Script that takes (remote_url, branch, file, lines) and outputs a URL. Lines format: 5 (single), 5-10 (range), 5,10 (multiple)";
       };
 
       config.home.packages = [ git-url ];
