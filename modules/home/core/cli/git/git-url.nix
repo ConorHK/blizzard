@@ -1,3 +1,4 @@
+# TODO: Move git-url to its own package so nvim and blizzard can depend on it without circular dependencies
 { lib, ... }:
 {
   flake.modules.homeManager.core =
@@ -7,9 +8,9 @@
       ...
     }:
     let
-      cfg = config.programs.git-repo;
+      cfg = config.programs.git-url;
 
-      defaultUrlBuilder = pkgs.writeShellScript "git-repo-url-builder" ''
+      defaultUrlBuilder = pkgs.writeShellScript "git-url-builder" ''
         remote_url="$1" branch="$2" file="$3" line="$4"
 
         if echo "$remote_url" | grep -q "github\.com"; then
@@ -38,7 +39,7 @@
         echo "$url"
       '';
 
-      git-repo = pkgs.writeShellScriptBin "git-repo" ''
+      git-url = pkgs.writeShellScriptBin "git-url" ''
         set -euo pipefail
 
         remote_url=$(git remote get-url origin 2>/dev/null) || {
@@ -61,12 +62,12 @@
       '';
     in
     {
-      options.programs.git-repo.urlBuilder = lib.mkOption {
+      options.programs.git-url.urlBuilder = lib.mkOption {
         type = lib.types.path;
         default = defaultUrlBuilder;
         description = "Script that takes (remote_url, branch, file, line) and outputs a URL";
       };
 
-      config.home.packages = [ git-repo ];
+      config.home.packages = [ git-url ];
     };
 }
