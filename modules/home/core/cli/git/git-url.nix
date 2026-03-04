@@ -58,7 +58,6 @@
 
         url=$(${cfg.urlBuilder} "$remote_url" "$branch" "$file" "$line")
         echo "$url"
-        printf "%s" "$url" | osc-copy
       '';
     in
     {
