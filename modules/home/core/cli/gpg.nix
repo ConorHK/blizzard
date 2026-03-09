@@ -1,6 +1,11 @@
 {
   flake.modules.homeManager.core =
-    { pkgs, lib, ... }:
+    {
+      config,
+      pkgs,
+      lib,
+      ...
+    }:
     {
       # https://github.com/drduh/yubikey-guide
       home.activation = {
@@ -77,9 +82,9 @@
         };
       };
       services.gpg-agent = {
-        enable = true;
+        enable = lib.mkDefault config.programs.gpg.enable;
         defaultCacheTtl = 1800;
-        enableSshSupport = true;
+        enableSshSupport = lib.mkDefault true;
         pinentry.package = pkgs.pinentry-curses;
       };
 
