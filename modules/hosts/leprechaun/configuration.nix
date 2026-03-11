@@ -1,7 +1,8 @@
 {
   flake.modules.nixos."nixosConfigurations/leprechaun" = {
-    # age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMi3IuMov8gNVRZnhNe9A4ZdcqTU3MYs85rjkrZCasuP";
+    age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwlNw/AL4VIXCrnUlllMVpWj/G0e82AuU3YbjcwtKQ1";
 
+    boot.zfs.extraPools = [ "storage" ];
     networking = {
       hostName = "leprechaun";
       ipv4.address = "192.168.0.145";

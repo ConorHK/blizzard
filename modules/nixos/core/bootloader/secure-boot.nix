@@ -17,6 +17,9 @@
         pkgs.sbctl
       ];
 
+      # Requires:
+      # sbctl create-keys
+      # sbctl enroll-keys --microsoft
       boot.loader.systemd-boot.enable = lib.mkForce false;
       boot.lanzaboote = {
         enable = true;

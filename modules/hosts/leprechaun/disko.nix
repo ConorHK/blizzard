@@ -65,7 +65,7 @@
           datasets = {
             "data" = {
               type = "zfs_fs";
-              mountpoint = "/storage";
+              options.mountpoint = "/storage";
             };
           };
         };

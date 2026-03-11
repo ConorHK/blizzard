@@ -5,7 +5,8 @@
   };
 
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
-    grub-boot
+    systemd-boot
     server-users
+    satisfactory
   ];
 }
