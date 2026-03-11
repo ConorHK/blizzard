@@ -21,11 +21,12 @@
             "8888:8888/tcp"
           ];
           environment = {
-            AUTOPAUSE = "true";
+            AUTOPAUSE = "false";
             AUTOSAVE = "true";
             AUTOSAVENUM = "3";
             AUTOSAVEINTERVAL = "300";
             MAXPLAYERS = "6";
+            SERVERSTREAMING = "false";
           };
         };
       };
