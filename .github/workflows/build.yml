@@ -12,9 +12,15 @@ jobs:
     steps:
       - name: Cleanup host
         uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v30
+        with:
+          extra-conf: |
+            build-dir = /nix/build
 
       - name: Sync repository
         uses: actions/checkout@v4
@@ -37,8 +43,8 @@ jobs:
             os: ubuntu-latest
           - machine: bananach
             os: ubuntu-latest
-          # - machine: banshee
-          #   os: ubuntu-24.04-arm
+          - machine: banshee
+            os: ubuntu-24.04-arm
           - machine: dullahan
             os: ubuntu-latest
           - machine: puca
