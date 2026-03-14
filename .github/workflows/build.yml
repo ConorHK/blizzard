@@ -57,9 +57,15 @@ jobs:
     steps:
       - name: Cleanup host
         uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: "rampage"
+          witness-carnage: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v30
+        with:
+          extra-conf: |
+            build-dir = /nix/build
 
       - name: Sync repository
         uses: actions/checkout@v4
