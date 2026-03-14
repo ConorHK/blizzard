@@ -29,7 +29,7 @@ jobs:
         with:
           name: conorhk
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          useDaemon: false
+          useDaemon: true
           installCommand: nix profile install nixpkgs#cachix
 
       - run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
@@ -75,7 +75,7 @@ jobs:
         with:
           name: conorhk
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          useDaemon: false
+          useDaemon: true
           installCommand: nix profile install nixpkgs#cachix
 
       - run: nix --extra-experimental-features pipe-operators build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
