@@ -35,6 +35,7 @@ jobs:
       - run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
 
   build-machines:
+    needs: check
     strategy:
       matrix:
         include:
