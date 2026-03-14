@@ -37,11 +37,13 @@ jobs:
             os: ubuntu-latest
           - machine: bananach
             os: ubuntu-latest
-          - machine: banshee
-            os: ubuntu-24.04-arm
+          # - machine: banshee
+          #   os: ubuntu-24.04-arm
           - machine: dullahan
             os: ubuntu-latest
           - machine: puca
+            os: ubuntu-latest
+          - machine: leprechaun
             os: ubuntu-latest
 
     runs-on: ${{ matrix.os }}
