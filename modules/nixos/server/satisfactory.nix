@@ -25,8 +25,7 @@
             AUTOSAVE = "true";
             AUTOSAVENUM = "3";
             AUTOSAVEINTERVAL = "300";
-            MAXPLAYERS = "6";
-            SERVERSTREAMING = "false";
+            MAXPLAYERS = "8";
           };
         };
       };
