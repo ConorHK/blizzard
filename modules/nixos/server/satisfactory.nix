@@ -2,7 +2,8 @@
   flake.modules.nixos.satisfactory =
     { lib, ... }:
     let
-      satisfactoryVersion = "latest";
+      # renovate: datasource=docker depName=ghcr.io/wolveix/satisfactory-server
+      satisfactoryVersion = "v1.9.10";
       dataDir = "/storage/service/satisfactory-server/data";
     in
     {
