@@ -31,12 +31,6 @@
         };
       };
 
-      networking.firewall = {
-        allowedUDPPorts = lib.mkDefault [ 7777 ];
-        allowedTCPPorts = lib.mkDefault [
-          7777
-          8888
-        ];
-      };
+
     };
 }
