@@ -10,6 +10,14 @@
       hostId = "748fda6c";
     };
 
+    services.sanoid.datasets."storage/data" = {
+      autosnap = true;
+      autoprune = true;
+      hourly = 24;
+      daily = 7;
+      monthly = 3;
+    };
+
     system = {
       stateVersion = "25.05";
     };
