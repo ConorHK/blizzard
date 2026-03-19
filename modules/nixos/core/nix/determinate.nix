@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.nix = {
+  flake.modules.nixos.determinate-nix = {
     imports = [ inputs.determinate.nixosModules.default ];
 
     nix.settings = {
