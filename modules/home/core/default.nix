@@ -1,17 +1,10 @@
 {
   flake.modules.homeManager.core =
-    {
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, ... }:
     {
       home = {
         username = lib.mkDefault "goose";
         homeDirectory = lib.mkDefault "/home/goose";
       };
-      home.packages = [
-        pkgs.serve-here
-      ];
     };
 }

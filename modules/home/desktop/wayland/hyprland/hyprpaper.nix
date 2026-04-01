@@ -2,7 +2,7 @@
   flake.modules.homeManager.hyprpaper =
     {
       pkgs,
-      lib,
+      inputs,
       ...
     }:
     {
@@ -20,7 +20,7 @@
           wallpaper = lib.mkDefault [
             {
               monitor = "";
-              path = "${pkgs.wallpapers}/wallpapers/hashwall.png";
+              path = "${inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wallpapers}/wallpapers/hashwall.png";
               fit_mode = "tile";
             }
           ];
