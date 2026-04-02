@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, ... }:
 {
   flake.lib.mkRootlessContainer =
     {
@@ -12,7 +12,6 @@
       extraArgs ? [ ],
       extraGroups ? [ ],
       startUid,
-      wantedBy ? [ "multi-user.target" ],
       after ? [
         "network.target"
         "network-online.target"
@@ -21,6 +20,8 @@
       extraServiceConfig ? { },
     }:
     let
+      enableFile = "/var/lib/${name}/.enabled";
+
       logsScript = pkgs.writeShellScriptBin "${name}-logs" ''
         exec ${pkgs.systemd}/bin/journalctl -u "podman-${name}" "$@"
       '';
@@ -71,23 +72,28 @@
 
       systemd.services."podman-${name}" = {
         description = "${name} OCI container";
-        inherit wantedBy after wants;
-        serviceConfig = {
-          Type = "simple";
-          Restart = "on-failure";
-          User = name;
-          RuntimeDirectory = name;
-          StateDirectory = name;
-          Environment = [
-            "XDG_RUNTIME_DIR=/run/${name}"
-            "HOME=/var/lib/${name}"
-            "PATH=/run/wrappers/bin:/run/current-system/sw/bin"
-          ];
-          ExecStartPre = "-${pkgs.podman}/bin/podman rm --ignore ${name}";
-          ExecStart = "${pkgs.podman}/bin/podman ${pkgs.lib.escapeShellArgs podmanArgs}";
-          ExecStop = "-${pkgs.podman}/bin/podman stop ${name}";
-        }
-        // extraServiceConfig;
+        wantedBy = [ "multi-user.target" ];
+        inherit after wants;
+        serviceConfig = lib.mkMerge [
+          {
+            Type = "simple";
+            Restart = "always";
+            User = name;
+            RuntimeDirectory = name;
+            StateDirectory = name;
+            Environment = [
+              "XDG_RUNTIME_DIR=/run/${name}"
+              "HOME=/var/lib/${name}"
+              "PATH=/run/wrappers/bin:/run/current-system/sw/bin"
+            ];
+            ConditionPathExists = enableFile;
+            ExecStartPre = "-${pkgs.podman}/bin/podman rm --ignore ${name}";
+            ExecStart = "${pkgs.podman}/bin/podman ${pkgs.lib.escapeShellArgs podmanArgs}";
+            ExecStop = "-${pkgs.podman}/bin/podman stop ${name}";
+            ExecStartPost = "${pkgs.coreutils}/bin/touch ${enableFile}";
+          }
+          extraServiceConfig
+        ];
       };
     };
 }
