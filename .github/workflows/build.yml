@@ -3,6 +3,7 @@ on:
   check_suite:
     types: [completed]
   push:
+  workflow_dispatch:
 jobs:
   check:
     runs-on: [self-hosted, nix, x86_64-linux]

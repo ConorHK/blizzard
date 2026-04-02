@@ -27,5 +27,6 @@ jobs:
           git add flake.lock
           git commit -m "chore: update flake inputs"
           git push --force origin "flake-update/auto"
+          gh workflow run build.yml --ref "flake-update/auto"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
