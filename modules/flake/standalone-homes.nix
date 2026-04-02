@@ -78,6 +78,7 @@ let
                     nix.package = lib.mkDefault nixpkgs'.legacyPackages.${options.system}.nix;
                   }
                   config.flake.modules.homeManager.core
+                  config.flake.modules.homeManager.theme
                   (config.flake.modules.homeManager."homeConfigurations/${name}" or { })
                 ];
               };

@@ -7,4 +7,9 @@
       targets.gnome.enable = false;
     };
   };
+
+  flake.modules.homeManager.theme = {
+    imports = [ inputs.stylix.homeManagerModules.stylix ];
+    stylix.enable = true;
+  };
 }

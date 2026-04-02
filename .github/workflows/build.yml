@@ -35,3 +35,21 @@ jobs:
       - run: |
           export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
           cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L --no-link .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
+
+  build-homes:
+    needs: check
+    strategy:
+      matrix:
+        include:
+          - home: abhartach
+          - home: dullahan
+
+    runs-on: [self-hosted, nix, x86_64-linux]
+    environment: production
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+
+      - run: |
+          export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
+          cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L --no-link .?submodules=1#homeConfigurations.${{ matrix.home }}.activationPackage

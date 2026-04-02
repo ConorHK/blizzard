@@ -4,6 +4,10 @@
     unstable = true;
   };
 
+  homeConfigurations.abhartach = {
+    unstable = true;
+  };
+
   flake.modules.nixos."nixosConfigurations/abhartach" = {
     imports = with config.flake.modules.nixos; [
       amdgpu
