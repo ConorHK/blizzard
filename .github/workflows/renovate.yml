@@ -11,8 +11,6 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v4
 
-      - uses: renovatebot/github-action@v41
-        with:
-          configurationFile: renovate.json
+      - run: nix run nixpkgs#renovate -- --platform=github --token=${{ secrets.GITHUB_TOKEN }} ConorHK/blizzard
         env:
-          RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOG_LEVEL: info
