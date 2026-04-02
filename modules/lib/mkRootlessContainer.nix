@@ -66,8 +66,14 @@
       environment.systemPackages = [ logsScript ];
 
       environment.etc = {
-        "subuid" = { mode = "0644"; text = "${name}:${toString startUid}:65536\n"; };
-        "subgid" = { mode = "0644"; text = "${name}:${toString startUid}:65536\n"; };
+        "subuid" = {
+          mode = "0644";
+          text = "${name}:${toString startUid}:65536\n";
+        };
+        "subgid" = {
+          mode = "0644";
+          text = "${name}:${toString startUid}:65536\n";
+        };
       };
 
       systemd.services."podman-${name}" = {

@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.server-users =
-    { config, blizzardLib, lib, ... }:
+    {
+      config,
+      blizzardLib,
+      lib,
+      ...
+    }:
     lib.mkMerge [
       (blizzardLib.mkUser {
         username = "driver";
