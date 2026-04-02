@@ -18,6 +18,8 @@
       monthly = 3;
     };
 
+    users.mutableUsers = false;
+
     system = {
       stateVersion = "25.05";
     };
