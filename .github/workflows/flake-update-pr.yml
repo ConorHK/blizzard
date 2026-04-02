@@ -1,0 +1,28 @@
+name: flake-update-pr
+on:
+  workflow_run:
+    workflows: ["build"]
+    types: [completed]
+    branches: ["flake-update/auto"]
+jobs:
+  create-pr:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, nix, x86_64-linux]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Open PR if not already open
+        run: |
+          branch="flake-update/auto"
+          if ! gh pr list --head "$branch" --state open --json number | jq -e '.[0]' > /dev/null; then
+            gh pr create \
+              --title "chore: update flake inputs" \
+              --body "Automated flake input updates via \`nix flake update\`. Check and build workflows passed." \
+              --base main \
+              --head "$branch"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

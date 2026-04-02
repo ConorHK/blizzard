@@ -15,10 +15,7 @@ jobs:
       - name: Update flake inputs
         run: nix --extra-experimental-features "nix-command flakes" flake update
 
-      - name: Check updated flake
-        run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
-
-      - name: Open PR if flake.lock changed
+      - name: Push branch if flake.lock changed
         run: |
           if git diff --quiet flake.lock; then
             echo "No changes to flake.lock"
@@ -26,17 +23,9 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          branch="flake-update/auto"
-          git checkout -b "$branch"
+          git checkout -b "flake-update/auto"
           git add flake.lock
           git commit -m "chore: update flake inputs"
-          git push --force origin "$branch"
-          if ! gh pr list --head "$branch" --state open --json number | jq -e '.[0]' > /dev/null; then
-            gh pr create \
-              --title "chore: update flake inputs" \
-              --body "Automated flake input updates via \`nix flake update\`." \
-              --base main \
-              --head "$branch"
-          fi
+          git push --force origin "flake-update/auto"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
