@@ -17,7 +17,6 @@
           exiftool
           # gimp
           imagemagick
-          inkscape
           jpeginfo
           wl-color-picker
           ;
