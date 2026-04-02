@@ -1,9 +1,9 @@
 name: flake-update-pr
 on:
   workflow_run:
+    # TODO: re-add `branches: ["flake-update/auto"]` once confirmed workflow_run fires correctly
     workflows: ["build"]
     types: [completed]
-    branches: ["flake-update/auto"]
 jobs:
   create-pr:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}

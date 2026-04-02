@@ -23,10 +23,14 @@
       users.mutableUsers = false;
 
       nix = {
-        gc.dates = lib.mkForce "daily";
+        gc = {
+          automatic = lib.mkForce false;
+          dates = lib.mkForce "daily";
+        };
         settings = {
-          min-free = 10737418240; # 10 GB
-          max-free = 21474836480; # 20 GB
+          min-free = lib.mkForce 10737418240; # 10 GB
+          max-free = lib.mkForce 21474836480; # 20 GB
+          trusted-users = [ "github-runner-blizzard" ];
         };
       };
 
