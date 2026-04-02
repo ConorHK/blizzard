@@ -24,10 +24,10 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "flake-update/auto"
+          git checkout -b "auto-flake-bump"
           git add flake.lock
           git commit -m "chore: update flake inputs"
-          git push --force origin "flake-update/auto"
-          gh workflow run build.yml --ref "flake-update/auto"
+          git push --force origin "auto-flake-bump"
+          gh workflow run build.yml --ref "auto-flake-bump"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

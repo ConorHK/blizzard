@@ -1,9 +1,9 @@
 name: flake-update-pr
 on:
   workflow_run:
-    # TODO: re-add `branches: ["flake-update/auto"]` once confirmed workflow_run fires correctly
     workflows: ["build"]
     types: [completed]
+    branches: ["auto-flake-bump"]
 jobs:
   create-pr:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -16,7 +16,7 @@ jobs:
 
       - name: Open PR if not already open
         run: |
-          branch="flake-update/auto"
+          branch="auto-flake-bump"
           if ! gh pr list --head "$branch" --state open --json number | jq -e '.[0]' > /dev/null; then
             gh pr create \
               --title "chore: update flake inputs" \
