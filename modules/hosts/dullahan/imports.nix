@@ -18,7 +18,5 @@
       secure-boot
       nixbuild
     ];
-
-    nixpkgs.overlays = [ config.flake.overlays.default ];
   };
 }

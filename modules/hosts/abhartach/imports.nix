@@ -25,7 +25,5 @@
       sunshine
       virtualization
     ];
-
-    nixpkgs.overlays = [ config.flake.overlays.default ];
   };
 }

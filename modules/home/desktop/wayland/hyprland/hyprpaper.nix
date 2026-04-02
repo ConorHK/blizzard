@@ -2,6 +2,7 @@
   flake.modules.homeManager.hyprpaper =
     {
       pkgs,
+      lib,
       inputs,
       ...
     }:

@@ -1,7 +1,10 @@
 topLevel: {
   flake.modules.homeManager."homeConfigurations/dullahan" =
-    { ... }:
+    { pkgs, inputs, ... }:
     {
+      home.packages = [
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.serve-here
+      ];
 
       age = {
         rekey = {

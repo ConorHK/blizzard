@@ -5,7 +5,7 @@
       keysFile = builtins.readFile (
         builtins.fetchurl {
           url = "https://github.com/conorhk.keys";
-          sha256 = "0dcf44q55cqnsnkb4wls1blhzmykrla4kda9mf1v1yc6vpwqgsap";
+          sha256 = "0dsy8sv3xzvai7lh3im1vr91gymm7p0ngrdys720wcnzgla2a9wi";
         }
       );
     in
