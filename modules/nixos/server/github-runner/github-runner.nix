@@ -8,6 +8,12 @@
       '';
     in
     {
+      users.users.github-runner-blizzard = {
+        isSystemUser = true;
+        group = "github-runner-blizzard";
+      };
+      users.groups.github-runner-blizzard = { };
+
       age.secrets = {
         github-runner-token = {
           rekeyFile = ./secrets/github-runner-token.age;
