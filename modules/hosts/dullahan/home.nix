@@ -8,7 +8,7 @@ topLevel: {
 
       age = {
         rekey = {
-          localStorageDir = ../../../.secrets/dullahan/goose;
+          localStorageDir = ../../../.secrets/homes/dullahan;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvnibFml4dw8uL++ghBdXSCfEfb4ZDAPD6uLcXZBvWn";
         };
       };

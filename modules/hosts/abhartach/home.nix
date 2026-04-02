@@ -4,7 +4,7 @@ topLevel: {
     {
 
       age.rekey = {
-        localStorageDir = ../../../.secrets/abhartach/goose;
+        localStorageDir = ../../../.secrets/homes/abhartach;
         hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
       };
 
