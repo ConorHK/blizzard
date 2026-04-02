@@ -1,12 +1,6 @@
 {
   flake.modules.nixos.github-runner =
     { config, pkgs, ... }:
-    let
-      watchStoreScript = pkgs.writeShellScript "cachix-watch-store" ''
-        export CACHIX_AUTH_TOKEN="$(cat ${config.age.secrets.github-runner-cachix.path})"
-        exec ${pkgs.cachix}/bin/cachix watch-store conorhk
-      '';
-    in
     {
       users.users.github-runner-blizzard = {
         isSystemUser = true;
@@ -22,23 +16,6 @@
         github-runner-cachix = {
           rekeyFile = ../cachix/secrets/cachix.age;
           owner = "github-runner-blizzard";
-        };
-      };
-
-      systemd.services.cachix-watch-store = {
-        description = "Push Nix build outputs to conorhk cachix";
-        wantedBy = [ "multi-user.target" ];
-        after = [
-          "network.target"
-          "nix-daemon.service"
-          "agenix.service"
-        ];
-        serviceConfig = {
-          Type = "simple";
-          Restart = "on-failure";
-          RestartSec = "10s";
-          User = "github-runner-blizzard";
-          ExecStart = "${watchStoreScript}";
         };
       };
 
