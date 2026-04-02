@@ -10,12 +10,21 @@
       ports ? [ ],
       environment ? { },
       extraArgs ? [ ],
+      extraGroups ? [ ],
       startUid,
       wantedBy ? [ "multi-user.target" ],
-      after ? [ "network.target" ],
+      after ? [
+        "network.target"
+        "network-online.target"
+      ],
+      wants ? [ "network-online.target" ],
       extraServiceConfig ? { },
     }:
     let
+      logsScript = pkgs.writeShellScriptBin "${name}-logs" ''
+        exec ${pkgs.systemd}/bin/journalctl -u "podman-${name}" "$@"
+      '';
+
       envArgs = map (k: "--env=${k}=${environment.${k}}") (builtins.attrNames environment);
 
       podmanArgs = [
@@ -23,6 +32,8 @@
         "--rm"
         "--name"
         name
+        "--cgroup-manager=cgroupfs"
+        "--no-healthcheck"
       ]
       ++ map (v: "--volume=${v}") volumes
       ++ map (p: "--publish=${p}") ports
@@ -35,6 +46,7 @@
       users.users.${name} = {
         isSystemUser = true;
         group = name;
+        inherit extraGroups;
         subUidRanges = [
           {
             startUid = startUid;
@@ -50,9 +62,16 @@
       };
       users.groups.${name} = { };
 
+      environment.systemPackages = [ logsScript ];
+
+      environment.etc = {
+        "subuid" = { mode = "0644"; text = "${name}:${toString startUid}:65536\n"; };
+        "subgid" = { mode = "0644"; text = "${name}:${toString startUid}:65536\n"; };
+      };
+
       systemd.services."podman-${name}" = {
         description = "${name} OCI container";
-        inherit wantedBy after;
+        inherit wantedBy after wants;
         serviceConfig = {
           Type = "simple";
           Restart = "on-failure";
@@ -62,6 +81,7 @@
           Environment = [
             "XDG_RUNTIME_DIR=/run/${name}"
             "HOME=/var/lib/${name}"
+            "PATH=/run/wrappers/bin:/run/current-system/sw/bin"
           ];
           ExecStartPre = "-${pkgs.podman}/bin/podman rm --ignore ${name}";
           ExecStart = "${pkgs.podman}/bin/podman ${pkgs.lib.escapeShellArgs podmanArgs}";
