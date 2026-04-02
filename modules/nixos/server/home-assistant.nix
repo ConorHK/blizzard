@@ -1,35 +1,32 @@
 {
   flake.modules.nixos.home-assistant =
-    { lib, ... }:
+    { pkgs, blizzardLib, ... }:
     let
       homeAssistantVersion = "stable";
-      configPath = "/home/driver/storage/homeassistant/";
       timezone = "Europe/Dublin";
       usbDevice = "/dev/ttyUSB0";
-      # TODO: initial load requires mkdir ~/storage/homeassistant and reboot
     in
-    {
-      virtualisation.oci-containers = {
-        backend = lib.mkDefault "podman";
-
-        containers.homeassistant = {
-          image = "ghcr.io/home-assistant/home-assistant:${homeAssistantVersion}";
-          autoStart = true;
-          volumes = [
-            "${configPath}:/config"
-            "/etc/localtime:/etc/localtime:ro"
-            "/run/dbus:/run/dbus:ro"
-          ];
-          environment.TZ = timezone;
-          extraOptions = [
-            "--network=host"
-            "--device=${usbDevice}:${usbDevice}"
-            "--cap-add=NET_RAW"
-            "--cap-add=NET_ADMIN"
-          ];
-        };
-      };
-
+    blizzardLib.mkRootlessContainer {
+      inherit pkgs;
+      name = "homeassistant";
+      image = "ghcr.io/home-assistant/home-assistant:${homeAssistantVersion}";
+      startUid = 165536;
+      extraGroups = [
+        "bluetooth"
+        "dialout"
+      ];
+      volumes = [
+        "/var/lib/homeassistant/config:/config"
+        "/etc/localtime:/etc/localtime:ro"
+        "/run/dbus:/run/dbus:ro"
+      ];
+      environment.TZ = timezone;
+      extraArgs = [
+        "--network=host"
+        "--device=${usbDevice}:${usbDevice}"
+      ];
+    }
+    // {
       networking.firewall.allowedTCPPorts = [ 8123 ];
     };
 }
