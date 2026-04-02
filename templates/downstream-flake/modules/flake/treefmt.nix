@@ -5,9 +5,7 @@
   ];
 
   perSystem =
-    {
-      ...
-    }:
+    _:
     {
       treefmt.config = {
         projectRootFile = "flake.nix";

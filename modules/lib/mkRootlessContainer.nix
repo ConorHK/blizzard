@@ -50,7 +50,7 @@
         inherit extraGroups;
         subUidRanges = [
           {
-            startUid = startUid;
+            inherit startUid;
             count = 65536;
           }
         ];

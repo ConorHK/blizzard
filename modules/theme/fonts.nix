@@ -9,8 +9,8 @@
     }:
     let
       # Try pkgs first (for downstream with overlay), fallback to inputs.self.packages (for blizzard itself)
-      creeper = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.creeper;
-      gohu = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.gohu;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) creeper;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) gohu;
     in
     {
       fonts = {
