@@ -41,7 +41,10 @@ in
           in
           nixpkgs'.lib.nixosSystem {
             inherit (options) system;
-            specialArgs.inputs = inputs;
+            specialArgs = {
+              inherit inputs;
+              blizzardLib = config.flake.lib;
+            };
             modules = [
               config.flake.modules.nixos.core
               (config.flake.modules.nixos."nixosConfigurations/${hostname}" or { })

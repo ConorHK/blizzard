@@ -21,7 +21,9 @@
           wallpaper = lib.mkDefault [
             {
               monitor = "";
-              path = "${inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wallpapers}/wallpapers/hashwall.png";
+              path = "${
+                inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wallpapers
+              }/wallpapers/hashwall.png";
               fit_mode = "tile";
             }
           ];

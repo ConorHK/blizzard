@@ -1,3 +1,4 @@
+{ config, ... }:
 {
-  flake.modules.nixos."nixosConfigurations/dullahan" = import ../../../lib/mkDisko.nix { };
+  flake.modules.nixos."nixosConfigurations/dullahan" = config.flake.lib.mkDisko { };
 }

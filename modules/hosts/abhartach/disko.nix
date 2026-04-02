@@ -1,5 +1,6 @@
+{ config, ... }:
 {
-  flake.modules.nixos."nixosConfigurations/abhartach" = import ../../../lib/mkDisko.nix {
+  flake.modules.nixos."nixosConfigurations/abhartach" = config.flake.lib.mkDisko {
     fido2 = true;
   };
 }
