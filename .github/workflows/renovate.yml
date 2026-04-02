@@ -13,7 +13,7 @@ jobs:
       issues: write
     steps:
       - name: Sync repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: nix run nixpkgs#renovate -- --platform=github ConorHK/blizzard
         env:
