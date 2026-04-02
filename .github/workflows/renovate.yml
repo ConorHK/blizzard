@@ -7,6 +7,9 @@ jobs:
   renovate:
     runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Sync repository
         uses: actions/checkout@v4
