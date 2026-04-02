@@ -31,6 +31,8 @@
         extraPackages = with pkgs; [
           cachix
           git
+          gh
+          renovate
         ];
       };
     };

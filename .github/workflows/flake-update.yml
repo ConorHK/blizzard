@@ -1,0 +1,39 @@
+name: flake-update
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: [self-hosted, nix, x86_64-linux]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Update flake inputs
+        run: nix --extra-experimental-features "nix-command flakes" flake update
+
+      - name: Open PR if flake.lock changed
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "No changes to flake.lock"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          branch="flake-update/auto"
+          git checkout -b "$branch"
+          git add flake.lock
+          git commit -m "chore: update flake inputs"
+          git push --force origin "$branch"
+          if ! gh pr list --head "$branch" --state open --json number | jq -e '.[0]' > /dev/null; then
+            gh pr create \
+              --title "chore: update flake inputs" \
+              --body "Automated flake input updates via \`nix flake update\`." \
+              --base main \
+              --head "$branch"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
