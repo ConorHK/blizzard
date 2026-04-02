@@ -10,10 +10,12 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - name: Sync repository
         uses: actions/checkout@v4
 
-      - run: nix run nixpkgs#renovate -- --platform=github --token=${{ secrets.GITHUB_TOKEN }} ConorHK/blizzard
+      - run: nix run nixpkgs#renovate -- --platform=github ConorHK/blizzard
         env:
+          RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: info
