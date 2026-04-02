@@ -2,35 +2,14 @@ name: build
 on:
   check_suite:
     types: [completed]
-  # workflow_dispatch:
   push:
-  # pull_request:
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
     steps:
-      - name: Cleanup host
-        uses: wimpysworld/nothing-but-nix@main
-        with:
-          hatchet-protocol: "rampage"
-          witness-carnage: true
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v30
-        with:
-          extra-conf: |
-            build-dir = /nix/build
-
       - name: Sync repository
         uses: actions/checkout@v4
-
-      - uses: cachix/cachix-action@v14
-        with:
-          name: conorhk
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          useDaemon: true
-          installCommand: nix profile install nixpkgs#cachix
 
       - run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
 
@@ -39,43 +18,17 @@ jobs:
     strategy:
       matrix:
         include:
-          # - macos-latest
           - machine: abhartach
-            os: ubuntu-latest
           - machine: bananach
-            os: ubuntu-latest
           # - machine: banshee
-          #   os: ubuntu-24.04-arm
           - machine: dullahan
-            os: ubuntu-latest
           - machine: puca
-            os: ubuntu-latest
           - machine: leprechaun
-            os: ubuntu-latest
 
-    runs-on: ${{ matrix.os }}
+    runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
     steps:
-      - name: Cleanup host
-        uses: wimpysworld/nothing-but-nix@main
-        with:
-          hatchet-protocol: "rampage"
-          witness-carnage: true
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v30
-        with:
-          extra-conf: |
-            build-dir = /nix/build
-
       - name: Sync repository
         uses: actions/checkout@v4
-
-      - uses: cachix/cachix-action@v14
-        with:
-          name: conorhk
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          useDaemon: true
-          installCommand: nix profile install nixpkgs#cachix
 
       - run: nix --extra-experimental-features pipe-operators build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel

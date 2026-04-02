@@ -9,5 +9,6 @@
     server-users
     podman
     satisfactory
+    github-runner
   ];
 }
