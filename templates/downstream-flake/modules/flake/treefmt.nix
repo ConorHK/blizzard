@@ -4,15 +4,13 @@
     inputs.treefmt-nix.flakeModule
   ];
 
-  perSystem =
-    _:
-    {
-      treefmt.config = {
-        projectRootFile = "flake.nix";
-        flakeCheck = true;
-        programs = {
-          nixfmt.enable = true;
-        };
+  perSystem = _: {
+    treefmt.config = {
+      projectRootFile = "flake.nix";
+      flakeCheck = true;
+      programs = {
+        nixfmt.enable = true;
       };
     };
+  };
 }

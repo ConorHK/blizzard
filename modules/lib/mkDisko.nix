@@ -1,5 +1,4 @@
-_:
-{
+_: {
   flake.lib.mkDisko =
     {
       device ? "/dev/nvme0n1",
