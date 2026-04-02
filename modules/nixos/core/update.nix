@@ -8,12 +8,12 @@
         flake = "github:conorhk/blizzard";
         flags = [ "-L" ];
 
-        dates = "*-*-* 04:30:00";
+        dates = "*-*-* 06:00:00";
 
         allowReboot = true;
         rebootWindow = {
-          lower = "04:25";
-          upper = "05:45";
+          lower = "06:00";
+          upper = "07:00";
         };
         operation = "boot";
         randomizedDelaySec = "5min";

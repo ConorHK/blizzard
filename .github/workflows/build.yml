@@ -34,4 +34,4 @@ jobs:
 
       - run: |
           export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
-          cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
+          cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L --no-link .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
