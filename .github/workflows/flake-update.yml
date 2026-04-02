@@ -15,6 +15,9 @@ jobs:
       - name: Update flake inputs
         run: nix --extra-experimental-features "nix-command flakes" flake update
 
+      - name: Check updated flake
+        run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
+
       - name: Open PR if flake.lock changed
         run: |
           if git diff --quiet flake.lock; then

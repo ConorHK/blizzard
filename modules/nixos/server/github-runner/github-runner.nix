@@ -32,6 +32,7 @@
           cachix
           git
           gh
+          jq
           renovate
         ];
       };
