@@ -9,7 +9,7 @@
   };
 
   flake.modules.homeManager.theme = {
-    imports = [ inputs.stylix.homeManagerModules.stylix ];
+    imports = [ inputs.stylix.homeModules.stylix ];
     stylix.enable = true;
   };
 }

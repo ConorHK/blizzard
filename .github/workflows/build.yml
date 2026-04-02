@@ -34,7 +34,8 @@ jobs:
 
       - run: |
           export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
-          cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L --no-link .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
+          out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
+          nix path-info -r "$out" | cachix push conorhk
 
   build-homes:
     needs: check
@@ -52,4 +53,5 @@ jobs:
 
       - run: |
           export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
-          cachix watch-exec conorhk -- nix --extra-experimental-features pipe-operators build -L --no-link .?submodules=1#homeConfigurations.${{ matrix.home }}.activationPackage
+          out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths .?submodules=1#homeConfigurations.${{ matrix.home }}.activationPackage)
+          nix path-info -r "$out" | cachix push conorhk
