@@ -9,7 +9,7 @@ jobs:
     environment: production
     steps:
       - name: Sync repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: nix --extra-experimental-features pipe-operators flake check .?submodules=1
 
@@ -29,6 +29,6 @@ jobs:
     environment: production
     steps:
       - name: Sync repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: nix --extra-experimental-features pipe-operators build -L .?submodules=1#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel
