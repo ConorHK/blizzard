@@ -50,7 +50,7 @@
 
           plugins {
             autolock location="file://${
-              (inputs.blizzard or inputs.self).packages.${pkgs.system}.zellij-autolock
+              (inputs.blizzard or inputs.self).packages.${pkgs.stdenv.hostPlatform.system}.zellij-autolock
             }" {
               triggers "nvim|vim|cnvim"
               watch_triggers "fzf|zoxide|atuin"

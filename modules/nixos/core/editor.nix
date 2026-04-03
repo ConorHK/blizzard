@@ -7,6 +7,6 @@
   flake.modules.nixos.cnvim =
     { inputs, pkgs, ... }:
     {
-      environment.systemPackages = [ inputs.cnvim.packages.${pkgs.system}.nightly ];
+      environment.systemPackages = [ inputs.cnvim.packages.${pkgs.stdenv.hostPlatform.system}.nightly ];
     };
 }

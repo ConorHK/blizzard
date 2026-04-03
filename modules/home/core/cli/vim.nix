@@ -9,7 +9,7 @@
     }:
     let
       cfg = config.programs.cnvim;
-      packages = inputs.cnvim.packages.${pkgs.system};
+      packages = inputs.cnvim.packages.${pkgs.stdenv.hostPlatform.system};
     in
     {
       options.programs.cnvim.variant = lib.mkOption {
