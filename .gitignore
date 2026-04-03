@@ -4,6 +4,7 @@ result-*
 
 # Ignore automatically generated direnv output
 .direnv
+.pre-commit-config.yaml
 
 # Claude Code
 CLAUDE.md

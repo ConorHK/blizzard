@@ -6,11 +6,13 @@
 
   perSystem =
     {
+      config,
       inputs',
       ...
     }:
     {
       devshells.default = {
+        devshell.startup.pre-commit.text = config.pre-commit.installationScript;
         packages = [
           inputs'.home-manager.packages.default
         ];
