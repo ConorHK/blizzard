@@ -14,7 +14,6 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-
       - run: renovate --platform=github ConorHK/blizzard
         env:
           RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}

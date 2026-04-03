@@ -12,13 +12,10 @@ jobs:
       actions: write
     steps:
       - uses: actions/checkout@v6
-
       - name: Update flake inputs
         run: nix --extra-experimental-features "nix-command flakes" flake update
-
       - name: Run flake check
         run: nix --extra-experimental-features pipe-operators flake check .
-
       - name: Push branch if flake.lock changed
         run: |
           if git diff --quiet flake.lock; then

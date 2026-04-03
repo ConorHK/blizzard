@@ -9,9 +9,7 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-
       - run: nix --extra-experimental-features pipe-operators flake check .
-
   build-machines:
     needs: check
     strategy:
@@ -23,14 +21,13 @@ jobs:
           - machine: dullahan
           - machine: puca
           - machine: leprechaun
-
     runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-
       - run: |
           export CACHIX_AUTH_TOKEN="$(cat /run/agenix/github-runner-cachix)"
-          out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
+          out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths \
+            .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
           nix path-info -r "$out" | cachix push conorhk

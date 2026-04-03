@@ -13,7 +13,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
-
       - name: Open PR
         run: |
           gh pr create \
