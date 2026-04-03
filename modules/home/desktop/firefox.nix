@@ -34,18 +34,31 @@
                 };
               };
 
+              # Extensions where the gecko ID is also the AMO slug (email-style or matching slug)
               extensions = [
-                "d7742d87-e61d-4b78-b8a1-b469842139fa" # vimium
-                "vimium-ff"
                 "9350bc42-47fb-4598-ae0f-825e3dd9ceba" # enable-right-click
-                "bitwarden-password-manager"
                 "addon@darkreader.org"
-                "sidebery"
                 "skipredirect@sblask"
                 "idcac-pub@guus.ninja"
+                "uBlock0@raymondhill.net"
               ];
             in
-            builtins.listToAttrs (map mkFirefoxExtension extensions);
+            (builtins.listToAttrs (map mkFirefoxExtension extensions))
+            // {
+              # Extensions where the gecko UUID differs from the AMO slug
+              "{d7742d87-e61d-4b78-b8a1-b469842139fa}" = {
+                installation_mode = "force_installed";
+                install_url = "https://addons.mozilla.org/firefox/downloads/latest/vimium-ff/latest.xpi";
+              };
+              "{446900e4-71c2-419f-a6a7-df9c091e268b}" = {
+                installation_mode = "force_installed";
+                install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
+              };
+              "{3c078156-979c-498b-8990-85f7987dd929}" = {
+                installation_mode = "force_installed";
+                install_url = "https://addons.mozilla.org/firefox/downloads/latest/sidebery/latest.xpi";
+              };
+            };
           FirefoxHome = {
             SponsoredTopSites = false;
             Highlights = false;
