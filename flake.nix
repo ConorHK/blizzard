@@ -4,6 +4,7 @@
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
     agenix-rekey.url = "github:oddlama/agenix-rekey";
     agenix.url = "github:ryantm/agenix";
+    claude-code.url = "github:sadjow/claude-code-nix";
     cnvim.inputs.nixpkgs.follows = "nixpkgs";
     cnvim.url = "github:conorhk/vimrc";
     crash.inputs.nixpkgs.follows = "nixpkgs";
