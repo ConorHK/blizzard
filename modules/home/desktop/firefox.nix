@@ -127,6 +127,8 @@
         };
       };
 
+      stylix.targets.firefox.profileNames = [ "primary" ];
+
       textfox = {
         enable = true;
         profiles = [ "primary" ];
