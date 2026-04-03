@@ -2,7 +2,10 @@
   flake.modules.homeManager.core =
     { lib, pkgs, ... }:
     {
-      home.packages = [ pkgs.pre-commit ];
+      home.packages = [
+        pkgs.pre-commit
+        pkgs.git-absorb
+      ];
       programs = {
         difftastic = {
           enable = true;
