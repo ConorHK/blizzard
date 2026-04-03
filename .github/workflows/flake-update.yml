@@ -16,6 +16,9 @@ jobs:
       - name: Update flake inputs
         run: nix --extra-experimental-features "nix-command flakes" flake update
 
+      - name: Run flake check
+        run: nix --extra-experimental-features pipe-operators flake check .
+
       - name: Push branch if flake.lock changed
         run: |
           if git diff --quiet flake.lock; then
@@ -27,7 +30,10 @@ jobs:
           git checkout -b "auto-flake-bump"
           git add flake.lock
           git commit -m "chore: update flake inputs"
+          pr_number=$(gh pr list --head "auto-flake-bump" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr_number" ]; then
+            gh pr close "$pr_number"
+          fi
           git push --force origin "auto-flake-bump"
-          gh workflow run build.yml --ref "auto-flake-bump"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

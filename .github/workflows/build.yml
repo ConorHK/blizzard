@@ -1,7 +1,5 @@
 name: build
 on:
-  check_suite:
-    types: [completed]
   push:
   workflow_dispatch:
 jobs:
