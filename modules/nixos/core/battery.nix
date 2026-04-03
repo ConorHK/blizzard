@@ -6,6 +6,7 @@
       system76-scheduler.settings.cfsProfiles.enable = true; # Better scheduling for CPU cycles - thanks System76!!!
       thermald.enable = true; # Enable thermald, the temperature management daemon. (only necessary if on Intel CPUs)
       power-profiles-daemon.enable = false; # Disable GNOMEs power management
+      upower.enable = true;
       tlp = {
         enable = true; # Enable TLP (better than gnomes internal power manager)
         settings = {
@@ -23,6 +24,9 @@
           STOP_CHARGE_THRESH_BAT0 = 81;
           WIFI_PWR_ON_AC = 0;
           WIFI_PWR_ON_BAT = 1;
+          PCIE_ASPM_ON_BAT = "powersupersave";
+          USB_AUTOSUSPEND = 1;
+          RUNTIME_PM_ON_BAT = "auto";
         };
       };
     };
