@@ -15,6 +15,15 @@ topLevel: {
         useGlobalPkgs = true;
         useUserPackages = true;
 
+        sharedModules = [
+          (
+            { config, ... }:
+            {
+              gtk.gtk4.theme = config.gtk.theme;
+            }
+          )
+        ];
+
         users.goose.imports = [
           topLevel.config.flake.modules.homeManager.core
           (topLevel.config.flake.modules.homeManager."homeConfigurations/${hostName}" or { })
