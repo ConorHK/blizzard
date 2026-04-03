@@ -11,6 +11,7 @@
   flake.modules.nixos."nixosConfigurations/dullahan" = {
     imports = with config.flake.modules.nixos; [
       battery
+      intgpu
 
       cnvim
       cachix
