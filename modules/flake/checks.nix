@@ -8,6 +8,7 @@
     pre-commit.settings.hooks = {
       deadnix.enable = true;
       flake-checker.enable = true;
+      yamllint.enable = true;
       ripsecrets.enable = true;
       shellcheck.enable = true;
       statix = {

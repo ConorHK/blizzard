@@ -10,6 +10,7 @@
       flakeCheck = true;
       programs = {
         nixfmt.enable = true;
+        yamlfmt.enable = true;
       };
     };
   };
