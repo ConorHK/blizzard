@@ -5,7 +5,7 @@
     inputs.nixos-facter-modules.nixosModules.facter
 
     agenix
-    github-nix-access
+    determinate-nix
     network
     nix
     root
