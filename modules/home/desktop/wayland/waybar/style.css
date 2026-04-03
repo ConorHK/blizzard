@@ -107,6 +107,7 @@ tooltip label {
 .modules-center #workspaces button.focused,
 .modules-center #workspaces button.active {
     border-bottom: 3px solid transparent;
+    color: #ff0000;
 }
 .modules-right #workspaces button {
     border-bottom: 3px solid transparent;
