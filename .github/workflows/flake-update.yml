@@ -32,5 +32,6 @@ jobs:
             gh pr close "$pr_number"
           fi
           git push --force origin "auto-flake-bump"
+          gh workflow run build.yml --ref "auto-flake-bump"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
