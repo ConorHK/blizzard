@@ -30,6 +30,7 @@
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05-small";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     stylix.inputs.flake-parts.follows = "flake-parts";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
     stylix.url = "github:danth/stylix";
