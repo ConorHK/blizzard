@@ -1,28 +1,35 @@
-{
-  flake.modules.nixos.satisfactory =
-    { pkgs, blizzardLib, ... }:
-    let
-      # renovate: datasource=docker depName=ghcr.io/wolveix/satisfactory-server
-      satisfactoryVersion = "v1.9.10";
-      dataDir = "/storage/service/satisfactory-server/data";
-    in
-    blizzardLib.mkRootlessContainer {
-      inherit pkgs;
-      name = "satisfactory";
-      image = "ghcr.io/wolveix/satisfactory-server:${satisfactoryVersion}";
-      startUid = 100000;
-      volumes = [ "${dataDir}:/config" ];
-      ports = [
-        "7777:7777/tcp"
-        "7777:7777/udp"
-        "8888:8888/tcp"
+_: {
+  flake.modules.nixos.satisfactory = _: {
+    networking.firewall = {
+      allowedTCPPorts = [
+        7777
+        8888
       ];
-      environment = {
-        AUTOPAUSE = "false";
-        AUTOSAVE = "true";
-        AUTOSAVENUM = "3";
-        AUTOSAVEINTERVAL = "300";
-        MAXPLAYERS = "8";
+      allowedUDPPorts = [ 7777 ];
+    };
+
+    home-manager.users.containers.virtualisation.quadlet = {
+      networks.satisfactory.networkConfig = { };
+
+      containers.satisfactory.containerConfig = {
+        # renovate: datasource=docker depName=ghcr.io/wolveix/satisfactory-server
+        image = "ghcr.io/wolveix/satisfactory-server:v1.9.10";
+        publishPorts = [
+          "7777:7777/tcp"
+          "7777:7777/udp"
+          "8888:8888/tcp"
+        ];
+        volumes = [ "/storage/service/satisfactory-server/data:/config" ];
+        environment = {
+          AUTOPAUSE = "false";
+          AUTOSAVE = "true";
+          AUTOSAVENUM = "3";
+          AUTOSAVEINTERVAL = "300";
+          MAXPLAYERS = "8";
+        };
+        networks = [ "satisfactory.network" ];
+        noNewPrivileges = true;
       };
     };
+  };
 }

@@ -1,32 +1,28 @@
-{
-  flake.modules.nixos.home-assistant =
-    { pkgs, blizzardLib, ... }:
-    let
-      homeAssistantVersion = "stable";
-      timezone = "Europe/Dublin";
-      usbDevice = "/dev/ttyUSB0";
-    in
-    blizzardLib.mkRootlessContainer {
-      inherit pkgs;
-      name = "homeassistant";
-      image = "ghcr.io/home-assistant/home-assistant:${homeAssistantVersion}";
-      startUid = 165536;
-      extraGroups = [
-        "bluetooth"
-        "dialout"
-      ];
-      volumes = [
-        "/var/lib/homeassistant/config:/config"
-        "/etc/localtime:/etc/localtime:ro"
-        "/run/dbus:/run/dbus:ro"
-      ];
-      environment.TZ = timezone;
-      extraArgs = [
-        "--network=host"
-        "--device=${usbDevice}:${usbDevice}"
-      ];
-    }
-    // {
-      networking.firewall.allowedTCPPorts = [ 8123 ];
+_: {
+  flake.modules.nixos.home-assistant = _: {
+    networking.firewall.allowedTCPPorts = [ 8123 ];
+
+    # containers user needs bluetooth and dialout for HA's Zigbee/Z-Wave USB adapters
+    users.users.containers.extraGroups = [
+      "bluetooth"
+      "dialout"
+    ];
+
+    home-manager.users.containers.virtualisation.quadlet = {
+      containers.home-assistant.containerConfig = {
+        # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
+        image = "ghcr.io/home-assistant/home-assistant:stable";
+        volumes = [
+          "/var/lib/homeassistant/config:/config"
+          "/etc/localtime:/etc/localtime:ro"
+          "/run/dbus:/run/dbus:ro"
+        ];
+        environment.TZ = "Europe/Dublin";
+        # USB adapter for Zigbee/Z-Wave
+        addDevice = [ "/dev/ttyUSB0" ];
+        # Host networking required for mDNS/Chromecast/DLNA discovery
+        networkMode = "host";
+      };
     };
+  };
 }
