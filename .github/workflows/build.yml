@@ -31,3 +31,21 @@ jobs:
           out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths \
             .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
           nix path-info -r "$out" | cachix push conorhk
+  create-pr:
+    needs: build-machines
+    if: github.ref == 'refs/heads/auto-flake-bump'
+    runs-on: [self-hosted, nix, x86_64-linux]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Open PR
+        run: |
+          gh pr create \
+            --title "chore: update flake inputs" \
+            --body "Automated flake input updates via \`nix flake update\`. Check and build workflows passed." \
+            --base main \
+            --head "auto-flake-bump"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
