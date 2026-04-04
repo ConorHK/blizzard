@@ -39,6 +39,15 @@
                   --extra-experimental-features pipe-operators
             '';
           }
+          {
+            name = "make-iso";
+            command = ''
+              echo -e "\n=> Building bootable ISO..."
+              nix build .#iso --out-link result-iso
+              echo -e "\n=> ISO ready:"
+              ls -lh result-iso/iso/*.iso
+            '';
+          }
         ];
       };
     };
