@@ -8,6 +8,7 @@
     systemd-boot
     server-users
     podman
+    quadlet
     satisfactory
     github-runner
   ];
