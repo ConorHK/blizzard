@@ -19,7 +19,7 @@ _: {
             volumes = [ "/storage/data/wallabag/data:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.wallabag-secrets.path ];
-            environment = {
+            environments = {
               POSTGRES_USER = "wallabag";
               POSTGRES_DB = "wallabag";
             };
@@ -42,7 +42,7 @@ _: {
               volumes = [ "/storage/data/wallabag/images:/var/www/wallabag/web/assets/images" ];
               # POSTGRES_PASSWORD and SYMFONY__ENV__DATABASE_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.wallabag-secrets.path ];
-              environment = {
+              environments = {
                 SYMFONY__ENV__DATABASE_DRIVER = "pdo_pgsql";
                 SYMFONY__ENV__DATABASE_HOST = "wallabag-db";
                 SYMFONY__ENV__DATABASE_PORT = "5432";

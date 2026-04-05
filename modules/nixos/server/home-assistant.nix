@@ -17,11 +17,13 @@ _: {
           "/etc/localtime:/etc/localtime:ro"
           "/run/dbus:/run/dbus:ro"
         ];
-        environment.TZ = "Europe/Dublin";
+        environments = {
+          TZ = "Europe/Dublin";
+        };
         # USB adapter for Zigbee/Z-Wave
-        addDevice = [ "/dev/ttyUSB0" ];
+        devices = [ "/dev/ttyUSB0" ];
         # Host networking required for mDNS/Chromecast/DLNA discovery
-        networkMode = "host";
+        networks = [ "host" ];
       };
     };
   };

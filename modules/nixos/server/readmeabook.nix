@@ -21,7 +21,7 @@ _: {
             "/storage/data/readmeabook/pgdata:/var/lib/postgresql/data"
             "/storage/data/readmeabook/redis:/var/lib/redis"
           ];
-          environment = {
+          environments = {
             PUID = "1000";
             PGID = "1000";
             PUBLIC_URL = "https://requestbook.goosebox.com";
@@ -42,7 +42,7 @@ _: {
             "/storage/data/readmeabook/pgdata-mom:/var/lib/postgresql/data"
             "/storage/data/readmeabook/redis-mom:/var/lib/redis"
           ];
-          environment = {
+          environments = {
             PUID = "1000";
             PGID = "1000";
             PUBLIC_URL = "https://mom.request.goosebox.com";

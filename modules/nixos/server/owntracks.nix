@@ -17,7 +17,7 @@ _: {
             "/storage/data/owntracks/config:/config"
             "/storage/data/owntracks/store:/store"
           ];
-          environment = {
+          environments = {
             OTR_PORT = "0";
           };
           networks = [ "owntracks.network" ];
@@ -31,7 +31,7 @@ _: {
           volumes = [
             "/storage/data/owntracks/frontend/config.js:/usr/share/nginx/html/config/config.js:ro"
           ];
-          environment = {
+          environments = {
             SERVER_HOST = "otrecorder";
             SERVER_PORT = "8083";
           };

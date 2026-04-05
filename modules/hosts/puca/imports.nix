@@ -8,6 +8,7 @@
     bluetooth
     github-nix-access
     grub-boot
+    quadlet
     home-assistant
     server-users
   ];

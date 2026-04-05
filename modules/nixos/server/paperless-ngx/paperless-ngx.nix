@@ -34,7 +34,7 @@ _: {
               ];
               # PAPERLESS_SECRET_KEY loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.paperless-secrets.path ];
-              environment = {
+              environments = {
                 PAPERLESS_REDIS = "redis://paperless-broker:6379";
                 PAPERLESS_URL = "https://paperless.goosebox.org";
                 PAPERLESS_TIME_ZONE = "Europe/Dublin";

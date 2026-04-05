@@ -31,7 +31,7 @@ _: {
             ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.dawarich-secrets.path ];
-            environment = {
+            environments = {
               POSTGRES_USER = "postgres";
               POSTGRES_DB = "dawarich_development";
             };
@@ -51,7 +51,7 @@ _: {
               ];
               # DATABASE_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.dawarich-secrets.path ];
-              environment = {
+              environments = {
                 RAILS_ENV = "development";
                 REDIS_URL = "redis://dawarich-redis:6379";
                 DATABASE_HOST = "dawarich-db";
@@ -87,7 +87,7 @@ _: {
               ];
               # DATABASE_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.dawarich-secrets.path ];
-              environment = {
+              environments = {
                 RAILS_ENV = "development";
                 REDIS_URL = "redis://dawarich-redis:6379";
                 DATABASE_HOST = "dawarich-db";

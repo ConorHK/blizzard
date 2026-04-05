@@ -14,7 +14,7 @@ _: {
           volumes = [ "/storage/data/boinc:/var/lib/boinc" ];
           # BOINC_GUI_RPC_PASSWORD loaded from agenix-managed env file
           environmentFiles = [ config.age.secrets.boinc-secrets.path ];
-          environment = {
+          environments = {
             BOINC_CMD_LINE_OPTIONS = "--allow_remote_gui_rpc";
           };
           # Uses host networking like original docker-compose network_mode: host

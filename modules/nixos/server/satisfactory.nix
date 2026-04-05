@@ -20,7 +20,7 @@ _: {
           "8888:8888/tcp"
         ];
         volumes = [ "/storage/service/satisfactory-server/data:/config" ];
-        environment = {
+        environments = {
           AUTOPAUSE = "false";
           AUTOSAVE = "true";
           AUTOSAVENUM = "3";
