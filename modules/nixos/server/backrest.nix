@@ -18,7 +18,7 @@ _: {
           # Podman socket for container-aware backups (rootless user socket)
           "/run/user/1000/podman/podman.sock:/var/run/docker.sock:ro"
         ];
-        environment = {
+        environments = {
           PUID = "1000";
           PGID = "1000";
           BACKREST_DATA = "/data";

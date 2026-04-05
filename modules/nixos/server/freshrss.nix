@@ -13,7 +13,7 @@ _: {
           "/storage/data/freshrss/data:/var/www/FreshRSS/data"
           "/storage/data/freshrss/extensions:/var/www/FreshRSS/extensions"
         ];
-        environment = {
+        environments = {
           TZ = "Europe/Dublin";
           CRON_MIN = "3,33";
           TRUSTED_PROXY = "172.16.0.1/12 192.168.0.1/16";

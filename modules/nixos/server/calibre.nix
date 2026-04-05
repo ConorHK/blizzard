@@ -19,7 +19,7 @@ _: {
             "/storage/data/calibre/injest:/cwa-book-ingest"
             "/storage/data/media/books:/calibre-library"
           ];
-          environment = {
+          environments = {
             PUID = "1000";
             PGID = "100";
             TZ = "Europe/Dublin";
@@ -33,7 +33,7 @@ _: {
           image = "ghcr.io/calibrain/calibre-web-automated-book-downloader:latest";
           publishPorts = [ "8085:8085" ];
           volumes = [ "/storage/data/calibre/injest:/cwa-book-ingest" ];
-          environment = {
+          environments = {
             FLASK_PORT = "8085";
             FLASK_DEBUG = "false";
             CLOUDFLARE_PROXY_URL = "http://cloudflare-bypass:8000";
@@ -56,7 +56,7 @@ _: {
           image = "evanbuss/openbooks:latest";
           publishPorts = [ "8086:80" ];
           volumes = [ "/storage/data/calibre/injest:/books" ];
-          environment = {
+          environments = {
             BASE_PATH = "/";
           };
           exec = "--name zimder --persist";

@@ -13,7 +13,7 @@ _: {
           "/storage/data/radicale/etc:/radicale/etc"
           "/storage/data/radicale/var:/radicale/var"
         ];
-        environment = {
+        environments = {
           TZ = "Europe/Dublin";
         };
         networks = [ "caldav.network" ];

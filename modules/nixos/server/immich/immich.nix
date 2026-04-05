@@ -26,7 +26,7 @@ _: {
             volumes = [ "/storage/data/immich/db:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.immich-secrets.path ];
-            environment = {
+            environments = {
               POSTGRES_USER = "postgres";
               POSTGRES_DB = "immich";
               POSTGRES_INITDB_ARGS = "--data-checksums";
@@ -54,7 +54,7 @@ _: {
               ];
               # DB_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.immich-secrets.path ];
-              environment = {
+              environments = {
                 DB_HOSTNAME = "immich-db";
                 DB_USERNAME = "postgres";
                 DB_DATABASE_NAME = "immich";

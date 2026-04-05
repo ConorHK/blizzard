@@ -22,7 +22,7 @@ _: {
             "/storage/data/gonic/playlists:/playlists"
             "/storage/data/gonic/cache:/cache"
           ];
-          environment = {
+          environments = {
             TZ = "Europe/Dublin";
           };
           networks = [ "music.network" ];
@@ -34,7 +34,7 @@ _: {
           image = "ghcr.io/v1ck3s/octo-fiesta:latest";
           publishPorts = [ "5274:8080" ];
           volumes = [ "/storage/data/media/music:/app/downloads" ];
-          environment = {
+          environments = {
             ASPNETCORE_ENVIRONMENT = "Production";
             Library__DownloadPath = "/app/downloads";
             Subsonic__Url = "http://gonic:80";
@@ -64,7 +64,7 @@ _: {
             "/storage/data/slskd:/app"
             "/storage/data/media/music:/music:rw"
           ];
-          environment = {
+          environments = {
             SLSKD_REMOTE_CONFIGURATION = "true";
           };
           user = "1000:1000";

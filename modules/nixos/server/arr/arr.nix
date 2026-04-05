@@ -30,7 +30,7 @@ _: {
               "/storage/data/sonarr:/config"
               "/storage/data:/data"
             ];
-            environment = {
+            environments = {
               PUID = "1000";
               PGID = "1000";
               UMASK = "002";
@@ -48,7 +48,7 @@ _: {
               "/storage/data/radarr/config:/config"
               "/storage/data:/data"
             ];
-            environment = {
+            environments = {
               PUID = "1000";
               PGID = "1000";
               UMASK = "002";
@@ -66,7 +66,7 @@ _: {
               "/storage/data/bazarr:/config"
               "/storage/data/media:/data/media"
             ];
-            environment = {
+            environments = {
               PUID = "1000";
               PGID = "1000";
               TZ = "Europe/Dublin";
@@ -80,7 +80,7 @@ _: {
             image = "ghcr.io/hotio/prowlarr:latest";
             publishPorts = [ "9696:9696" ];
             volumes = [ "/storage/data/prowlarr:/config" ];
-            environment = {
+            environments = {
               PUID = "1000";
               PGID = "1000";
               UMASK = "002";
@@ -95,7 +95,7 @@ _: {
             image = "fallenbagel/jellyseerr:latest";
             publishPorts = [ "5055:5055" ];
             volumes = [ "/storage/data/jellyseerr/config:/app/config" ];
-            environment = {
+            environments = {
               LOG_LEVEL = "debug";
               TZ = "Europe/Dublin";
             };
@@ -119,7 +119,7 @@ _: {
               "/storage/data/qbittorrent/cookies:/config/cookies"
               "/storage/data/cross-seed/links:/links"
             ];
-            environment = {
+            environments = {
               PUID = "1000";
               PGID = "1000";
               UMASK = "002";
@@ -157,7 +157,9 @@ _: {
             # renovate: datasource=docker depName=ghcr.io/recyclarr/recyclarr
             image = "ghcr.io/recyclarr/recyclarr:latest";
             volumes = [ "/storage/data/recyclarr:/config" ];
-            environment.TZ = "Europe/Dublin";
+            environments = {
+              TZ = "Europe/Dublin";
+            };
             networks = [ "arr.network" ];
             noNewPrivileges = true;
             user = "1000:1000";
@@ -169,7 +171,7 @@ _: {
             volumes = [ "/storage/data/torrents:/data/torrents" ];
             # API keys and secrets loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.arr-secrets.path ];
-            environment = {
+            environments = {
               TZ = "Europe/Dublin";
               UN_DEBUG = "false";
               UN_INTERVAL = "2m";
@@ -217,7 +219,7 @@ _: {
             volumes = [ "/storage/data/jellystat/db:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.arr-secrets.path ];
-            environment = {
+            environments = {
               POSTGRES_DB = "jfstat";
               POSTGRES_USER = "postgres";
             };
@@ -233,7 +235,7 @@ _: {
               volumes = [ "/storage/data/jellystat/backup:/app/backend/backup-data" ];
               # POSTGRES_PASSWORD and JWT_SECRET loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.arr-secrets.path ];
-              environment = {
+              environments = {
                 POSTGRES_USER = "postgres";
                 POSTGRES_IP = "jellystat-db";
                 POSTGRES_PORT = "5432";

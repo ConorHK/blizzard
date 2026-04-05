@@ -24,7 +24,7 @@ _: {
           "21027:21027/udp"
         ];
         volumes = [ "/storage/data/syncthing:/var/syncthing" ];
-        environment = {
+        environments = {
           PUID = "1000";
           PGID = "1000";
         };

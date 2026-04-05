@@ -10,7 +10,7 @@ _: {
         image = "ghcr.io/mealie-recipes/mealie:latest";
         publishPorts = [ "9925:9000" ];
         volumes = [ "/storage/data/mealie:/app/data" ];
-        environment = {
+        environments = {
           ALLOW_SIGNUP = "true";
           PUID = "1000";
           PGID = "1000";
