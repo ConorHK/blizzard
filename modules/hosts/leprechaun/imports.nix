@@ -8,6 +8,7 @@
     github-nix-access
     github-runner
     podman
+    quadlet
     satisfactory
     server-users
     systemd-boot
