@@ -11,17 +11,13 @@
   flake.modules.nixos."nixosConfigurations/abhartach" = {
     imports = with config.flake.modules.nixos; [
       amdgpu
-
       beeper
-
-      cnvim
       cachix
-
+      cnvim
       desktop
       gaming
-
+      github-nix-access
       home-manager
-
       kubernetes
       kvm-amd
       nixbuild

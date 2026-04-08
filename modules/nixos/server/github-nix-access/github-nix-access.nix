@@ -7,12 +7,12 @@
       };
 
       nix.extraOptions = ''
-        include ${config.age.secrets.github-nix-token.path}
+        !include ${config.age.secrets.github-nix-token.path}
       '';
 
       systemd.services.nix-daemon = {
-        after = [ "agenix.service" ];
-        requires = [ "agenix.service" ];
+        after = [ "agenix-install-secrets.service" ];
+        requires = [ "agenix-install-secrets.service" ];
       };
     };
 }

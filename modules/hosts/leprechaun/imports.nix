@@ -5,10 +5,11 @@
   };
 
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
-    systemd-boot
-    server-users
+    github-nix-access
+    github-runner
     podman
     satisfactory
-    github-runner
+    server-users
+    systemd-boot
   ];
 }

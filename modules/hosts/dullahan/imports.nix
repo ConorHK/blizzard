@@ -11,17 +11,14 @@
   flake.modules.nixos."nixosConfigurations/dullahan" = {
     imports = with config.flake.modules.nixos; [
       battery
-      intgpu
-
-      cnvim
       cachix
-
+      cnvim
       desktop
-
+      github-nix-access
       home-manager
-
-      secure-boot
+      intgpu
       nixbuild
+      secure-boot
     ];
   };
 }
