@@ -466,6 +466,22 @@
         "url": "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz"
       }
     },
+    "flake-compat_7": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767039857,
+        "narHash": "sha256-vNpUSpF5Nuw8xvDLj2KCwwksIbjua2LZCqhV1LNRDns=",
+        "owner": "NixOS",
+        "repo": "flake-compat",
+        "rev": "5edf11c44bc78a0d334f6334cdaf7d60d732daab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "flake-compat",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -1777,6 +1793,7 @@
     },
     "vicinae-extensions": {
       "inputs": {
+        "flake-compat": "flake-compat_7",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -1784,11 +1801,11 @@
         "vicinae": "vicinae"
       },
       "locked": {
-        "lastModified": 1775209041,
-        "narHash": "sha256-8juuSr/mOGMdxr+OuWf954EtvEGRk9TDXJYpqx1ycW8=",
+        "lastModified": 1775839885,
+        "narHash": "sha256-ADJMIkSRMRGrf1lirBiagpnAFLhMMj9Eau6qn6fQDPg=",
         "owner": "vicinaehq",
         "repo": "extensions",
-        "rev": "d732ba957b6a540e0eb2479b81b19e9d6368c8c7",
+        "rev": "63285d22e301568be36df6c1371c8e251b8b4331",
         "type": "github"
       },
       "original": {
