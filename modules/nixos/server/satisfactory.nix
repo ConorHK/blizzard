@@ -11,6 +11,8 @@ _: {
     home-manager.users.containers.virtualisation.quadlet = {
       networks.satisfactory.networkConfig = { };
 
+      containers.satisfactory.autoStart = false;
+
       containers.satisfactory.containerConfig = {
         # renovate: datasource=docker depName=ghcr.io/wolveix/satisfactory-server
         image = "ghcr.io/wolveix/satisfactory-server:v1.9.10";

@@ -7,6 +7,7 @@
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     github-nix-access
     github-runner
+    mealie
     podman
     quadlet
     satisfactory

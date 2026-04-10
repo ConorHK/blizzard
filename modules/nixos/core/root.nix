@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.root =
-    { config, ... }:
+    { config, lib, ... }:
     {
-      services.userborn.enable = true;
+      services.userborn.enable = lib.mkDefault true;
       users = {
         mutableUsers = false;
         users.root = {

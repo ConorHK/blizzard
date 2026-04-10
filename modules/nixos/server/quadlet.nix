@@ -5,34 +5,16 @@
     {
       imports = [ inputs.home-manager.nixosModules.home-manager ];
 
+      services.userborn.enable = false;
       users.users.containers = {
         isNormalUser = true;
         group = "containers";
         home = "/home/containers";
         createHome = true;
-        subUidRanges = [
-          {
-            startUid = 200000;
-            count = 65536;
-          }
-        ];
-        subGidRanges = [
-          {
-            startGid = 200000;
-            count = 65536;
-          }
-        ];
+        autoSubUidGidRange = true;
+        linger = true;
       };
       users.groups.containers = { };
-
-      # NixOS does not auto-generate these from subUidRanges
-      environment.etc = {
-        "subuid".text = "containers:200000:65536\n";
-        "subgid".text = "containers:200000:65536\n";
-      };
-
-      # Start user services without an active login session
-      systemd.tmpfiles.rules = [ "f /var/lib/systemd/linger/containers" ];
 
       home-manager = {
         useGlobalPkgs = true;
