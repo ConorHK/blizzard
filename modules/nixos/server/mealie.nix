@@ -32,6 +32,8 @@ _: {
         ];
       };
 
+      backrest.pauseContainers = [ "mealie" ];
+
       services.nginx.virtualHosts."mealie.goosebox.org" = {
         enableACME = true;
         forceSSL = true;
