@@ -7,16 +7,12 @@ _: {
 
       containers.backrest.containerConfig = {
         # renovate: datasource=docker depName=garethgeorge/backrest
-        image = "garethgeorge/backrest:latest";
+        image = "garethgeorge/backrest:v1.12.1";
         publishPorts = [ "9898:9898" ];
         volumes = [
           "/storage/data/backrest/data:/data"
           "/storage/data/backrest/config:/config"
           "/storage/data/backrest/cache:/cache"
-          # Mount storage for backup source access
-          "/storage:/userdata/storage"
-          # Podman socket for container-aware backups (rootless user socket)
-          "/run/user/1000/podman/podman.sock:/var/run/docker.sock:ro"
         ];
         environments = {
           PUID = "1000";

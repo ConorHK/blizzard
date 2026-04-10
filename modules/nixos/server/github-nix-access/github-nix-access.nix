@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.github-nix-access =
-    { config, ... }:
+    { config, lib, ... }:
     {
       age.secrets.github-nix-token = {
         rekeyFile = ./secrets/github-nix-token.age;
@@ -10,7 +10,9 @@
         !include ${config.age.secrets.github-nix-token.path}
       '';
 
-      systemd.services.nix-daemon = {
+      # Only require the agenix service when sysusers is enabled; without it,
+      # agenix uses activation scripts which run before nix-daemon on boot.
+      systemd.services.nix-daemon = lib.mkIf config.systemd.sysusers.enable {
         after = [ "agenix-install-secrets.service" ];
         requires = [ "agenix-install-secrets.service" ];
       };
