@@ -39,14 +39,26 @@ _: {
       };
 
       config = {
-        age.secrets.restic-password = {
-          rekeyFile = ./secrets/restic-password.age;
-          owner = "containers";
+        age.secrets = {
+          restic-password.rekeyFile = ./secrets/restic-password.age;
+          restic-env.rekeyFile = ./secrets/restic-env.age;
+          restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
         };
 
-        age.secrets.restic-env = {
-          rekeyFile = ./secrets/restic-env.age;
-          owner = "containers";
+        systemd.services.restic-backups-service-data.unitConfig.OnFailure =
+          "restic-backups-notify-failure.service";
+
+        systemd.services.restic-backups-notify-failure = {
+          description = "Notify restic backup failure via ntfy";
+          serviceConfig = {
+            Type = "oneshot";
+            EnvironmentFile = config.age.secrets.restic-ntfy-topic.path;
+          };
+          script = ''
+            ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
+              -H "Content-Type: application/json" \
+              -d "{\"topic\": \"$NTFY_TOPIC\", \"title\": \"Backup failed on ${config.networking.hostName}\", \"message\": \"restic backup service-data failed — check journalctl -u restic-backups-service-data\", \"priority\": 4, \"tags\": [\"warning\"]}"
+          '';
         };
 
         services.restic.backups.service-data = {
