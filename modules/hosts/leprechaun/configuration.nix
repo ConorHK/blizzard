@@ -4,6 +4,7 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwlNw/AL4VIXCrnUlllMVpWj/G0e82AuU3YbjcwtKQ1";
 
+      boot.supportedFilesystems = [ "zfs" ];
       boot.zfs.extraPools = [ "storage" ];
       networking = {
         hostName = "leprechaun";
