@@ -83,7 +83,7 @@ _: {
           };
         };
 
-        services.nginx.virtualHosts."backrest.goosebox.org" = {
+        services.nginx.virtualHosts."backup.lep.goosebox.org" = {
           enableACME = true;
           forceSSL = true;
           locations."/" = {

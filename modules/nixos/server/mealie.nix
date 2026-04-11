@@ -34,7 +34,7 @@ _: {
 
       backrest.pauseContainers = [ "mealie" ];
 
-      services.nginx.virtualHosts."mealie.goosebox.org" = {
+      services.nginx.virtualHosts."mealie.lep.goosebox.org" = {
         enableACME = true;
         forceSSL = true;
         locations."/" = {

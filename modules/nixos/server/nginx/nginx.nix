@@ -1,6 +1,11 @@
 _: {
   flake.modules.nixos.nginx =
-    { config, ... }:
+    { config, lib, ... }:
+    let
+      # security.acme.defaults.dnsProvider doesn't propagate to individual certs,
+      # so we derive the cert list from nginx vhosts and set dnsProvider explicitly.
+      acmeVhosts = lib.filterAttrs (_: vhost: vhost.enableACME) config.services.nginx.virtualHosts;
+    in
     {
       networking.firewall.allowedTCPPorts = [
         80 # HTTP → HTTPS redirect
@@ -16,12 +21,12 @@ _: {
 
       security.acme = {
         acceptTerms = true;
-        defaults = {
-          email = "admin@goosebox.org";
+        defaults.email = "admin@goosebox.org";
+        certs = lib.mapAttrs (_: _: {
           dnsProvider = "namecheap";
-          # File contains NAMECHEAP_API_USER and NAMECHEAP_API_KEY
           credentialsFile = config.age.secrets.namecheap-acme.path;
-        };
+          webroot = null;
+        }) acmeVhosts;
       };
 
       services.nginx = {
