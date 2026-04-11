@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
   flake.modules.nixos.quadlet =
-    { ... }:
+    { pkgs, ... }:
     {
       imports = [ inputs.home-manager.nixosModules.home-manager ];
 
@@ -19,6 +19,14 @@
       };
       users.groups.containers = { };
 
+      environment.shellAliases.podman-tui = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers) /etc/profiles/per-user/containers/bin/podman-tui";
+
+      systemd.user.sockets.podman = {
+        description = "Podman API Socket";
+        listenStreams = [ "%t/podman/podman.sock" ];
+        wantedBy = [ "sockets.target" ];
+      };
+
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
@@ -29,6 +37,7 @@
           stateVersion = "25.05";
           username = "containers";
           homeDirectory = "/home/containers";
+          packages = [ pkgs.podman-tui ];
         };
       };
     };
