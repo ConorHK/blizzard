@@ -37,6 +37,6 @@ _: {
           noNewPrivileges = true;
         };
       };
-      restic.paths = [ "${dataDir}/backups" ];
+      restic.paths = [ "${dataDir}/data/backups" ];
     };
 }
