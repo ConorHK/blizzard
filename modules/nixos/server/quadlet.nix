@@ -19,7 +19,10 @@
       };
       users.groups.containers = { };
 
-      environment.shellAliases.podman-tui = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers) /etc/profiles/per-user/containers/bin/podman-tui";
+      environment.shellAliases = {
+        podman-tui = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers) /etc/profiles/per-user/containers/bin/podman-tui";
+        asc = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers)";
+      };
 
       systemd.user.sockets.podman = {
         description = "Podman API Socket";
