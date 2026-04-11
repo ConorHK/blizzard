@@ -12,9 +12,14 @@ _: {
         443 # HTTPS
       ];
 
-      age.secrets.namecheap-acme = {
-        rekeyFile = ./secrets/namecheap-acme.age;
-        # acme user needs to read this to call the Namecheap API
+      age.secrets.namecheap-api-user = {
+        rekeyFile = ./secrets/namecheap-api-user.age;
+        group = "acme";
+        mode = "0440";
+      };
+
+      age.secrets.namecheap-api-key = {
+        rekeyFile = ./secrets/namecheap-api-key.age;
         group = "acme";
         mode = "0440";
       };
@@ -24,8 +29,11 @@ _: {
         defaults.email = "admin@goosebox.org";
         certs = lib.mapAttrs (_: _: {
           dnsProvider = "namecheap";
-          credentialsFile = config.age.secrets.namecheap-acme.path;
           webroot = null;
+          credentialFiles = {
+            "NAMECHEAP_API_USER_FILE" = config.age.secrets.namecheap-api-user.path;
+            "NAMECHEAP_API_KEY_FILE" = config.age.secrets.namecheap-api-key.path;
+          };
         }) acmeVhosts;
       };
 
@@ -35,6 +43,10 @@ _: {
         recommendedOptimisation = true;
         recommendedGzipSettings = true;
         recommendedProxySettings = true;
+        virtualHosts."_" = {
+          default = true;
+          locations."/".return = "444";
+        };
       };
     };
 }
