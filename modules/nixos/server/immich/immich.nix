@@ -1,4 +1,14 @@
-_: {
+_:
+let
+  dataDir = "/storage/data/immich";
+  url = "photos.lep.goosebox.org";
+in
+{
+  flake.monitoringChecks.immich = {
+    name = "immich";
+    url = "https://${url}";
+  };
+
   flake.modules.nixos.immich =
     { config, ... }:
     {
@@ -23,11 +33,10 @@ _: {
           immich-db.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/postgres
             image = "ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0";
-            volumes = [ "/storage/data/immich/db:/var/lib/postgresql/data" ];
-            # POSTGRES_PASSWORD loaded from agenix-managed env file
+            volumes = [ "${dataDir}/pgdata:/var/lib/postgresql/data" ];
             environmentFiles = [ config.age.secrets.immich-secrets.path ];
             environments = {
-              POSTGRES_USER = "postgres";
+              POSTGRES_USER = "admin";
               POSTGRES_DB = "immich";
               POSTGRES_INITDB_ARGS = "--data-checksums";
             };
@@ -37,8 +46,8 @@ _: {
 
           immich-machine-learning.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-            image = "ghcr.io/immich-app/immich-machine-learning:release";
-            volumes = [ "/storage/data/immich/model-cache:/cache" ];
+            image = "ghcr.io/immich-app/immich-machine-learning:v2.7.4";
+            volumes = [ "${dataDir}/models:/cache" ];
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
@@ -46,20 +55,15 @@ _: {
           immich-server = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-              image = "ghcr.io/immich-app/immich-server:release";
+              image = "ghcr.io/immich-app/immich-server:v2.7.4";
               publishPorts = [ "2283:2283" ];
               volumes = [
-                "/storage/data/immich/upload:/usr/src/app/upload"
+                "${dataDir}:/usr/src/app/upload"
                 "/etc/localtime:/etc/localtime:ro"
               ];
               # DB_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.immich-secrets.path ];
-              environments = {
-                DB_HOSTNAME = "immich-db";
-                DB_USERNAME = "postgres";
-                DB_DATABASE_NAME = "immich";
-                REDIS_HOSTNAME = "immich-redis";
-              };
+              environments.REDIS_HOSTNAME = "immich-redis";
               networks = [ "immich.network" ];
               noNewPrivileges = true;
             };
@@ -71,7 +75,14 @@ _: {
         };
       };
 
-      services.nginx.virtualHosts."photos.goosebox.org" = {
+      # restic.paths = [
+      #   "${dataDir}/backups"
+      #   "${dataDir}/library"
+      #   "${dataDir}/profile"
+      #   "${dataDir}/upload"
+      # ];
+
+      services.nginx.virtualHosts.${url} = {
         enableACME = true;
         forceSSL = true;
         # Immich requires large body size for photo/video uploads
