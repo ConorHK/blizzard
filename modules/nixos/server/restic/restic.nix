@@ -40,8 +40,15 @@ _: {
 
       config = {
         age.secrets = {
-          restic-password.rekeyFile = ./secrets/restic-password.age;
-          restic-env.rekeyFile = ./secrets/restic-env.age;
+          restic-password = {
+            rekeyFile = ./secrets/restic-password.age;
+            owner = "containers";
+          };
+
+          restic-env = {
+            rekeyFile = ./secrets/restic-env.age;
+            owner = "containers";
+          };
           restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
         };
 
