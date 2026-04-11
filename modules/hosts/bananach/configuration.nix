@@ -6,7 +6,7 @@
 
       networking.hostName = "bananach";
 
-      services.uptime-kuma.settings.HOST = "100.96.40.127";
+      services.gatus.settings.web.address = "100.96.40.127";
       programs.mosh.enable = false;
 
       # Generate SSH host keys for agenix without running sshd or opening firewall ports

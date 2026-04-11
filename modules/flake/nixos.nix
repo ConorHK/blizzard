@@ -44,6 +44,7 @@ in
             specialArgs = {
               inherit inputs;
               blizzardLib = config.flake.lib;
+              monitoringChecks = lib.attrValues config.flake.monitoringChecks;
             };
             modules = [
               config.flake.modules.nixos.core

@@ -6,7 +6,7 @@
 
   flake.modules.nixos."nixosConfigurations/bananach".imports = with config.flake.modules.nixos; [
     server-users
-    uptime-kuma
+    gatus
     github-nix-access
   ];
 }

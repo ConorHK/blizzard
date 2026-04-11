@@ -6,6 +6,15 @@
 
       restic.repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
 
+      services.nginx.virtualHosts."monitor.goosebox.org" = {
+        enableACME = true;
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://100.96.40.127:8080";
+          proxyWebsockets = true;
+        };
+      };
+
       boot.supportedFilesystems = [ "zfs" ];
       boot.zfs.extraPools = [ "storage" ];
       networking = {
