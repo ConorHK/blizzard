@@ -29,10 +29,6 @@ _: {
         locations."/" = {
           proxyPass = "http://127.0.0.1:5006";
           proxyWebsockets = true;
-          extraConfig = ''
-            add_header Cross-Origin-Opener-Policy "same-origin";
-            add_header Cross-Origin-Embedder-Policy "require-corp";
-          '';
         };
       };
     };
