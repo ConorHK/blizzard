@@ -6,13 +6,16 @@
       imports = [ inputs.home-manager.nixosModules.home-manager ];
 
       services.userborn.enable = false;
-      users.users.containers = {
-        isNormalUser = true;
-        group = "containers";
-        home = "/home/containers";
-        createHome = true;
-        autoSubUidGidRange = true;
-        linger = true;
+      users.users = {
+        containers = {
+          isNormalUser = true;
+          group = "containers";
+          home = "/home/containers";
+          createHome = true;
+          autoSubUidGidRange = true;
+          linger = true;
+        };
+        driver.extraGroups = [ "containers" ];
       };
       users.groups.containers = { };
 
