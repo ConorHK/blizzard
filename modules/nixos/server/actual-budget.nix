@@ -23,6 +23,8 @@ _: {
         ];
       };
 
+      restic.paths = [ dataDir ];
+
       services.nginx.virtualHosts."budget.lep.goosebox.org" = {
         enableACME = true;
         forceSSL = true;

@@ -33,6 +33,8 @@ _: {
       };
 
       backrest.pauseContainers = [ "mealie" ];
+      restic.paths = [ dataDir ];
+      restic.pauseContainers = [ "mealie" ];
 
       services.nginx.virtualHosts."mealie.lep.goosebox.org" = {
         enableACME = true;

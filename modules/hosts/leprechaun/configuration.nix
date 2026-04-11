@@ -4,6 +4,8 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwlNw/AL4VIXCrnUlllMVpWj/G0e82AuU3YbjcwtKQ1";
 
+      restic.repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
+
       boot.supportedFilesystems = [ "zfs" ];
       boot.zfs.extraPools = [ "storage" ];
       networking = {

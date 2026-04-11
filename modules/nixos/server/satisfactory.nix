@@ -21,7 +21,7 @@ _: {
           "7777:7777/udp"
           "8888:8888/tcp"
         ];
-        volumes = [ "/storage/service/satisfactory-server/data:/config" ];
+        volumes = [ "/storage/data/satisfactory-server/data:/config" ];
         environments = {
           AUTOPAUSE = "false";
           AUTOSAVE = "true";
