@@ -27,12 +27,8 @@ _: {
           noNewPrivileges = true;
         };
 
-        containers.backrest.containerConfig.volumes = [
-          "${dataDir}:/userdata/mealie"
-        ];
       };
 
-      backrest.pauseContainers = [ "mealie" ];
       restic.paths = [ dataDir ];
       restic.pauseContainers = [ "mealie" ];
 

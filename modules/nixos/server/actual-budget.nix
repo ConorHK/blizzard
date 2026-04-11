@@ -17,10 +17,6 @@ _: {
           networks = [ "actual-budget.network" ];
           noNewPrivileges = true;
         };
-
-        containers.backrest.containerConfig.volumes = [
-          "${dataDir}:/userdata/actual-budget"
-        ];
       };
 
       restic.paths = [ dataDir ];
