@@ -32,7 +32,7 @@ in
 
           immich-db.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/postgres
-            image = "ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0";
+            image = "ghcr.io/immich-app/postgres:16-vectorchord0.3.0-pgvectors0.2.0";
             volumes = [ "${dataDir}/pgdata:/var/lib/postgresql/data" ];
             environmentFiles = [ config.age.secrets.immich-secrets.path ];
             environments = {
