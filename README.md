@@ -16,7 +16,6 @@
 | `arr` | sonarr, radarr, bazarr, prowlarr, jellyseerr, qbittorrent, cross-seed, recyclarr, unpackerr, qbit-manage, jellystat | 8989, 7878, 6767, 9696, 5055, 8080, 2468, 3000 |
 | `actual-budget` | actual-server | 5006 |
 | `audiobookshelf` | audiobookshelf | 13378 |
-| `backrest` | backrest | 9898 |
 | `boinc` | boinc (host network) | — |
 | `caldav` | radicale | 5232 |
 | `calibre` | calibre-web, book-downloader, cf-bypass, openbooks | 8183, 8085, 8086 |
@@ -30,5 +29,12 @@
 | `owntracks` | otrecorder, frontend | 8083, 8084 |
 | `paperless-ngx` | redis, webserver | 8000 |
 | `readmeabook` | readmeabook, readmeabook-mom | 3030, 3029 |
+| `restic` | restic (backup) | — |
 | `syncthing` | syncthing | 8384, 22000 (TCP/UDP), 21027 (UDP) |
 | `wallabag` | postgres, redis, wallabag | 8001 |
+
+## bananach services
+
+| Module | Services | Ports |
+|--------|----------|-------|
+| `gatus` | gatus | 8080 |
