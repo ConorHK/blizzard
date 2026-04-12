@@ -10,8 +10,13 @@ _: {
         enable = true;
         environmentFile = config.age.secrets.gatus-ntfy-topic.path;
         settings = {
+          storage = {
+            type = "sqlite";
+            path = "/var/lib/gatus/data.db";
+          };
+
           alerting.ntfy = {
-            topic = ''"$ENV{NTFY_TOPIC}"'';
+            topic = "$NTFY_TOPIC";
             url = "https://ntfy.sh";
             default-alert = {
               enabled = true;
