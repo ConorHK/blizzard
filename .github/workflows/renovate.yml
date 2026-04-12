@@ -17,4 +17,4 @@ jobs:
       - run: renovate --platform=github ConorHK/blizzard
         env:
           RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LOG_LEVEL: info
+          LOG_LEVEL: debug
