@@ -25,7 +25,7 @@ in
         containers = {
           immich-redis.containerConfig = {
             # renovate: datasource=docker depName=docker.io/redis
-            image = "docker.io/redis:6.2-alpine";
+            image = "docker.io/redis:8.6-alpine";
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
