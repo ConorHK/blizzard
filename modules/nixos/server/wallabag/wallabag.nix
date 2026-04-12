@@ -15,7 +15,7 @@ _: {
         containers = {
           wallabag-db.containerConfig = {
             # renovate: datasource=docker depName=docker.io/postgres
-            image = "docker.io/postgres:14";
+            image = "docker.io/postgres:18";
             volumes = [ "/storage/data/wallabag/data:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.wallabag-secrets.path ];
