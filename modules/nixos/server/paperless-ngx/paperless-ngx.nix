@@ -15,7 +15,7 @@ _: {
         containers = {
           paperless-broker.containerConfig = {
             # renovate: datasource=docker depName=docker.io/library/redis
-            image = "docker.io/library/redis:7";
+            image = "docker.io/library/redis:8";
             volumes = [ "/storage/data/paperless-ngx/redis:/data" ];
             networks = [ "paperless-ngx.network" ];
             noNewPrivileges = true;
