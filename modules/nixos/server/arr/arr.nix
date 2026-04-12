@@ -8,7 +8,6 @@ _: {
         6767 # bazarr
         9696 # prowlarr
         5055 # jellyseerr
-        8080 # qbittorrent
         2468 # cross-seed
         3000 # jellystat
       ];
@@ -28,7 +27,7 @@ _: {
             publishPorts = [ "8989:8989" ];
             volumes = [
               "/storage/data/sonarr:/config"
-              "/storage/data/torrents:/data/torrents"
+              "/storage/media/torrents/data:/data/torrents"
               "/storage/media:/data/media"
             ];
             environments = {
@@ -47,7 +46,7 @@ _: {
             publishPorts = [ "7878:7878" ];
             volumes = [
               "/storage/data/radarr/config:/config"
-              "/storage/data/torrents:/data/torrents"
+              "/storage/media/torrents/data:/data/torrents"
               "/storage/media:/data/media"
             ];
             environments = {
@@ -105,37 +104,6 @@ _: {
             noNewPrivileges = true;
           };
 
-          qbittorrent.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.io/hotio/qbittorrent
-            image = "ghcr.io/hotio/qbittorrent:latest";
-            publishPorts = [
-              "8080:8080"
-              "24217:24217"
-            ];
-            volumes = [
-              "/storage/data/wireguard:/config/wireguard"
-              "/storage/data/torrents:/data/torrents"
-              "/storage/data/qbittorrent/config:/config/config"
-              "/storage/data/qbittorrent/cache:/config/cache"
-              "/storage/data/qbittorrent/data:/config/data"
-              "/storage/data/qbittorrent/cookies:/config/cookies"
-              "/storage/data/cross-seed/links:/links"
-            ];
-            environments = {
-              PUID = "1000";
-              PGID = "1000";
-              UMASK = "002";
-              TZ = "Europe/Dublin";
-              PRIVOXY_ENABLED = "false";
-              LAN_NETWORK = "192.168.0.0/24";
-            };
-            networks = [ "arr.network" ];
-            addCapabilities = [ "NET_ADMIN" ];
-            sysctl = {
-              "net.ipv4.conf.all.src_valid_mark" = "1";
-            };
-          };
-
           cross-seed = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/cross-seed/cross-seed
@@ -145,7 +113,7 @@ _: {
                 "/storage/data/cross-seed/config:/config"
                 "/storage/data/qbittorrent/data/BT_backup:/torrents:ro"
                 "/storage/data/cross-seed/cross-seeds:/cross-seeds"
-                "/storage/data/torrents:/data/torrents"
+                "/storage/media/torrents/data:/data/torrents"
                 "/storage/data/cross-seed/output:/output"
               ];
               networks = [ "arr.network" ];
@@ -170,7 +138,7 @@ _: {
           unpackerr.containerConfig = {
             # renovate: datasource=docker depName=golift/unpackerr
             image = "golift/unpackerr:latest";
-            volumes = [ "/storage/data/torrents:/data/torrents" ];
+            volumes = [ "/storage/media/torrents/data:/data/torrents" ];
             # API keys and secrets loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.arr-secrets.path ];
             environments = {
@@ -200,19 +168,6 @@ _: {
             networks = [ "arr.network" ];
             noNewPrivileges = true;
             user = "1000:1000";
-          };
-
-          qbit-manage.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.io/stuffanthings/qbit_manage
-            image = "ghcr.io/stuffanthings/qbit_manage:latest";
-            volumes = [
-              "/storage/data/qbit-manage/config:/config:rw"
-              "/storage/data/torrents:/data/torrents:rw"
-              "/storage/data/qbittorrent/data:/qbittorrent/data"
-              "/storage/data/cross-seed/links:/links"
-            ];
-            networks = [ "arr.network" ];
-            noNewPrivileges = true;
           };
 
           jellystat-db.containerConfig = {
@@ -252,6 +207,10 @@ _: {
           };
         };
       };
+
+      # Join qbittorrent containers to arr network so sonarr/radarr/cross-seed can reach them
+      home-manager.users.containers.virtualisation.quadlet.containers.qbittorrent.containerConfig.networks =
+        [ "arr.network" ];
 
       services.nginx.virtualHosts."jellystat.goosebox.org" = {
         enableACME = true;

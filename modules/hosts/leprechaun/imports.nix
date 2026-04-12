@@ -20,6 +20,7 @@
     mealie
     nginx
     podman
+    qbittorrent
     quadlet
     restic
     satisfactory

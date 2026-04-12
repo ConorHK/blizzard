@@ -1,8 +1,21 @@
-_: {
+_:
+let
+  dataDir = "/storage/data/readmeabook";
+  # renovate: datasource=docker depName=ghcr.io/kikootwo/readmeabook
+  image = "ghcr.io/kikootwo/readmeabook:1.1.7";
+  portMain = 3030;
+  portMom = 3029;
+  commonEnv = { };
+  commonVolumes = [
+    "/storage/media/torrents/downloads:/data/torrents"
+    "/storage/media/audiobooks:/media"
+  ];
+in
+{
   flake.modules.nixos.readmeabook = _: {
     networking.firewall.allowedTCPPorts = [
-      3030 # readmeabook
-      3029 # readmeabook-mom
+      portMain # readmeabook
+      portMom # readmeabook-mom
     ];
 
     home-manager.users.containers.virtualisation.quadlet = {
@@ -10,20 +23,15 @@ _: {
 
       containers = {
         readmeabook.containerConfig = {
-          # renovate: datasource=docker depName=ghcr.io/kikootwo/readmeabook
-          image = "ghcr.io/kikootwo/readmeabook:latest";
-          publishPorts = [ "3030:3030" ];
-          volumes = [
-            "/storage/data/readmeabook/config:/app/config"
-            "/storage/data/readmeabook/cache:/app/cache"
-            "/storage/data:/data"
-            "/storage/media/audiobooks:/media"
-            "/storage/data/readmeabook/pgdata:/var/lib/postgresql/data"
-            "/storage/data/readmeabook/redis:/var/lib/redis"
+          inherit image;
+          publishPorts = [ "${toString portMain}:3030" ];
+          volumes = commonVolumes ++ [
+            "${dataDir}/conor/config:/app/config"
+            "${dataDir}/conor/cache:/app/cache"
+            "${dataDir}/conor/pgdata:/var/lib/postgresql/data"
+            "${dataDir}/conor/redis:/var/lib/redis"
           ];
-          environments = {
-            PUID = "1000";
-            PGID = "1000";
+          environments = commonEnv // {
             PUBLIC_URL = "https://requestbook.goosebox.com";
           };
           networks = [ "readmeabook.network" ];
@@ -31,20 +39,15 @@ _: {
         };
 
         readmeabook-mom.containerConfig = {
-          # renovate: datasource=docker depName=ghcr.io/kikootwo/readmeabook
-          image = "ghcr.io/kikootwo/readmeabook:latest";
-          publishPorts = [ "3029:3030" ];
-          volumes = [
-            "/storage/data/readmeabook/config-mom:/app/config"
-            "/storage/data/readmeabook/cache-mom:/app/cache"
-            "/storage/data:/data"
-            "/storage/media/audiobooks:/media"
-            "/storage/data/readmeabook/pgdata-mom:/var/lib/postgresql/data"
-            "/storage/data/readmeabook/redis-mom:/var/lib/redis"
+          inherit image;
+          publishPorts = [ "${toString portMom}:3030" ];
+          volumes = commonVolumes ++ [
+            "${dataDir}/toni/config:/app/config"
+            "${dataDir}/toni/cache:/app/cache"
+            "${dataDir}/toni/pgdata:/var/lib/postgresql/data"
+            "${dataDir}/toni/redis:/var/lib/redis"
           ];
-          environments = {
-            PUID = "1000";
-            PGID = "1000";
+          environments = commonEnv // {
             PUBLIC_URL = "https://mom.request.goosebox.com";
           };
           networks = [ "readmeabook.network" ];
@@ -58,7 +61,7 @@ _: {
         enableACME = true;
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:3030";
+          proxyPass = "http://127.0.0.1:${toString portMain}";
           proxyWebsockets = true;
         };
       };
@@ -66,7 +69,7 @@ _: {
         enableACME = true;
         forceSSL = true;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:3029";
+          proxyPass = "http://127.0.0.1:${toString portMom}";
           proxyWebsockets = true;
         };
       };
