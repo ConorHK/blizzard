@@ -172,7 +172,7 @@ _: {
 
           jellystat-db.containerConfig = {
             # renovate: datasource=docker depName=postgres
-            image = "postgres:15.2";
+            image = "postgres:15.17";
             volumes = [ "/storage/data/jellystat/db:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
             environmentFiles = [ config.age.secrets.arr-secrets.path ];
