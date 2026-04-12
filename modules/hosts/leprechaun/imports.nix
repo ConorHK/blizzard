@@ -13,9 +13,10 @@
 
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     actual-budget
+    audiobookshelf
     github-nix-access
-    immich
     github-runner
+    immich
     mealie
     nginx
     podman

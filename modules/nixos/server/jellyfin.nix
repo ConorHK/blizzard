@@ -7,9 +7,9 @@ _: {
         volumes = [
           "/storage/data/jellyfin/config:/config"
           "/storage/data/jellyfin/cache:/cache"
-          "/storage/data/media/movies:/movies:ro"
-          "/storage/data/media/television:/television:ro"
-          "/storage/data/media/anime:/anime:ro"
+          "/storage/media/movies:/movies:ro"
+          "/storage/media/television:/television:ro"
+          "/storage/media/anime:/anime:ro"
         ];
         # Host networking for DLNA/discovery and hardware transcoding device access
         networkMode = "host";

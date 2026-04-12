@@ -17,7 +17,7 @@ _: {
             "/storage/data/readmeabook/config:/app/config"
             "/storage/data/readmeabook/cache:/app/cache"
             "/storage/data:/data"
-            "/storage/data/media/audiobooks:/media"
+            "/storage/media/audiobooks:/media"
             "/storage/data/readmeabook/pgdata:/var/lib/postgresql/data"
             "/storage/data/readmeabook/redis:/var/lib/redis"
           ];
@@ -38,7 +38,7 @@ _: {
             "/storage/data/readmeabook/config-mom:/app/config"
             "/storage/data/readmeabook/cache-mom:/app/cache"
             "/storage/data:/data"
-            "/storage/data/media/audiobooks:/media"
+            "/storage/media/audiobooks:/media"
             "/storage/data/readmeabook/pgdata-mom:/var/lib/postgresql/data"
             "/storage/data/readmeabook/redis-mom:/var/lib/redis"
           ];

@@ -67,6 +67,13 @@
               type = "zfs_fs";
               options.mountpoint = "/storage/data";
             };
+            "media" = {
+              type = "zfs_fs";
+              options = {
+                mountpoint = "/storage/media";
+                compression = "off"; # media files are already compressed
+              };
+            };
           };
         };
       };

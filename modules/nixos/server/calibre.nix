@@ -17,7 +17,7 @@ _: {
           volumes = [
             "/storage/data/calibre/calibre-web/config:/config"
             "/storage/data/calibre/injest:/cwa-book-ingest"
-            "/storage/data/media/books:/calibre-library"
+            "/storage/media/books:/calibre-library"
           ];
           environments = {
             PUID = "1000";

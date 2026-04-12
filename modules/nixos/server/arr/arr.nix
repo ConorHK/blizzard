@@ -28,7 +28,8 @@ _: {
             publishPorts = [ "8989:8989" ];
             volumes = [
               "/storage/data/sonarr:/config"
-              "/storage/data:/data"
+              "/storage/data/torrents:/data/torrents"
+              "/storage/media:/data/media"
             ];
             environments = {
               PUID = "1000";
@@ -46,7 +47,8 @@ _: {
             publishPorts = [ "7878:7878" ];
             volumes = [
               "/storage/data/radarr/config:/config"
-              "/storage/data:/data"
+              "/storage/data/torrents:/data/torrents"
+              "/storage/media:/data/media"
             ];
             environments = {
               PUID = "1000";
@@ -64,7 +66,7 @@ _: {
             publishPorts = [ "6767:6767" ];
             volumes = [
               "/storage/data/bazarr:/config"
-              "/storage/data/media:/data/media"
+              "/storage/media:/data/media"
             ];
             environments = {
               PUID = "1000";
