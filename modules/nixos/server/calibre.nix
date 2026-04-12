@@ -13,7 +13,11 @@ in
     monitoringChecks = {
       calibre-web = {
         name = "calibre-web";
-        url = "https://${urlCalibreWeb}";
+        url = "https://${urlCalibreWeb}/health";
+        conditions = [
+          "[STATUS] == 200"
+          "[BODY].status == ok"
+        ];
       };
       shelfmark = {
         name = "shelfmark";
