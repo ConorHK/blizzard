@@ -24,15 +24,13 @@ in
 
         containers = {
           immich-redis.containerConfig = {
-            # renovate: datasource=docker depName=docker.io/redis
-            image = "docker.io/redis:6.2-alpine";
+            image = "docker.io/valkey/valkey:9@sha256:3b55fbaa0cd93cf0d9d961f405e4dfcc70efe325e2d84da207a0a8e6d8fde4f9";
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
 
           immich-db.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.io/immich-app/postgres
-            image = "ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0";
+            image = "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23";
             volumes = [ "${dataDir}/pgdata:/var/lib/postgresql/data" ];
             environmentFiles = [ config.age.secrets.immich-secrets.path ];
             environments = {
