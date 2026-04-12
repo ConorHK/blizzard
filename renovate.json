@@ -1,12 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "configMigration": true,
+  "prHourlyLimit": 0,
   "enabledManagers": ["github-actions", "custom.regex"],
   "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/\.nix$/"
+        "/\\.nix$/"
       ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*\\S+\\s*=\\s*\"[^:\"]+:(?<currentValue>[^\"]+)\";"

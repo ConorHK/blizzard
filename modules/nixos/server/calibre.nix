@@ -36,7 +36,7 @@ in
 
         containers = {
           calibre-web.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.ip/crocodilestick/calibre-web-automated
+            # renovate: datasource=docker depName=ghcr.io/crocodilestick/calibre-web-automated
             image = "ghcr.io/crocodilestick/calibre-web-automated:v4.0.6";
             publishPorts = [ "${toString portCalibreWeb}:8083" ];
             volumes = [
