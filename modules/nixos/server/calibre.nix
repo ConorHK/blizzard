@@ -1,86 +1,92 @@
-_: {
-  flake.modules.nixos.calibre = _: {
-    networking.firewall.allowedTCPPorts = [
-      8183 # calibre-web-automated
-      8085 # calibre-web-automated-book-downloader
-      8086 # openbooks
-    ];
-
-    home-manager.users.containers.virtualisation.quadlet = {
-      networks.calibre.networkConfig = { };
-
-      containers = {
-        calibre-web.containerConfig = {
-          # renovate: datasource=docker depName=crocodilestick/calibre-web-automated
-          image = "crocodilestick/calibre-web-automated:latest";
-          publishPorts = [ "8183:8083" ];
-          volumes = [
-            "/storage/data/calibre/calibre-web/config:/config"
-            "/storage/data/calibre/injest:/cwa-book-ingest"
-            "/storage/media/books:/calibre-library"
-          ];
-          environments = {
-            PUID = "1000";
-            PGID = "100";
-            TZ = "Europe/Dublin";
-          };
-          networks = [ "calibre.network" ];
-          noNewPrivileges = true;
-        };
-
-        calibre-downloader.containerConfig = {
-          # renovate: datasource=docker depName=ghcr.io/calibrain/calibre-web-automated-book-downloader
-          image = "ghcr.io/calibrain/calibre-web-automated-book-downloader:latest";
-          publishPorts = [ "8085:8085" ];
-          volumes = [ "/storage/data/calibre/injest:/cwa-book-ingest" ];
-          environments = {
-            FLASK_PORT = "8085";
-            FLASK_DEBUG = "false";
-            CLOUDFLARE_PROXY_URL = "http://cloudflare-bypass:8000";
-            INGEST_DIR = "/cwa-book-ingest";
-            BOOK_LANGUAGE = "en";
-          };
-          networks = [ "calibre.network" ];
-          noNewPrivileges = true;
-        };
-
-        cloudflare-bypass.containerConfig = {
-          # renovate: datasource=docker depName=ghcr.io/sarperavci/cloudflarebypassforscraping
-          image = "ghcr.io/sarperavci/cloudflarebypassforscraping:latest";
-          networks = [ "calibre.network" ];
-          noNewPrivileges = true;
-        };
-
-        openbooks.containerConfig = {
-          # renovate: datasource=docker depName=evanbuss/openbooks
-          image = "evanbuss/openbooks:latest";
-          publishPorts = [ "8086:80" ];
-          volumes = [ "/storage/data/calibre/injest:/books" ];
-          environments = {
-            BASE_PATH = "/";
-          };
-          exec = "--name zimder --persist";
-          networks = [ "calibre.network" ];
-          noNewPrivileges = true;
-        };
+_:
+let
+  calibreDir = "/storage/data/calibre-web-automated";
+  shelfmarkDir = "/storage/data/shelfmark";
+  ingestDir = "${calibreDir}/injest";
+  portCalibreWeb = 8183;
+  portShelfmark = 8084;
+  urlCalibreWeb = "calibre.goosebox.org";
+  urlShelfmark = "shelfmark.goosebox.org";
+in
+{
+  flake = {
+    monitoringChecks = {
+      calibre-web = {
+        name = "calibre-web";
+        url = "https://${urlCalibreWeb}";
+      };
+      shelfmark = {
+        name = "shelfmark";
+        url = "https://${urlShelfmark}";
       };
     };
 
-    services.nginx.virtualHosts = {
-      "calibre.goosebox.org" = {
-        enableACME = true;
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8183";
-          proxyWebsockets = true;
+    modules.nixos.calibre = _: {
+      networking.firewall.allowedTCPPorts = [
+        portCalibreWeb
+        portShelfmark
+      ];
+
+      home-manager.users.containers.virtualisation.quadlet = {
+        networks.calibre.networkConfig = { };
+
+        containers = {
+          calibre-web.containerConfig = {
+            # renovate: datasource=docker depName=ghcr.ip/crocodilestick/calibre-web-automated
+            image = "ghcr.io/crocodilestick/calibre-web-automated:v4.0.6";
+            publishPorts = [ "${toString portCalibreWeb}:8083" ];
+            volumes = [
+              "${calibreDir}/config:/config"
+              "${ingestDir}:/cwa-book-ingest"
+              "/storage/media/books:/calibre-library"
+            ];
+            environments = {
+              PUID = "1000";
+              PGID = "1000";
+              TZ = "Europe/Dublin";
+            };
+            networks = [ "calibre.network" ];
+            noNewPrivileges = true;
+          };
+
+          shelfmark.containerConfig = {
+            # renovate: datasource=docker depName=ghcr.io/calibrain/shelfmark
+            image = "ghcr.io/calibrain/shelfmark:v1.2.1";
+            publishPorts = [ "${toString portShelfmark}:${toString portShelfmark}" ];
+            volumes = [
+              "${shelfmarkDir}:/config"
+              "${ingestDir}:/books"
+            ];
+            environments = {
+              PUID = "1000";
+              PGID = "1000";
+              FLASK_PORT = toString portShelfmark;
+              BOOK_LANGUAGE = "en";
+            };
+            networks = [ "calibre.network" ];
+            noNewPrivileges = true;
+          };
         };
       };
-      "openbooks.goosebox.org" = {
-        enableACME = true;
-        forceSSL = true;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8086";
-          proxyWebsockets = true;
+
+      restic.paths = [ "${calibreDir}/config/processed_books/imported" ];
+
+      services.nginx.virtualHosts = {
+        "${urlCalibreWeb}" = {
+          enableACME = true;
+          forceSSL = true;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString portCalibreWeb}";
+            proxyWebsockets = true;
+          };
+        };
+        "${urlShelfmark}" = {
+          enableACME = true;
+          forceSSL = true;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString portShelfmark}";
+            proxyWebsockets = true;
+          };
         };
       };
     };

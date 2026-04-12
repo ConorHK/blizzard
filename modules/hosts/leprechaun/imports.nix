@@ -14,6 +14,7 @@
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     actual-budget
     audiobookshelf
+    calibre
     github-nix-access
     github-runner
     immich
