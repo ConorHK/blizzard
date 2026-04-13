@@ -14,7 +14,6 @@ _: {
 
         containers = {
           dawarich-redis.containerConfig = {
-            # renovate: datasource=docker depName=redis
             image = "redis:7.4-alpine";
             exec = "redis-server";
             volumes = [ "/storage/data/dawarich/shared:/data" ];
@@ -23,7 +22,6 @@ _: {
           };
 
           dawarich-db.containerConfig = {
-            # renovate: datasource=docker depName=postgis/postgis
             image = "postgis/postgis:17-3.5-alpine";
             volumes = [
               "/storage/data/dawarich/db_data:/var/lib/postgresql/data"

@@ -14,7 +14,6 @@ _: {
 
         containers = {
           wallabag-db.containerConfig = {
-            # renovate: datasource=docker depName=docker.io/postgres
             image = "docker.io/postgres:14";
             volumes = [ "/storage/data/wallabag/data:/var/lib/postgresql/data" ];
             # POSTGRES_PASSWORD loaded from agenix-managed env file
@@ -28,7 +27,6 @@ _: {
           };
 
           wallabag-cache.containerConfig = {
-            # renovate: datasource=docker depName=docker.io/redis
             image = "docker.io/redis:alpine";
             networks = [ "wallabag.network" ];
             noNewPrivileges = true;
