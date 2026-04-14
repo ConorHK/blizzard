@@ -36,7 +36,7 @@ _: {
             containerConfig = {
               # renovate: datasource=docker depName=docker.io/wallabag/wallabag
               image = "docker.io/wallabag/wallabag:latest";
-              publishPorts = [ "8001:80" ];
+              publishPorts = [ "127.0.0.1:8001:80" ];
               volumes = [ "/storage/data/wallabag/images:/var/www/wallabag/web/assets/images" ];
               # POSTGRES_PASSWORD and SYMFONY__ENV__DATABASE_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.wallabag-secrets.path ];

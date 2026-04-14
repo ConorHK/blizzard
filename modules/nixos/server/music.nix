@@ -15,7 +15,7 @@ _: {
         gonic.containerConfig = {
           # renovate: datasource=docker depName=sentriz/gonic
           image = "sentriz/gonic:latest";
-          publishPorts = [ "4747:80" ];
+          publishPorts = [ "127.0.0.1:4747:80" ];
           volumes = [
             "/storage/data/gonic/data:/data"
             "/storage/media/music:/music:ro"
@@ -32,7 +32,7 @@ _: {
         octo-fiesta.containerConfig = {
           # renovate: datasource=docker depName=ghcr.io/v1ck3s/octo-fiesta
           image = "ghcr.io/v1ck3s/octo-fiesta:latest";
-          publishPorts = [ "5274:8080" ];
+          publishPorts = [ "127.0.0.1:5274:8080" ];
           volumes = [ "/storage/media/music:/app/downloads" ];
           environments = {
             ASPNETCORE_ENVIRONMENT = "Production";
@@ -56,7 +56,7 @@ _: {
           # renovate: datasource=docker depName=slskd/slskd
           image = "slskd/slskd:latest";
           publishPorts = [
-            "5030:5030"
+            "127.0.0.1:5030:5030"
             "5031:5031"
             "50300:50300"
           ];

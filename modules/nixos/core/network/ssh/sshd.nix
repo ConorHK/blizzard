@@ -15,7 +15,7 @@
         allowSFTP = false;
 
         settings = {
-          KbdInteractiveAuthentication = true;
+          KbdInteractiveAuthentication = false;
           PasswordAuthentication = false;
           KexAlgorithms = [
             "curve25519-sha256@libssh.org"

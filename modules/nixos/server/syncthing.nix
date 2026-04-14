@@ -18,7 +18,7 @@ _: {
         # renovate: datasource=docker depName=syncthing/syncthing
         image = "syncthing/syncthing:latest";
         publishPorts = [
-          "8384:8384"
+          "127.0.0.1:8384:8384"
           "22000:22000/tcp"
           "22000:22000/udp"
           "21027:21027/udp"

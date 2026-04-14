@@ -41,7 +41,7 @@ _: {
             containerConfig = {
               # renovate: datasource=docker depName=freikin/dawarich
               image = "freikin/dawarich:latest";
-              publishPorts = [ "3001:3000" ];
+              publishPorts = [ "127.0.0.1:3001:3000" ];
               volumes = [
                 "/storage/data/dawarich/public:/var/app/public"
                 "/storage/data/dawarich/watched:/var/app/tmp/imports/watched"

@@ -24,7 +24,7 @@ _: {
           sonarr.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/hotio/sonarr
             image = "ghcr.io/hotio/sonarr:latest";
-            publishPorts = [ "8989:8989" ];
+            publishPorts = [ "127.0.0.1:8989:8989" ];
             volumes = [
               "/storage/data/sonarr:/config"
               "/storage/media/torrents/data:/data/torrents"
@@ -43,7 +43,7 @@ _: {
           radarr.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/hotio/radarr
             image = "ghcr.io/hotio/radarr:latest";
-            publishPorts = [ "7878:7878" ];
+            publishPorts = [ "127.0.0.1:7878:7878" ];
             volumes = [
               "/storage/data/radarr/config:/config"
               "/storage/media/torrents/data:/data/torrents"
@@ -62,7 +62,7 @@ _: {
           bazarr.containerConfig = {
             # renovate: datasource=docker depName=lscr.io/linuxserver/bazarr
             image = "lscr.io/linuxserver/bazarr:latest";
-            publishPorts = [ "6767:6767" ];
+            publishPorts = [ "127.0.0.1:6767:6767" ];
             volumes = [
               "/storage/data/bazarr:/config"
               "/storage/media:/data/media"
@@ -79,7 +79,7 @@ _: {
           prowlarr.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/hotio/prowlarr
             image = "ghcr.io/hotio/prowlarr:latest";
-            publishPorts = [ "9696:9696" ];
+            publishPorts = [ "127.0.0.1:9696:9696" ];
             volumes = [ "/storage/data/prowlarr:/config" ];
             environments = {
               PUID = "1000";
@@ -94,7 +94,7 @@ _: {
           jellyseerr.containerConfig = {
             # renovate: datasource=docker depName=fallenbagel/jellyseerr
             image = "fallenbagel/jellyseerr:latest";
-            publishPorts = [ "5055:5055" ];
+            publishPorts = [ "127.0.0.1:5055:5055" ];
             volumes = [ "/storage/data/jellyseerr/config:/app/config" ];
             environments = {
               LOG_LEVEL = "debug";
@@ -108,7 +108,7 @@ _: {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/cross-seed/cross-seed
               image = "ghcr.io/cross-seed/cross-seed:6";
-              publishPorts = [ "2468:2468" ];
+              publishPorts = [ "127.0.0.1:2468:2468" ];
               volumes = [
                 "/storage/data/cross-seed/config:/config"
                 "/storage/data/qbittorrent/data/BT_backup:/torrents:ro"
@@ -187,7 +187,7 @@ _: {
             containerConfig = {
               # renovate: datasource=docker depName=cyfershepard/jellystat
               image = "cyfershepard/jellystat:latest";
-              publishPorts = [ "3000:3000" ];
+              publishPorts = [ "127.0.0.1:3000:3000" ];
               volumes = [ "/storage/data/jellystat/backup:/app/backend/backup-data" ];
               # POSTGRES_PASSWORD and JWT_SECRET loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.arr-secrets.path ];

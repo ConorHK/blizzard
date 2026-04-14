@@ -24,7 +24,7 @@ in
       containers = {
         readmeabook.containerConfig = {
           inherit image;
-          publishPorts = [ "${toString portMain}:3030" ];
+          publishPorts = [ "127.0.0.1:${toString portMain}:3030" ];
           volumes = commonVolumes ++ [
             "${dataDir}/conor/config:/app/config"
             "${dataDir}/conor/cache:/app/cache"
@@ -40,7 +40,7 @@ in
 
         readmeabook-mom.containerConfig = {
           inherit image;
-          publishPorts = [ "${toString portMom}:3030" ];
+          publishPorts = [ "127.0.0.1:${toString portMom}:3030" ];
           volumes = commonVolumes ++ [
             "${dataDir}/toni/config:/app/config"
             "${dataDir}/toni/cache:/app/cache"

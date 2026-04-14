@@ -38,7 +38,7 @@ in
           calibre-web.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/crocodilestick/calibre-web-automated
             image = "ghcr.io/crocodilestick/calibre-web-automated:v4.0.6";
-            publishPorts = [ "${toString portCalibreWeb}:8083" ];
+            publishPorts = [ "127.0.0.1:${toString portCalibreWeb}:8083" ];
             volumes = [
               "${calibreDir}/config:/config"
               "${ingestDir}:/cwa-book-ingest"
@@ -56,7 +56,7 @@ in
           shelfmark.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/calibrain/shelfmark
             image = "ghcr.io/calibrain/shelfmark:v1.2.1";
-            publishPorts = [ "${toString portShelfmark}:${toString portShelfmark}" ];
+            publishPorts = [ "127.0.0.1:${toString portShelfmark}:${toString portShelfmark}" ];
             volumes = [
               "${shelfmarkDir}:/config"
               "${ingestDir}:/books"

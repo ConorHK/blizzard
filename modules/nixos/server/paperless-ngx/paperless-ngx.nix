@@ -24,7 +24,7 @@ _: {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/paperless-ngx/paperless-ngx
               image = "ghcr.io/paperless-ngx/paperless-ngx:latest";
-              publishPorts = [ "8000:8000" ];
+              publishPorts = [ "127.0.0.1:8000:8000" ];
               volumes = [
                 "/storage/data/paperless-ngx/data:/usr/src/paperless/data"
                 "/storage/data/paperless-ngx/media:/usr/src/paperless/media"

@@ -18,7 +18,7 @@ in
       containers.mealie.containerConfig = {
         # renovate: datasource=docker depName=ghcr.io/mealie-recipes/mealie
         image = "ghcr.io/mealie-recipes/mealie:v3.14.0";
-        publishPorts = [ "9925:9000" ];
+        publishPorts = [ "127.0.0.1:9925:9000" ];
         volumes = [ "${dataDir}:/app/data" ];
         environments = {
           ALLOW_SIGNUP = "true";

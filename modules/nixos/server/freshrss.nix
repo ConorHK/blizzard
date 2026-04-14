@@ -8,7 +8,7 @@ _: {
       containers.freshrss.containerConfig = {
         # renovate: datasource=docker depName=freshrss/freshrss
         image = "freshrss/freshrss:latest";
-        publishPorts = [ "8002:80" ];
+        publishPorts = [ "127.0.0.1:8002:80" ];
         volumes = [
           "/storage/data/freshrss/data:/var/www/FreshRSS/data"
           "/storage/data/freshrss/extensions:/var/www/FreshRSS/extensions"
