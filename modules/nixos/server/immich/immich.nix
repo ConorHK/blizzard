@@ -53,7 +53,7 @@ in
           immich-server = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-              image = "ghcr.io/immich-app/immich-server:v2.7.4";
+              image = "ghcr.io/immich-app/immich-server:v2.7.5";
               publishPorts = [ "127.0.0.1:2283:2283" ];
               volumes = [
                 "${dataDir}:/usr/src/app/upload"
