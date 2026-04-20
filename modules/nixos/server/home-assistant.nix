@@ -1,30 +1,35 @@
-_: {
-  flake.modules.nixos.home-assistant = _: {
-    networking.firewall.allowedTCPPorts = [ 8123 ];
+{
+  flake.modules.nixos.home-assistant =
+    { lib, ... }:
+    let
+      homeAssistantVersion = "stable";
+      configPath = "/home/driver/storage/homeassistant/";
+      timezone = "Europe/Dublin";
+      usbDevice = "/dev/ttyUSB0";
+      # TODO: initial load requires mkdir ~/storage/homeassistant and reboot
+    in
+    {
+      virtualisation.oci-containers = {
+        backend = lib.mkDefault "podman";
 
-    # containers user needs bluetooth and dialout for HA's Zigbee/Z-Wave USB adapters
-    users.users.containers.extraGroups = [
-      "bluetooth"
-      "dialout"
-    ];
-
-    home-manager.users.containers.virtualisation.quadlet = {
-      containers.home-assistant.containerConfig = {
-        # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-        image = "ghcr.io/home-assistant/home-assistant:stable";
-        volumes = [
-          "/var/lib/homeassistant/config:/config"
-          "/etc/localtime:/etc/localtime:ro"
-          "/run/dbus:/run/dbus:ro"
-        ];
-        environments = {
-          TZ = "Europe/Dublin";
+        containers.homeassistant = {
+          image = "ghcr.io/home-assistant/home-assistant:${homeAssistantVersion}";
+          autoStart = true;
+          volumes = [
+            "${configPath}:/config"
+            "/etc/localtime:/etc/localtime:ro"
+            "/run/dbus:/run/dbus:ro"
+          ];
+          environment.TZ = timezone;
+          extraOptions = [
+            "--network=host"
+            "--device=${usbDevice}:${usbDevice}"
+            "--cap-add=NET_RAW"
+            "--cap-add=NET_ADMIN"
+          ];
         };
-        # USB adapter for Zigbee/Z-Wave
-        devices = [ "/dev/ttyUSB0" ];
-        # Host networking required for mDNS/Chromecast/DLNA discovery
-        networks = [ "host" ];
       };
+
+      networking.firewall.allowedTCPPorts = [ 8123 ];
     };
-  };
 }
