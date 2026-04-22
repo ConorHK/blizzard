@@ -2,7 +2,7 @@ _:
 let
   dataDir = "/storage/data/readmeabook";
   # renovate: datasource=docker depName=ghcr.io/kikootwo/readmeabook
-  image = "ghcr.io/kikootwo/readmeabook:1.1.7";
+  image = "ghcr.io/kikootwo/readmeabook:1.1.8";
   portMain = 3030;
   portMom = 3029;
   commonEnv = { };
