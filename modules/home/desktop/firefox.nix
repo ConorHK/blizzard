@@ -14,6 +14,7 @@
       home.sessionVariables.BROWSER = "firefox";
       programs.firefox = {
         enable = true;
+        configPath = ".mozilla/firefox";
         policies = {
           AutofillAddressEnabled = false;
           AutofillCreditCardEnabled = false;
