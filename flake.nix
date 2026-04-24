@@ -20,10 +20,8 @@
     git-hooks-nix.url = "github:cachix/git-hooks.nix";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
-    impermanence.url = "github:nix-community/impermanence";
     import-tree.url = "github:vic/import-tree";
     lanzaboote.url = "github:nix-community/lanzaboote";
-    nixcord.url = "github:kaylorben/nixcord";
     nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
@@ -39,8 +37,6 @@
     textfox.url = "github:adriankarlen/textfox";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    vicinae-extensions.inputs.nixpkgs.follows = "nixpkgs";
-    vicinae-extensions.url = "github:vicinaehq/extensions";
   };
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
