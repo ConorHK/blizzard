@@ -2,7 +2,7 @@
   flake.modules.nixos.home-assistant =
     { lib, ... }:
     let
-      homeAssistantVersion = "stable";
+      homeAssistantVersion = "2026.4.4";
       configPath = "/home/driver/storage/homeassistant/";
       timezone = "Europe/Dublin";
       usbDevice = "/dev/ttyUSB0";
