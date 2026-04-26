@@ -52,7 +52,7 @@
                 TTS_MODELS = "kokoro";
                 TTS_STREAMING_MODELS = "kokoro";
                 TTS_BACKEND = "KOKORO_FASTAPI";
-                TTS_VOICES = "af_sky,af_bella";
+                TTS_VOICES = "af_bella";
                 TTS_STREAMING_MIN_WORDS = "6";
                 TTS_STREAMING_MAX_CHARS = "220";
               };
