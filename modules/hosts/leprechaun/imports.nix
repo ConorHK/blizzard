@@ -20,6 +20,7 @@
     immich
     mealie
     nginx
+    nvidia
     podman
     qbittorrent
     quadlet
@@ -27,5 +28,6 @@
     satisfactory
     server-users
     systemd-boot
+    voice
   ];
 }
