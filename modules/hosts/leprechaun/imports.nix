@@ -19,6 +19,7 @@
     github-runner
     immich
     mealie
+    music-assistant
     nginx
     nvidia
     podman
