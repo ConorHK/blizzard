@@ -27,7 +27,7 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05-small";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:conorhk/nixpkgs";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     stylix.inputs.flake-parts.follows = "flake-parts";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
