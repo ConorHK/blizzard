@@ -1151,11 +1151,11 @@
     },
     "nixpkgs_9": {
       "locked": {
-        "lastModified": 1777654768,
-        "narHash": "sha256-NY2HOpQrpSBNiQtMU30bdKDtTAUML+INcIW13vMpkis=",
+        "lastModified": 1777668766,
+        "narHash": "sha256-q7aEqv542Mf1fisIq27mZeBcW8J1zY5JXhZSKLfNVW4=",
         "owner": "conorhk",
         "repo": "nixpkgs",
-        "rev": "b94e33b2ac9ff5cc98ca96597c2461c1048c882c",
+        "rev": "7b4a250d71382643ed429213beec5cff8042ffca",
         "type": "github"
       },
       "original": {
