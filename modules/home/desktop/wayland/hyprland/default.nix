@@ -66,6 +66,7 @@
 
       wayland.windowManager.hyprland = {
         enable = true;
+        configType = "lua";
         systemd.enable = false; # conflicts with UWSM
       };
     };

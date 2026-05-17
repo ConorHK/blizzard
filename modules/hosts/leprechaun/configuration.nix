@@ -15,8 +15,14 @@
         };
       };
 
-      boot.supportedFilesystems = [ "zfs" ];
-      boot.zfs.extraPools = [ "storage" ];
+      boot = {
+        supportedFilesystems = [ "zfs" ];
+        zfs = {
+          extraPools = [ "storage" ];
+          forceImportRoot = false;
+        };
+      };
+
       networking = {
         hostName = "leprechaun";
         ipv4.address = "192.168.0.145";
