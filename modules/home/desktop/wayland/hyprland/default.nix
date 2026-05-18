@@ -60,9 +60,11 @@
         };
       };
 
-      wayland.windowManager.hyprland.settings.exec-once = [
-        "systemctl --user start hyprland-session.service"
-      ];
+      wayland.windowManager.hyprland.extraConfig = ''
+        hl.on("hyprland.start", function()
+          hl.exec_cmd("systemctl --user start hyprland-session.service")
+        end)
+      '';
 
       wayland.windowManager.hyprland = {
         enable = true;
