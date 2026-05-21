@@ -9,7 +9,10 @@ _: {
       users.users.${username} = {
         isNormalUser = true;
         group = username;
-        extraGroups = [ "wheel" ];
+        extraGroups = [
+          "wheel"
+          "dialout"
+        ];
         inherit hashedPassword;
         home = "/home/${username}";
         createHome = true;
