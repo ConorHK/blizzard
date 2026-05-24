@@ -2,7 +2,6 @@
   flake.modules.nixos.home-assistant =
     { lib, ... }:
     let
-      homeAssistantVersion = "2026.4.4";
       configPath = "/home/driver/storage/homeassistant/";
       timezone = "Europe/Dublin";
       usbDevice = "/dev/ttyUSB0";
@@ -13,7 +12,8 @@
         backend = lib.mkDefault "podman";
 
         containers.homeassistant = {
-          image = "ghcr.io/home-assistant/home-assistant:${homeAssistantVersion}";
+          # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
+          image = "ghcr.io/home-assistant/home-assistant:2026.5.4";
           autoStart = true;
           volumes = [
             "${configPath}:/config"
