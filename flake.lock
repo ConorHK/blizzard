@@ -1432,11 +1432,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779396425,
-        "narHash": "sha256-fmD00QbngQE3UJBWci7h//U7ffwywV2ASBh/phPeNhg=",
+        "lastModified": 1780405768,
+        "narHash": "sha256-WhPHaupeq5yWP53anFH6vr/ZMQQtAYGtpgUhzqWx9Ws=",
         "owner": "adriankarlen",
         "repo": "textfox",
-        "rev": "ad6787bb9a01cbfdc94fd6419974f64068be5307",
+        "rev": "d6895da75f10fa17f1b637759aec3d84818b20e2",
         "type": "github"
       },
       "original": {
