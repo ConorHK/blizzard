@@ -1,11 +1,12 @@
 {
+  # Not wired into the hyprland config; the wleave module is unused.
+  flake.modules.wrapper."hyprland/wleave".settings.bind = [
+    "SUPER, x, exec, wleave"
+  ];
+
   flake.modules.homeManager.wleave =
     { pkgs, ... }:
     {
-      wayland.windowManager.hyprland.settings.bind = [
-        "SUPER, x, exec, wleave"
-      ];
-
       programs.wleave = {
         enable = true;
         settings = {

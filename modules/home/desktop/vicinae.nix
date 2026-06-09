@@ -1,4 +1,8 @@
 {
+  flake.modules.wrapper."hyprland/vicinae".settings.bind = [
+    "SUPER, Space, exec, vicinae toggle"
+  ];
+
   flake.modules.homeManager.vicinae =
     {
       pkgs,
@@ -46,9 +50,6 @@
         ) names;
     in
     {
-      wayland.windowManager.hyprland.settings.bind = [
-        "SUPER, Space, exec, vicinae toggle"
-      ];
       # TODO: bisect and find why this causes infinite recursion
       stylix.targets.vicinae.enable = false;
       programs.vicinae = {

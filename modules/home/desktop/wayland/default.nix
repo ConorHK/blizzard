@@ -10,7 +10,6 @@
       imports = with config.flake.modules.homeManager; [
         swayosd
         dunst
-        screenshot
       ];
 
       home = {

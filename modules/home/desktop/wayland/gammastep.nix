@@ -1,9 +1,11 @@
 {
-  flake.modules.homeManager.gammastep =
-    { lib, pkgs, ... }:
+  # Not wired into the hyprland config; the gammastep module is unused.
+  flake.modules.wrapper."hyprland/gammastep" =
+    { config, lib, ... }:
     {
-      wayland.windowManager.hyprland.settings =
+      settings.bind =
         let
+          inherit (config) pkgs;
           toggle-gammastep = pkgs.writeShellScriptBin "toggle-gammastep" ''
             #!/usr/bin/env bash
 
@@ -13,25 +15,25 @@
             fi
           '';
         in
-        {
-          bind = [
-            "SUPER, G, exec, ${lib.getExe toggle-gammastep}"
-          ];
-        };
+        [
+          "SUPER, G, exec, ${lib.getExe toggle-gammastep}"
+        ];
+    };
 
-      systemd.user.services.gammastep = {
-        Install = {
-          WantedBy = [ "graphical-session.target" ];
-        };
-      };
-      services.gammastep = {
-        enable = true;
-        provider = "manual";
-        latitude = 53.26;
-        longitude = 6.15;
-        temperature.day = 5500;
-        temperature.night = 1900;
-        tray = false;
+  flake.modules.homeManager.gammastep = {
+    systemd.user.services.gammastep = {
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
       };
     };
+    services.gammastep = {
+      enable = true;
+      provider = "manual";
+      latitude = 53.26;
+      longitude = 6.15;
+      temperature.day = 5500;
+      temperature.night = 1900;
+      tray = false;
+    };
+  };
 }

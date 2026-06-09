@@ -1,5 +1,9 @@
 { config, ... }:
 {
+  flake.modules.wrapper."hyprland/session".settings.exec-once = [
+    "systemctl --user start hyprland-session.service"
+  ];
+
   flake.modules.homeManager.hyprland =
     {
       lib,
@@ -58,15 +62,6 @@
         Install = {
           WantedBy = [ "graphical-session.target" ];
         };
-      };
-
-      wayland.windowManager.hyprland.settings.exec-once = [
-        "systemctl --user start hyprland-session.service"
-      ];
-
-      wayland.windowManager.hyprland = {
-        enable = true;
-        systemd.enable = false; # conflicts with UWSM
       };
     };
 }

@@ -1,4 +1,8 @@
 {
+  flake.modules.wrapper."hyprland/hyprpaper".settings.exec-once = [
+    "systemctl --user start hyprpaper"
+  ];
+
   flake.modules.homeManager.hyprpaper =
     {
       pkgs,
@@ -8,10 +12,6 @@
     }:
     {
       stylix.targets.hyprpaper.enable = lib.mkForce false;
-
-      wayland.windowManager.hyprland.settings.exec-once = [
-        "systemctl --user start hyprpaper"
-      ];
 
       services.hyprpaper = {
         enable = true;

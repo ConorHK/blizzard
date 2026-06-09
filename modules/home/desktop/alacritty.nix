@@ -1,15 +1,15 @@
 {
-  flake.modules.homeManager.alacritty = {
-    wayland.windowManager.hyprland.settings.bind = [
+  flake.modules.wrapper."hyprland/alacritty".settings = {
+    bind = [
       "SUPER, Return, exec, uwsm app -- alacritty"
     ];
+    windowrule = [
+      "float on, match:class alacritty-popup"
+      "center on, match:class alacritty-popup"
+    ];
+  };
 
-    wayland.windowManager.hyprland.settings = {
-      windowrule = [
-        "float on, match:class alacritty-popup"
-        "center on, match:class alacritty-popup"
-      ];
-    };
+  flake.modules.homeManager.alacritty = {
     programs = {
       alacritty = {
         enable = true;

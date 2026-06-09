@@ -1,14 +1,14 @@
 {
+  flake.modules.wrapper."hyprland/firefox".settings.bind = [
+    "SUPER_SHIFT, F, exec, uwsm app -- firefox"
+  ];
+
   flake.modules.homeManager.firefox =
     { inputs, ... }:
 
     {
       imports = [
         inputs.textfox.homeManagerModules.default
-      ];
-
-      wayland.windowManager.hyprland.settings.bind = [
-        "SUPER_SHIFT, F, exec, uwsm app -- firefox"
       ];
 
       home.sessionVariables.BROWSER = "firefox";

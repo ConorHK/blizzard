@@ -1,8 +1,8 @@
 {
-  flake.modules.homeManager.hyprland =
+  flake.modules.wrapper."hyprland/settings" =
     { lib, ... }:
     {
-      wayland.windowManager.hyprland.settings = {
+      settings = {
         monitor = lib.mkDefault [ ", highrr, auto, 1, vrr, 3" ];
 
         xwayland = {
@@ -14,7 +14,7 @@
           gaps_in = 0;
           gaps_out = 0;
           border_size = 2;
-          "col.active_border" = lib.mkForce "0xFFAF875F";
+          "col.active_border" = "0xFFAF875F";
           resize_on_border = true;
         };
 
