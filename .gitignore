@@ -6,5 +6,9 @@ result-*
 .direnv
 .pre-commit-config.yaml
 
+# devenv runtime artifacts
+.devenv*
+devenv.local.nix
+
 # Claude Code
 CLAUDE.md

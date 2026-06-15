@@ -16,19 +16,14 @@
       ...
     }:
     {
-      devshells.default = {
+      devenv.shells.default = {
         packages = [
           inputs'.agenix-rekey.packages.default
           pkgs.age-plugin-yubikey
         ];
-        env = [
-          {
-            # Automatically add rekeyed secrets to git without
-            # requiring `agenix rekey -a`
-            name = "AGENIX_REKEY_ADD_TO_GIT";
-            value = true;
-          }
-        ];
+        # Automatically add rekeyed secrets to git without
+        # requiring `agenix rekey -a`
+        env.AGENIX_REKEY_ADD_TO_GIT = true;
       };
     };
 }
