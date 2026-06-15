@@ -1,7 +1,13 @@
+{ inputs, ... }:
 {
   flake.modules.nixos.nix = {
     nix = {
       channel.enable = false;
+
+      # Pin the `nixpkgs` registry entry to this flake's locked nixpkgs so ad-hoc
+      # `nix run/shell nixpkgs#…` reuses the already-realised tree instead of
+      # refetching. Works together with `flake-registry = ""` below.
+      registry.nixpkgs.flake = inputs.nixpkgs;
 
       gc = {
         automatic = true;
@@ -14,6 +20,23 @@
 
       settings = {
         experimental-features = "nix-command flakes pipe-operators";
+
+        # --- Determinate Nix tuning -------------------------------------------
+        # Evaluate flakes without first copying the whole source tree into the
+        # store. Big win for a many-file dotfiles flake (fonts, images, facter
+        # JSON); the companion to `eval-cores` (parallel eval, set in
+        # determinate.nix). Requires Determinate Nix.
+        lazy-trees = true;
+
+        # Never consult the online flake registry: this flake pins everything
+        # and `nix.registry.nixpkgs` is set above, so resolution stays offline
+        # and deterministic.
+        flake-registry = "";
+
+        # Default download buffer (64 MiB) overflows when substituting whole
+        # system closures from Cachix, printing "download buffer is full".
+        download-buffer-size = 268435456; # 256 MiB
+        # ----------------------------------------------------------------------
 
         max-jobs = "auto";
 
@@ -43,9 +66,9 @@
         keep-outputs = true;
         keep-derivations = true;
 
-        # Automatically detect files in the store that have identical contents, and replaces
-        # them with hard links to a single copy. This saves disk space.
-        auto-optimise-store = true;
+        # Store de-duplication is handled by the scheduled `nix.optimise.automatic`
+        # timer above; `auto-optimise-store` would additionally hard-link on every
+        # build, which duplicates that work — so it is intentionally left off.
 
         # Whether to warn about dirty Git/Mercurial trees.
         warn-dirty = false;
