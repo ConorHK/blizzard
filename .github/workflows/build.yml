@@ -10,17 +10,27 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v6
       - run: nix --extra-experimental-features pipe-operators flake check .
+  discover:
+    runs-on: [self-hosted, nix, x86_64-linux]
+    environment: production
+    outputs:
+      machines: ${{ steps.list.outputs.machines }}
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+      # Source of truth is the flake itself — adding/removing a host updates the
+      # build matrix automatically. (All hosts are x86_64-linux, matching the runner.)
+      - id: list
+        run: |
+          machines=$(nix --extra-experimental-features pipe-operators eval --json \
+            .#nixosConfigurations --apply builtins.attrNames)
+          echo "machines=$machines" >> "$GITHUB_OUTPUT"
   build-machines:
-    needs: check
+    needs: [check, discover]
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - machine: abhartach
-          - machine: bananach
-          # - machine: banshee
-          - machine: dullahan
-          - machine: puca
-          - machine: leprechaun
+        machine: ${{ fromJSON(needs.discover.outputs.machines) }}
     runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
     steps:
