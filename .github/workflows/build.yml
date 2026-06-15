@@ -9,7 +9,15 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-      - run: nix --extra-experimental-features pipe-operators flake check .
+      # devenv's dev shell is a checked output and needs to know the project
+      # directory via the impure `devenv-root` input — mirror what .envrc does
+      # so `nix flake check` can evaluate the shell in CI (no direnv here).
+      - run: |
+          mkdir -p "$PWD/.devenv"
+          printf %s "$PWD" > "$PWD/.devenv/root"
+          nix --extra-experimental-features pipe-operators flake check \
+            --no-pure-eval \
+            --override-input devenv-root "file+file://$PWD/.devenv/root" .
   discover:
     runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
