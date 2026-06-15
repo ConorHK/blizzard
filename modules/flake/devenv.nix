@@ -39,6 +39,15 @@
             echo -e "\n=> ISO ready:"
             ls -lh result-iso/iso/*.iso
           '';
+          # Fast smoke test: force every host's toplevel to *evaluate* (catching a
+          # host that no longer evaluates) without building anything. Building each
+          # host is CI's job (.github/workflows/build.yml); this stays cheap/local.
+          check-hosts.exec = ''
+            echo -e "\n=> Evaluating every host toplevel (eval-only, no build)..."
+            nix eval --no-pure-eval --raw .#nixosConfigurations --apply \
+              'cfgs: builtins.concatStringsSep "\n" (builtins.attrValues (builtins.mapAttrs (name: cfg: "  " + name + "  ->  " + cfg.config.system.build.toplevel.drvPath) cfgs))'
+            echo
+          '';
         };
       };
     };
