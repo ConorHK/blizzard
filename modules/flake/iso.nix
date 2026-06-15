@@ -1,21 +1,14 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
 {
   perSystem =
     { system, ... }:
     {
       packages.iso =
         let
+          sshKeys = config.flake.lib.conorhkSshKeys;
+
           isoModule =
             { lib, pkgs, ... }:
-            let
-              keysFile = builtins.readFile (
-                builtins.fetchurl {
-                  url = "https://github.com/conorhk.keys";
-                  sha256 = "0dsy8sv3xzvai7lh3im1vr91gymm7p0ngrdys720wcnzgla2a9wi";
-                }
-              );
-              sshKeys = builtins.filter (x: x != "") (lib.splitString "\n" keysFile);
-            in
             {
               environment.systemPackages = lib.attrValues {
                 inherit (pkgs)
