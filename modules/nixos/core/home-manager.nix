@@ -15,15 +15,6 @@ topLevel: {
         useGlobalPkgs = true;
         useUserPackages = true;
 
-        sharedModules = [
-          (
-            { config, ... }:
-            {
-              gtk.gtk4.theme = config.gtk.theme;
-            }
-          )
-        ];
-
         users.goose.imports = [
           topLevel.config.flake.modules.homeManager.core
           # Stylix opt-in target list. The stylix HM module itself is provided

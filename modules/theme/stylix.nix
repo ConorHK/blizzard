@@ -85,15 +85,12 @@ in
       };
     };
 
-    homeManager.theme =
-      { config, ... }:
-      {
-        imports = [
-          inputs.stylix.homeModules.stylix
-          homeStylix
-        ];
-        stylix.enable = true;
-        gtk.gtk4.theme = config.gtk.theme;
-      };
+    homeManager.theme = {
+      imports = [
+        inputs.stylix.homeModules.stylix
+        homeStylix
+      ];
+      stylix.enable = true;
+    };
   };
 }
