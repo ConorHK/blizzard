@@ -15,8 +15,7 @@
 
       security.polkit.enable = true;
 
-      services = {
-        libinput.enable = true;
-      };
+      services.libinput.enable = true;
+      programs.fuse.enable = true;
     };
 }
