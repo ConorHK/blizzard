@@ -44,7 +44,7 @@ in
 
           immich-machine-learning.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-            image = "ghcr.io/immich-app/immich-machine-learning:v2.7.5";
+            image = "ghcr.io/immich-app/immich-machine-learning:v3.0.1";
             volumes = [ "${dataDir}/models:/cache" ];
             networks = [ "immich.network" ];
             noNewPrivileges = true;
