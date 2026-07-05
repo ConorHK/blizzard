@@ -24,9 +24,11 @@ _: {
               success-threshold = 1;
             };
           };
+          # Cover the whole autoUpgrade reboot window (06:00-07:00) so host
+          # reboots don't page.
           maintenance = {
-            start = "05:40";
-            duration = "35m";
+            start = "06:00";
+            duration = "70m";
             timezone = "Europe/Dublin";
           };
 

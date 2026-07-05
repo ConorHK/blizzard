@@ -73,8 +73,11 @@ _: {
           inherit (cfg) repository paths;
           passwordFile = config.age.secrets.restic-password.path;
           environmentFile = config.age.secrets.restic-env.path;
+          # Keep well clear of the 06:00-07:00 autoUpgrade reboot window: a
+          # reboot mid-backup leaves a stale repo lock and the interrupted unit
+          # is "stopped", not "failed", so OnFailure would never alert about it.
           timerConfig = {
-            OnCalendar = "05:45";
+            OnCalendar = "03:00";
             Persistent = true;
           };
           pruneOpts = [
@@ -88,7 +91,12 @@ _: {
             "max"
             "--cleanup-cache"
           ];
-          backupPrepareCommand = lib.optionalString (pauseContainers != [ ]) "${mkContainerScript "stop"}";
+          # `restic unlock` clears stale locks left by an interrupted run;
+          # otherwise every later backup fails silently on the lock.
+          backupPrepareCommand = ''
+            ${pkgs.restic}/bin/restic unlock
+            ${lib.optionalString (pauseContainers != [ ]) (mkContainerScript "stop")}
+          '';
           backupCleanupCommand = lib.optionalString (pauseContainers != [ ]) "${mkContainerScript "start"}";
         };
       };
