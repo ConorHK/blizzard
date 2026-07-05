@@ -1,17 +1,9 @@
 {
   flake.modules.nixos.users =
-    {
-      config,
-      blizzardLib,
-      lib,
-      ...
-    }:
-    lib.mkMerge [
-      { age.secrets.goose-password-hash.rekeyFile = ./secrets/goose-password-hash.age; }
-      (blizzardLib.mkUser {
-        username = "goose";
-        hashedPasswordFile = config.age.secrets.goose-password-hash.path;
-        inherit (config.blizzard) sshKeys;
-      })
-    ];
+    { config, blizzardLib, ... }:
+    blizzardLib.mkUser {
+      username = "goose";
+      hashedPassword = "$6$o/.qISAqaJ2DbFIA$sFd/J56LT46H4CVH6SYKVRIUmK.KaFeePMj0xdPYzCksDc9a1J1VAEQkGJ9jUarAV68GIriIyc94w7qvgHlIp1";
+      inherit (config.blizzard) sshKeys;
+    };
 }

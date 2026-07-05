@@ -9,12 +9,10 @@
     lib.mkMerge [
       (blizzardLib.mkUser {
         username = "driver";
-        hashedPasswordFile = config.age.secrets.driver-password-hash.path;
+        hashedPassword = "$6$o/.qISAqaJ2DbFIA$sFd/J56LT46H4CVH6SYKVRIUmK.KaFeePMj0xdPYzCksDc9a1J1VAEQkGJ9jUarAV68GIriIyc94w7qvgHlIp1";
         inherit (config.blizzard) sshKeys;
       })
       {
-        age.secrets.driver-password-hash.rekeyFile = ./secrets/driver-password-hash.age;
-
         nix.settings.trusted-users = [ "driver" ];
         users.users.driver.extraGroups = [ "systemd-journal" ];
       }
