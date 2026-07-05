@@ -22,7 +22,12 @@ _: {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "defaults" ];
+                # umask keeps kernels/initrds and the systemd-boot random seed
+                # from being world-readable
+                mountOptions = [
+                  "defaults"
+                  "umask=0077"
+                ];
               };
             };
             luks = {

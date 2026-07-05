@@ -7,16 +7,31 @@
     {
       programs.mosh = {
         enable = lib.mkDefault true;
-        openFirewall = lib.mkDefault true;
+        # SSH/mosh are reachable over tailscale0 (a trusted interface); don't
+        # expose them on every interface.
+        openFirewall = lib.mkDefault false;
       };
       services.openssh = {
         enable = lib.mkDefault true;
+        openFirewall = lib.mkDefault false;
         ports = [ port ];
         allowSFTP = false;
 
         settings = {
           KbdInteractiveAuthentication = false;
           PasswordAuthentication = false;
+
+          # Drop dead/idle sessions after 2 missed keepalives (10 min).
+          # Note: ClientAliveCountMax 0 would *disable* termination entirely.
+          ClientAliveInterval = 300;
+          ClientAliveCountMax = 2;
+
+          AllowTcpForwarding = false;
+          AllowAgentForwarding = false;
+          MaxAuthTries = 3;
+          MaxSessions = 2;
+          TCPKeepAlive = false;
+
           KexAlgorithms = [
             "curve25519-sha256@libssh.org"
             "ecdh-sha2-nistp521"
@@ -41,18 +56,6 @@
             "umac-128@openssh.com"
           ];
         };
-
-        extraConfig = ''
-          ClientAliveCountMax 0
-          ClientAliveInterval 300
-
-          AllowTcpForwarding no
-          AllowAgentForwarding no
-          MaxAuthTries 3
-          MaxSessions 2
-          TCPKeepAlive no
-        '';
-
       };
     };
 }
