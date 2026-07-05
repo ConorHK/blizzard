@@ -49,3 +49,17 @@ jobs:
           out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths \
             .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
           nix path-info -r "$out" | cachix push conorhk
+  # Fast-forward `stable` to the commit that just built for every host.
+  # system.autoUpgrade points at `stable`, so this is the deployment gate:
+  # broken pushes to main never reach the machines.
+  promote:
+    needs: [build-machines]
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, nix, x86_64-linux]
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+      - run: git push origin HEAD:stable
