@@ -3,11 +3,16 @@
     { config, lib, ... }:
     {
       services.userborn.enable = lib.mkDefault true;
+
+      # Password hashes live in agenix rather than the repo: committed hashes
+      # are an offline cracking target.
+      age.secrets.root-password-hash.rekeyFile = ./secrets/root-password-hash.age;
+
       users = {
         mutableUsers = false;
         users.root = {
           isSystemUser = true;
-          hashedPassword = "$6$W1tE3/h9AFWOXaXi$pGpXeXFoE/Jyi2RzkuiTfr5dA6FQ.R6Mme8sxi5nWXLIrv7R9d5b0cDoqbb830MWkwwdKbGqBo6f3ZoIhCMjA0";
+          hashedPasswordFile = config.age.secrets.root-password-hash.path;
           openssh.authorizedKeys.keys = config.blizzard.sshKeys;
         };
       };

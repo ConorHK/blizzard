@@ -2,7 +2,7 @@ _: {
   flake.lib.mkUser =
     {
       username,
-      hashedPassword,
+      hashedPasswordFile,
       sshKeys,
     }:
     {
@@ -13,7 +13,7 @@ _: {
           "wheel"
           "dialout"
         ];
-        inherit hashedPassword;
+        inherit hashedPasswordFile;
         home = "/home/${username}";
         createHome = true;
         openssh.authorizedKeys.keys = sshKeys;
