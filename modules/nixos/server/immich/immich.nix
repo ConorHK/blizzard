@@ -12,8 +12,6 @@ in
   flake.modules.nixos.immich =
     { config, ... }:
     {
-      networking.firewall.allowedTCPPorts = [ 2283 ];
-
       age.secrets.immich-secrets = {
         rekeyFile = ./secrets/immich-secrets.age;
         owner = "containers";

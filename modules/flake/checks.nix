@@ -32,7 +32,6 @@
               "modules/home/core/cli/ssh.nix"
               "modules/home/desktop/media/gfx.nix"
               "modules/nixos/core/network/network-manager.nix"
-              "modules/nixos/desktop/android.nix"
               "modules/nixos/desktop/wayland/default.nix"
             ];
             configDir = pkgs.runCommand "statix-config" { } ''
