@@ -1,8 +1,6 @@
 { config, ... }:
 {
-  nixosHosts.puca = {
-    unstable = true;
-  };
+  nixosHosts.puca = { };
 
   flake.modules.nixos."nixosConfigurations/puca".imports = with config.flake.modules.nixos; [
     bluetooth

@@ -1,8 +1,6 @@
 { config, ... }:
 {
-  nixosHosts.bananach = {
-    unstable = true;
-  };
+  nixosHosts.bananach = { };
 
   flake.modules.nixos."nixosConfigurations/bananach".imports = with config.flake.modules.nixos; [
     server-users

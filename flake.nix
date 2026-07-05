@@ -3,6 +3,9 @@
   inputs = {
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
     agenix-rekey.url = "github:oddlama/agenix-rekey";
+    agenix.inputs.darwin.follows = "";
+    agenix.inputs.home-manager.follows = "home-manager";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
     claude-code.url = "github:sadjow/claude-code-nix";
     cnvim.inputs.nixpkgs.follows = "nixpkgs";
@@ -24,6 +27,8 @@
     home-manager.url = "github:nix-community/home-manager";
     import-tree.url = "github:vic/import-tree";
     lanzaboote.url = "github:nix-community/lanzaboote";
+    # Not referenced by this repo, but devenv's flakeModule requires it to
+    # evaluate its `containers` output during `nix flake check`.
     mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
@@ -31,7 +36,6 @@
     nix2container.inputs.nixpkgs.follows = "nixpkgs";
     nix2container.url = "github:nlewo/nix2container";
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05-small";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     stylix.inputs.flake-parts.follows = "flake-parts";

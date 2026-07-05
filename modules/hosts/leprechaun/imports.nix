@@ -7,9 +7,7 @@
     conditions = [ "[CONNECTED] == true" ];
   };
 
-  nixosHosts.leprechaun = {
-    unstable = true;
-  };
+  nixosHosts.leprechaun = { };
 
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     actual-budget

@@ -36,6 +36,7 @@ let
 
                 unstable = lib.mkOption {
                   type = types.bool;
+                  default = true;
                 };
 
                 stateVersion = lib.mkOption {
@@ -62,7 +63,14 @@ let
             mkHome =
               name: options:
               let
-                nixpkgs' = if options.unstable then inputs.nixpkgs else inputs.nixpkgs-stable;
+                # Blizzard itself only tracks unstable; the stable branch is for
+                # downstream flakes, which must provide their own `nixpkgs-stable`.
+                nixpkgs' =
+                  if options.unstable then
+                    inputs.nixpkgs
+                  else
+                    inputs.nixpkgs-stable
+                      or (throw "homeConfigurations.${name} sets unstable = false, but this flake has no `nixpkgs-stable` input");
               in
               inputs.home-manager.lib.homeManagerConfiguration {
                 pkgs = import nixpkgs' {

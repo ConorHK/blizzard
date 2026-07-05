@@ -1,12 +1,8 @@
 { config, ... }:
 {
-  nixosHosts.abhartach = {
-    unstable = true;
-  };
+  nixosHosts.abhartach = { };
 
-  homeConfigurations.abhartach = {
-    unstable = true;
-  };
+  homeConfigurations.abhartach = { };
 
   flake.modules.nixos."nixosConfigurations/abhartach" = {
     imports = with config.flake.modules.nixos; [

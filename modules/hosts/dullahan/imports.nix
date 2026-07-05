@@ -1,12 +1,8 @@
 { config, ... }:
 {
-  nixosHosts.dullahan = {
-    unstable = true;
-  };
+  nixosHosts.dullahan = { };
 
-  homeConfigurations.dullahan = {
-    unstable = true;
-  };
+  homeConfigurations.dullahan = { };
 
   flake.modules.nixos."nixosConfigurations/dullahan" = {
     imports = with config.flake.modules.nixos; [
