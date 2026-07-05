@@ -18,19 +18,29 @@
         ];
         scripts = {
           rebuild.exec = ''
+            set -euo pipefail
+            if [ "$#" -ne 1 ]; then
+              echo "usage: rebuild <hostname>" >&2
+              exit 1
+            fi
             hostname=$1
 
             echo -e "\n=> Deploying system '$hostname'"
             nh os switch \
-                --hostname $hostname \
-                --target-host root@$hostname \
-                --build-host root@$hostname
+                --hostname "$hostname" \
+                --target-host "root@$hostname" \
+                --build-host "root@$hostname"
           '';
           rebuild-home.exec = ''
+            set -euo pipefail
+            if [ "$#" -ne 1 ]; then
+              echo "usage: rebuild-home <user@host>" >&2
+              exit 1
+            fi
             home=$1
 
             echo -e "\n=> Deploying home configuration '$home'"
-            home-manager switch --flake .#$home \
+            home-manager switch --flake ".#$home" \
                 --extra-experimental-features pipe-operators
           '';
           make-iso.exec = ''
