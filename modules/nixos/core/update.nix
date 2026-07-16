@@ -5,10 +5,7 @@
       system.autoUpgrade = {
         enable = lib.mkDefault true;
 
-        # `stable` is fast-forwarded to main by CI only after every host builds
-        # (see .github/workflows/build.yml), so a broken push to main is never
-        # auto-deployed.
-        flake = "github:conorhk/blizzard/stable";
+        flake = "github:conorhk/blizzard";
         flags = [ "-L" ];
 
         dates = "*-*-* 06:00:00";
