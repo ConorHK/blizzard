@@ -24,11 +24,11 @@ _: {
               success-threshold = 1;
             };
           };
-          # Cover the whole autoUpgrade reboot window (06:00-07:00) so host
-          # reboots don't page.
+          # Cover the 06:00 autoUpgrade + reboot window and the slowest service's
+          # post-restart recovery (audiobookshelf's library scan) so it doesn't page.
           maintenance = {
             start = "06:00";
-            duration = "70m";
+            duration = "120m";
             timezone = "Europe/Dublin";
           };
 
