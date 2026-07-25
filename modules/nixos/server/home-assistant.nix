@@ -13,7 +13,7 @@
 
         containers.homeassistant = {
           # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-          image = "ghcr.io/home-assistant/home-assistant:2026.7.2";
+          image = "ghcr.io/home-assistant/home-assistant:2026.7.4";
           autoStart = true;
           volumes = [
             "${configPath}:/config"
