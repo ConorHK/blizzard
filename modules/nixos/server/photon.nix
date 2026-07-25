@@ -22,7 +22,8 @@ in
           REGION = "planet";
           IMPORT_MODE = "jsonl";
           REVERSE_ONLY = "TRUE";
-          UPDATE_STRATEGY = "DISABLED";
+          UPDATE_STRATEGY = "SEQUENTIAL";
+          UPDATE_INTERVAL = "365d";
         };
         networks = [ "photon.network" ];
         noNewPrivileges = true;
