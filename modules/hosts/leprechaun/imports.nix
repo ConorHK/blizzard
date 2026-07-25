@@ -20,6 +20,7 @@
     music-assistant
     nginx
     nvidia
+    photon
     podman
     qbittorrent
     quadlet
