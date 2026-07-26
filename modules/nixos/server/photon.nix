@@ -30,7 +30,7 @@ in
           mkdir -p "$data"
           systemctl --user start photon.service
 
-          if timeout 8h sh -c 'until curl -sf -o /dev/null "${probe}"; do sleep 60; done'; then
+          if timeout 16h sh -c 'until curl -sf -o /dev/null "${probe}"; do sleep 60; done'; then
             rm -rf "$staging"
           else
             systemctl --user stop photon.service
