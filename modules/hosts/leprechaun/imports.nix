@@ -30,5 +30,6 @@
     server-users
     systemd-boot
     voice
+    wireguard-gateway
   ];
 }
