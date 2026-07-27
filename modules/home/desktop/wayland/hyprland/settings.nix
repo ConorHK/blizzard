@@ -19,7 +19,7 @@
         };
 
         input = {
-          follow_mouse = 1;
+          follow_mouse = 2;
 
           repeat_delay = 400;
           repeat_rate = 30;
