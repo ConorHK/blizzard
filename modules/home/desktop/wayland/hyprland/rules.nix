@@ -7,7 +7,8 @@
       "float on, match:title ^(File Upload)"
       "center on, match:title ^(File Upload)"
 
-      "float on, match:class ^(steam)$"
+      # Float only the Steam Friends List; let the main window tile
+      "float on, match:class ^(steam)$, match:title ^(Friends List)$"
       "float on, match:class com.saivert.pwvucontrol"
       "center on, match:class com.saivert.pwvucontrol"
     ];
