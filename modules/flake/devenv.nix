@@ -12,6 +12,15 @@
     }:
     {
       devenv.shells.default = {
+        # `.envrc`/CI supply the real path via the `devenv-root` override-input;
+        # the "/" fallback keeps override-less pure eval (e.g. `nix flake check`)
+        # past devenv's non-empty-root assertion.
+        devenv.root =
+          let
+            content = builtins.readFile inputs.devenv-root.outPath;
+          in
+          if content != "" then content else "/";
+
         enterShell = config.pre-commit.installationScript;
         packages = [
           inputs'.home-manager.packages.default
