@@ -6,10 +6,10 @@
         "--height 40%"
         "--border"
       ];
-      fileWidgetOptions = [
+      fileWidget.options = [
         "--preview 'head {}'"
       ];
-      historyWidgetOptions = [
+      historyWidget.options = [
         "--sort"
       ];
     };

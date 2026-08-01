@@ -19,7 +19,7 @@
         |> filterAttrs (_: value: value.config.services.openssh.enable)
         |> mapAttrs (
           _: value: {
-            user =
+            User =
               value.config.users.users
               |> filterAttrs (_: value: value.isNormalUser)
               |> attrNames
@@ -32,16 +32,16 @@
         |> filterAttrs (_: value: value.config.services.openssh.enable)
         |> mapAttrs (
           _name: value: {
-            user =
+            User =
               value.config.users.users
               |> filterAttrs (_: value: value.isNormalUser)
               |> attrNames
               |> remove "root"
               |> head;
 
-            hostname = value.config.networking.ipv4.address;
+            HostName = value.config.networking.ipv4.address;
 
-            port = head value.config.services.openssh.ports;
+            Port = head value.config.services.openssh.ports;
           }
         )
         |> mapAttrsToList (name: value: nameValuePair "${name}-local" value)
@@ -51,13 +51,13 @@
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
-        matchBlocks =
+        settings =
           hosts
           // localHosts
           // {
             "*" = {
-              setEnv.COLORTERM = "truecolor";
-              setEnv.TERM = "xterm-256color";
+              SetEnv.COLORTERM = "truecolor";
+              SetEnv.TERM = "xterm-256color";
             };
           };
       };
