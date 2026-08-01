@@ -56,6 +56,7 @@
     {
       # TODO: bisect and find why this causes infinite recursion
       stylix.targets.vicinae.enable = false;
+      home.packages = [ pkgs.pulseaudio ];
       programs.vicinae = {
         enable = true;
         systemd = {

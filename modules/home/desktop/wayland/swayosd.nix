@@ -10,6 +10,8 @@
     bindle = [
       ", XF86AudioRaiseVolume, exec, $osdclient --output-volume raise"
       ", XF86AudioLowerVolume, exec, $osdclient --output-volume lower"
+      ", Prior, exec, $osdclient --output-volume raise"
+      ", Next, exec, $osdclient --output-volume lower"
       ", XF86AudioMute, exec, $osdclient --output-volume mute-toggle"
       ", XF86AudioMicMute, exec, $osdclient --input-volume mute-toggle"
       ", XF86MonBrightnessUp, exec, $osdclient --brightness raise"
