@@ -87,6 +87,7 @@
               "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
               "browser.ctrlTab.sortByRecentlyUsed" = true;
               "browser.fullscreen.autohide" = false;
+              "browser.tabs.closeWindowWithLastTab" = true;
             };
             userChrome = ''
               /* Alduin Theme */
