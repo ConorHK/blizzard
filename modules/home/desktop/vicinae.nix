@@ -78,7 +78,7 @@
           escape_key_behavior = "navigate_back";
           launcher_window = {
             opacity = 1;
-            layer_shell.keyboard_interactivity = "on_demand";
+            layer_shell.keyboard_interactivity = "exclusive";
           };
         };
       };
