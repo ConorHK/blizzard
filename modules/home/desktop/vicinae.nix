@@ -78,7 +78,13 @@
           escape_key_behavior = "navigate_back";
           launcher_window = {
             opacity = 1;
-            layer_shell.keyboard_interactivity = "exclusive";
+            layer_shell = {
+              keyboard_interactivity = "exclusive";
+              # Vicinae defaults to the 'top' layer, which Hyprland renders
+              # *below* fullscreen windows - so fullscreen games hide the
+              # launcher. 'overlay' renders above fullscreen.
+              layer = "overlay";
+            };
           };
         };
       };
