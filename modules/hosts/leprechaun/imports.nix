@@ -13,6 +13,7 @@
     actual-budget
     audiobookshelf
     calibre
+    dawarich
     duckdns
     github-nix-access
     github-runner
