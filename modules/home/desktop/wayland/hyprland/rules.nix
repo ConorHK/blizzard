@@ -15,7 +15,7 @@
       "float on, match:class ^(firefox)$, match:title ^(Picture-in-Picture)$"
 
       # Float only the Steam Friends List; let the main window tile
-      "float on, match:class ^(steam)$, match:title ^(Friends List)$"
+      "float on, match:class ^(steam)$, match:initial_title ^(Friends List)$"
       "float on, match:class com.saivert.pwvucontrol"
       "center on, match:class com.saivert.pwvucontrol"
     ];
