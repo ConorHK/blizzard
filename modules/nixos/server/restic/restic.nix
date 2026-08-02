@@ -52,8 +52,11 @@ _: {
           restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
         };
 
-        systemd.services.restic-backups-service-data.unitConfig.OnFailure =
-          "restic-backups-notify-failure.service";
+        systemd.services.restic-backups-service-data = {
+          unitConfig.OnFailure = "restic-backups-notify-failure.service";
+          # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
+          serviceConfig.Nice = 19;
+        };
 
         systemd.services.restic-backups-notify-failure = {
           description = "Notify restic backup failure via ntfy";
@@ -88,8 +91,11 @@ _: {
           ];
           extraBackupArgs = [
             "--compression"
-            "max"
+            "auto"
             "--cleanup-cache"
+            # One reader at a time; spinning ZFS pool seeks poorly under parallel reads
+            "--read-concurrency"
+            "1"
           ];
           # `restic unlock` clears stale locks left by an interrupted run;
           # otherwise every later backup fails silently on the lock.

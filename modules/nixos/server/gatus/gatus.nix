@@ -24,11 +24,11 @@ _: {
               success-threshold = 1;
             };
           };
-          # Cover the 06:00 autoUpgrade + reboot window and the slowest service's
-          # post-restart recovery (audiobookshelf's library scan) so it doesn't page.
+          # Span the 03:00 restic run (audiobookshelf blips under backup I/O)
+          # through the 06:00-07:00 autoUpgrade reboot window.
           maintenance = {
-            start = "06:00";
-            duration = "120m";
+            start = "03:00";
+            duration = "240m";
             timezone = "Europe/Dublin";
           };
 
