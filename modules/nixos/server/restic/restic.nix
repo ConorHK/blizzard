@@ -76,6 +76,8 @@ _: {
           inherit (cfg) repository paths;
           passwordFile = config.age.secrets.restic-password.path;
           environmentFile = config.age.secrets.restic-env.path;
+          # Emit progress to the journal; restic is otherwise silent without a TTY
+          progressFps = 0.1;
           # Keep well clear of the 06:00-07:00 autoUpgrade reboot window: a
           # reboot mid-backup leaves a stale repo lock and the interrupted unit
           # is "stopped", not "failed", so OnFailure would never alert about it.
