@@ -100,7 +100,7 @@ in
           dawarich-app = {
             containerConfig = {
               # renovate: datasource=docker depName=docker.io/freikin/dawarich
-              image = "docker.io/freikin/dawarich:1.10.3";
+              image = "docker.io/freikin/dawarich:1.11.0";
               entrypoint = "web-entrypoint.sh";
               exec = [
                 "bin/rails"
