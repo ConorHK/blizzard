@@ -8,7 +8,18 @@ in
 {
   flake.monitoringChecks.audiobookshelf = {
     name = "audiobookshelf";
-    url = "https://${url}";
+    # `/healthcheck` is a bare 200; `/` serves the whole client app, which is
+    # what timed out under backup I/O.
+    url = "https://${url}/healthcheck";
+    timeout = "30s";
+    # Covers the 03:00 restic run, overlapping the 06:00 global reboot window
+    # so there's no gap between the two.
+    maintenanceWindows = [
+      {
+        start = "02:55";
+        duration = "195m";
+      }
+    ];
   };
   flake.modules.nixos.audiobookshelf = {
     networking.firewall.allowedTCPPorts = [ (lib.toInt port) ];

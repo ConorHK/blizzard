@@ -1,6 +1,11 @@
 _: {
   flake.modules.nixos.gatus =
-    { config, monitoringChecks, ... }:
+    {
+      config,
+      lib,
+      monitoringChecks,
+      ...
+    }:
     {
       age.secrets.gatus-ntfy-topic = {
         rekeyFile = ./secrets/gatus-ntfy-topic.age;
@@ -24,23 +29,38 @@ _: {
               success-threshold = 1;
             };
           };
-          # Span the 03:00 restic run (audiobookshelf blips under backup I/O)
-          # through the 06:00-07:00 autoUpgrade reboot window.
+          # The autoUpgrade reboot only — this silences every endpoint, so
+          # service-specific blips belong in that check's `maintenanceWindows`.
           maintenance = {
-            start = "03:00";
-            duration = "240m";
+            start = "06:00";
+            duration = "70m";
             timezone = "Europe/Dublin";
           };
 
-          endpoints = map (check: {
-            inherit (check)
-              name
-              url
-              interval
-              conditions
-              ;
-            alerts = [ { type = "ntfy"; } ];
-          }) monitoringChecks;
+          endpoints = map (
+            check:
+            {
+              inherit (check)
+                name
+                url
+                interval
+                conditions
+                ;
+              alerts = [ { type = "ntfy"; } ];
+            }
+            // lib.optionalAttrs (check.timeout != null) {
+              client.timeout = check.timeout;
+            }
+            // lib.optionalAttrs (check.maintenanceWindows != [ ]) {
+              maintenance-windows = map (
+                window:
+                {
+                  inherit (window) start duration timezone;
+                }
+                // lib.optionalAttrs (window.every != [ ]) { inherit (window) every; }
+              ) check.maintenanceWindows;
+            }
+          ) monitoringChecks;
         };
       };
     };

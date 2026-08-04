@@ -16,7 +16,12 @@
         persistent = true;
       };
 
-      optimise.automatic = true;
+      optimise = {
+        automatic = true;
+        # The 03:45 default plus 30min jitter lands on 04:00-04:15, colliding
+        # with leprechaun's 03:00 restic run; both are random-read heavy.
+        dates = [ "23:15" ];
+      };
 
       settings = {
         experimental-features = "nix-command flakes pipe-operators";
