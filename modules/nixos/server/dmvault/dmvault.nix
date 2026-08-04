@@ -25,12 +25,17 @@ in
         owner = "containers";
       };
 
-      # Own both dirs as `containers` (so rootless podman/datomic can create the
-      # DB subdirs) at 0755 (so the `nginx` user can traverse in and read the
-      # homebrew file). Ordering is safe: tmpfiles runs at early boot, before the
-      # lingering containers-user services start the quadlet units.
+      # Create every bind-mount source up front. Rootless podman 5.x does NOT
+      # auto-create missing `-v` source dirs — it fails with `statfs ... no such
+      # file or directory` (exit 125) — so datomic's `data`/`logs` must exist
+      # before it starts. All owned by `containers` so podman can write, at 0755
+      # so the `nginx` user can also traverse in to read the homebrew file.
+      # Ordering is safe: tmpfiles runs at early boot, before the lingering
+      # containers-user services start the quadlet units.
       systemd.tmpfiles.rules = [
         "d ${dataDir} 0755 containers containers - -"
+        "d ${dataDir}/data 0755 containers containers - -"
+        "d ${dataDir}/logs 0755 containers containers - -"
         "d ${homebrewDir} 0755 containers containers - -"
       ];
 
@@ -44,8 +49,8 @@ in
           # container, which podman gives the network alias `datomic` on the
           # shared network. This mirrors the upstream docker-compose service name.
           datomic.containerConfig = {
-            # Upstream is unmaintained and only publishes a rolling `latest`.
-            image = "docker.io/orcpub/datomic:latest";
+            # renovate: datasource=docker depName=docker.io/orcpub/datomic
+            image = "docker.io/orcpub/datomic:release-2.4.0.28";
             volumes = [
               "${dataDir}/data:/data"
               "${dataDir}/logs:/logs"
@@ -58,13 +63,23 @@ in
 
           dmvault-app = {
             containerConfig = {
-              image = "docker.io/orcpub/orcpub:latest";
+              # renovate: datasource=docker depName=docker.io/orcpub/orcpub
+              # This repo publishes NO `latest` tag — only `release-*` tags.
+              image = "docker.io/orcpub/orcpub:release-v2.5.0.27";
               publishPorts = [ "127.0.0.1:${toString port}:${toString port}" ];
-              # Provides DATOMIC_URL (embeds the DB password), SIGNATURE, and
-              # EMAIL_SECRET_KEY (the Resend API key) — all sensitive.
+              # Secret provides DATOMIC_PASSWORD, SIGNATURE, and EMAIL_SECRET_KEY
+              # (the Resend API key). The DB password is joined to the URL by
+              # orcpub itself — config.clj appends `?password=<DATOMIC_PASSWORD>`
+              # whenever DATOMIC_URL contains no `password=`.
               environmentFiles = [ config.age.secrets.dmvault-secrets.path ];
               environments = {
                 PORT = toString port;
+                # Kept in code (not the secret) so the scheme can't be mistyped:
+                # orcpub uses this string verbatim, so the mandatory `datomic:`
+                # scheme prefix, the `free` protocol (matching the transactor),
+                # and the `datomic` host (the DB container's network alias) must
+                # all be exact. No password here — orcpub appends it (see above).
+                DATOMIC_URL = "datomic:free://datomic:4334/orcpub";
                 # Resend transactional relay over STARTTLS on 587.
                 EMAIL_SERVER_URL = "smtp.resend.com";
                 EMAIL_SERVER_PORT = "587";
