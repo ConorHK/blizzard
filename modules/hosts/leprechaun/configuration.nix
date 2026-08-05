@@ -30,12 +30,15 @@
         hostId = "748fda6c";
       };
 
-      services.sanoid.datasets."storage/data" = {
-        autosnap = true;
-        autoprune = true;
-        hourly = 24;
-        daily = 7;
-        monthly = 3;
+      services.sanoid = {
+        enable = true;
+        datasets."storage/data" = {
+          autosnap = true;
+          autoprune = true;
+          hourly = 24;
+          daily = 7;
+          monthly = 3;
+        };
       };
 
       users.mutableUsers = false;
