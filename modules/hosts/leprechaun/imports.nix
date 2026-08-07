@@ -29,6 +29,7 @@
     restic
     satisfactory
     server-users
+    smartd
     systemd-boot
     voice
     wireguard-gateway
