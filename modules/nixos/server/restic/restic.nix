@@ -52,23 +52,76 @@ _: {
           restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
         };
 
-        systemd.services.restic-backups-service-data = {
-          unitConfig.OnFailure = "restic-backups-notify-failure.service";
-          # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
-          serviceConfig.Nice = 19;
-        };
+        systemd = {
+          services = {
+            restic-backups-service-data = {
+              unitConfig.OnFailure = "restic-backups-notify-failure.service";
+              # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
+              serviceConfig.Nice = 19;
+            };
 
-        systemd.services.restic-backups-notify-failure = {
-          description = "Notify restic backup failure via ntfy";
-          serviceConfig = {
-            Type = "oneshot";
-            EnvironmentFile = config.age.secrets.restic-ntfy-topic.path;
+            restic-backups-notify-failure = {
+              description = "Notify restic backup failure via ntfy";
+              serviceConfig = {
+                Type = "oneshot";
+                EnvironmentFile = config.age.secrets.restic-ntfy-topic.path;
+              };
+              script = ''
+                ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
+                  -H "Content-Type: application/json" \
+                  -d "{\"topic\": \"$NTFY_TOPIC\", \"title\": \"Backup failed on ${config.networking.hostName}\", \"message\": \"restic backup service-data failed — check journalctl -u restic-backups-service-data\", \"priority\": 4, \"tags\": [\"warning\"]}"
+              '';
+            };
+
+            restic-backups-freshness = {
+              description = "Alert if the newest restic snapshot is stale";
+              # Root, not the `containers` backup user: restic-ntfy-topic is root-owned.
+              serviceConfig = {
+                Type = "oneshot";
+                EnvironmentFile = [
+                  config.age.secrets.restic-env.path
+                  config.age.secrets.restic-ntfy-topic.path
+                ];
+                Environment = [
+                  "RESTIC_REPOSITORY=${cfg.repository}"
+                  "RESTIC_PASSWORD_FILE=${config.age.secrets.restic-password.path}"
+                ];
+              };
+              script = ''
+                set -uo pipefail
+                alert() {
+                  ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
+                    -H "Content-Type: application/json" \
+                    -d "$(${pkgs.jq}/bin/jq -n --arg topic "$NTFY_TOPIC" --arg msg "$1" \
+                      '{topic: $topic, title: "Backup stale on ${config.networking.hostName}", message: $msg, priority: 4, tags: ["warning"]}')"
+                }
+                newest=$(${pkgs.restic}/bin/restic snapshots --json --latest 1 2>/dev/null \
+                  | ${pkgs.jq}/bin/jq -r 'max_by(.time).time // empty')
+                if [ -z "$newest" ]; then
+                  alert "restic reports no snapshots (repo unreachable or empty) — check journalctl -u restic-backups-service-data"
+                  exit 0
+                fi
+                age=$(( $(${pkgs.coreutils}/bin/date +%s) - $(${pkgs.coreutils}/bin/date -d "$newest" +%s) ))
+                # 26h: one daily backup plus margin for a slow run.
+                if [ "$age" -gt 93600 ]; then
+                  alert "newest snapshot is $((age / 3600))h old — backup has not run"
+                fi
+              '';
+            };
           };
-          script = ''
-            ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
-              -H "Content-Type: application/json" \
-              -d "{\"topic\": \"$NTFY_TOPIC\", \"title\": \"Backup failed on ${config.networking.hostName}\", \"message\": \"restic backup service-data failed — check journalctl -u restic-backups-service-data\", \"priority\": 4, \"tags\": [\"warning\"]}"
-          '';
+
+          # Dead-man's switch: OnFailure only fires when a run *fails*. A timer that
+          # never triggers (host off at 03:00, systemd wedged) produces no backup and
+          # no alert. This checks the repo's newest snapshot age daily and pages if
+          # it's stale — catching silent non-runs and empty backups alike. Reads the
+          # real repo, so it also verifies the backup exists, not just that a unit ran.
+          timers.restic-backups-freshness = {
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnCalendar = "10:00";
+              Persistent = true;
+            };
+          };
         };
 
         services.restic.backups.service-data = {
@@ -76,6 +129,15 @@ _: {
           inherit (cfg) repository paths;
           passwordFile = config.age.secrets.restic-password.path;
           environmentFile = config.age.secrets.restic-env.path;
+          # Create the repo on first run instead of failing. Idempotent, and the
+          # difference between a working DR restore and a silent failure at the
+          # worst possible time if the B2 bucket ever has to be recreated.
+          initialize = true;
+          # An unverified backup is a hope, not a backup. `restic check` validates
+          # repo structure every run; --read-data-subset reads and re-hashes a
+          # rotating 2.5% of pack files so the whole repo's *data* is verified over
+          # ~40 days without the I/O cost of reading it all nightly.
+          checkOpts = [ "--read-data-subset=2.5%" ];
           # Emit progress to the journal; restic is otherwise silent without a TTY
           progressFps = 0.1;
           # Keep well clear of the 06:00-07:00 autoUpgrade reboot window: a
