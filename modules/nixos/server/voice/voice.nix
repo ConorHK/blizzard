@@ -22,7 +22,7 @@
 
           kokoro.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/remsky/kokoro-fastapi-gpu
-            image = "ghcr.io/remsky/kokoro-fastapi-gpu:v0.7.1";
+            image = "ghcr.io/remsky/kokoro-fastapi-gpu:v0.7.2";
             networks = [ "kokoro.network" ];
             devices = [ "nvidia.com/gpu=all" ];
             environments = {
