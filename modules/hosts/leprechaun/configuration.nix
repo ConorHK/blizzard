@@ -30,14 +30,23 @@
         hostId = "748fda6c";
       };
 
-      services.sanoid = {
-        enable = true;
-        datasets."storage/data" = {
-          autosnap = true;
-          autoprune = true;
-          hourly = 24;
-          daily = 7;
-          monthly = 3;
+      services = {
+        sanoid = {
+          enable = true;
+          datasets."storage/data" = {
+            autosnap = true;
+            autoprune = true;
+            hourly = 24;
+            daily = 7;
+            monthly = 3;
+          };
+        };
+
+        # A single-disk pool can't self-heal, but scrub still surfaces silent
+        # bitrot early — turning "restic restored a corrupt file" into advance warning.
+        zfs.autoScrub = {
+          enable = true;
+          interval = "weekly";
         };
       };
 
