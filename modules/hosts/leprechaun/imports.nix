@@ -14,7 +14,6 @@
     audiobookshelf
     calibre
     dawarich
-    dmvault
     duckdns
     github-nix-access
     github-runner
