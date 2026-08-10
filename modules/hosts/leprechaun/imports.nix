@@ -15,6 +15,7 @@
     calibre
     dawarich
     duckdns
+    glance
     github-nix-access
     github-runner
     immich
