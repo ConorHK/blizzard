@@ -49,30 +49,12 @@ _: {
                         }
                         {
                           type = "rss";
-                          title = "Ars Technica";
-                          style = "vertical-list";
-                          "single-line-titles" = false;
-                          limit = 12;
-                          "collapse-after" = -1;
-                          feeds = [ { url = "https://feeds.arstechnica.com/arstechnica/index"; } ];
-                        }
-                        {
-                          type = "rss";
                           title = "404 Media";
                           style = "vertical-list";
                           "single-line-titles" = false;
                           limit = 12;
                           "collapse-after" = -1;
                           feeds = [ { url = "https://www.404media.co/rss/"; } ];
-                        }
-                        {
-                          type = "rss";
-                          title = "BBC World";
-                          style = "vertical-list";
-                          "single-line-titles" = false;
-                          limit = 15;
-                          "collapse-after" = -1;
-                          feeds = [ { url = "https://feeds.bbci.co.uk/news/world/rss.xml"; } ];
                         }
                         {
                           type = "rss";
@@ -87,6 +69,30 @@ _: {
                               headers."User-Agent" = "Mozilla/5.0 (compatible; Glance RSS)";
                             }
                           ];
+                        }
+                        {
+                          type = "rss";
+                          title = "AP News";
+                          style = "vertical-list";
+                          "single-line-titles" = false;
+                          limit = 15;
+                          "collapse-after" = -1;
+                          # AP discontinued official public RSS; Google News scoped to
+                          # apnews.com is the reliable stand-in.
+                          feeds = [
+                            {
+                              url = "https://news.google.com/rss/search?q=when:24h+site:apnews.com&hl=en-US&gl=US&ceid=US:en";
+                            }
+                          ];
+                        }
+                        {
+                          type = "rss";
+                          title = "Al Jazeera";
+                          style = "vertical-list";
+                          "single-line-titles" = false;
+                          limit = 15;
+                          "collapse-after" = -1;
+                          feeds = [ { url = "https://www.aljazeera.com/xml/rss/all.xml"; } ];
                         }
                       ];
                     }
