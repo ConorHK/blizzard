@@ -19,6 +19,9 @@
       };
       users.groups.containers = { };
 
+      # Runtime dir lets home-manager's system-run activation reach the user bus so sd-switch restarts changed containers.
+      systemd.services.home-manager-containers.environment.XDG_RUNTIME_DIR = "/run/user/%U";
+
       environment.shellAliases = {
         podman-tui = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers) /etc/profiles/per-user/containers/bin/podman-tui";
         asc = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers)";
