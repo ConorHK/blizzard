@@ -6,6 +6,7 @@
 
     agenix
     determinate-nix
+    intrusion
     network
     nix
     root
