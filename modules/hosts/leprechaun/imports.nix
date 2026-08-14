@@ -28,6 +28,7 @@
     qbittorrent
     quadlet
     restic
+    restic-secrets
     satisfactory
     server-users
     smartd

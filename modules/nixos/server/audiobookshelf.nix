@@ -1,4 +1,4 @@
-{ lib, ... }:
+_:
 let
   configDir = "/storage/data/audiobookshelf";
   mediaDir = "/storage/media";
@@ -22,8 +22,6 @@ in
     ];
   };
   flake.modules.nixos.audiobookshelf = {
-    networking.firewall.allowedTCPPorts = [ (lib.toInt port) ];
-
     home-manager.users.containers.virtualisation.quadlet = {
       networks.audiobookshelf.networkConfig = { };
 

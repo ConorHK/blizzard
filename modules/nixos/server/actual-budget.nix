@@ -10,8 +10,6 @@ in
   };
 
   flake.modules.nixos.actual-budget = {
-    networking.firewall.allowedTCPPorts = [ 5006 ];
-
     home-manager.users.containers.virtualisation.quadlet = {
       networks.actual-budget.networkConfig = { };
 

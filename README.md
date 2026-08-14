@@ -31,7 +31,7 @@
 | `voice` | wyoming-whisper, kokoro-fastapi, wyoming-openai | 10300, 10200 | — |
 | `wireguard-gateway` | wireguard wg0 | 51820 (UDP) | — |
 
-`immich`, `photon` and `voice` are not opened in the firewall — they are reachable over the tailnet or through nginx only. `monitor.goosebox.org` proxies to gatus on bananach.
+The Ports column is what each service listens on, not what is reachable. Only `music-assistant` (host network), `satisfactory` and `wireguard-gateway` are opened in the firewall; everything else binds `127.0.0.1` and is reachable through nginx or over the tailnet. `monitor.goosebox.org` proxies to gatus on bananach.
 
 ## puca services
 
@@ -79,10 +79,26 @@ systemctl start tripwire-fast          # run now
 rm /var/lib/tripwire/baseline-fast     # start a fresh baseline
 ```
 
-### tests
-
-`nix build .#checks.x86_64-linux.tripwire` boots a VM and drives the whole state machine: baseline creation, clean re-runs, setuid and account drift, re-baselining so a change reports once, and the fast/full split. It asserts on the delivered alert — title, priority, tags, diff body — by pointing `blizzard.alerts.endpoint` at a recorder inside the VM, so nothing leaves the machine and no secret is needed. `nix flake check` runs it; a nixpkgs bump re-runs it.
-
 ### auditd
 
 Evaluated and deliberately not used — it does not work correctly against this deployment's login path. Do not re-add it without revisiting that.
+
+## tests
+
+`nix flake check` runs everything below. The VM tests boot a real machine, so they
+assert behaviour a build cannot: alerts are captured by a recorder inside the VM
+(`blizzard.alerts.endpoint`), so nothing leaves the machine and no secret is needed.
+
+| Check | Asserts | Runtime |
+|-------|---------|---------|
+| `tripwire` | baseline creation, clean re-runs, setuid and account drift, re-baselining so a change reports once, the fast/full split | ~30s |
+| `auth-alerts` | every classifier branch with its title/priority/tags, that tailscaled chatter cannot forge an sshd alert, the ten-per-window cap | ~20s |
+| `alerts` | the `alert-failure@` OnFailure template pages | ~20s |
+| `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
+| `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
+| `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
+
+Two invariants are enforced as NixOS assertions instead, so they fail the host build:
+
+- **Firewall vs. published ports** — a port opened in the firewall whose container binds `127.0.0.1` only is a stated intent the deployment does not have. Fails the build; there is no opt-out.
+- **Monitoring coverage** — every public nginx vhost needs a `monitoringChecks` entry, or an explicit `blizzard.monitoring.exempt` entry saying why not.

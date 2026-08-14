@@ -6,6 +6,9 @@
 
       restic.repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
 
+      # gatus cannot usefully page about its own UI being down.
+      blizzard.monitoring.exempt = [ "monitor.goosebox.org" ];
+
       services.nginx.virtualHosts."monitor.goosebox.org" = {
         enableACME = true;
         forceSSL = true;

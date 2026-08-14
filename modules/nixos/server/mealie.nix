@@ -10,8 +10,6 @@ in
   };
 
   flake.modules.nixos.mealie = {
-    networking.firewall.allowedTCPPorts = [ 9925 ];
-
     home-manager.users.containers.virtualisation.quadlet = {
       networks.mealie.networkConfig = { };
 

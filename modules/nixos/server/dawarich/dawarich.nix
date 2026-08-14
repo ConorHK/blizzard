@@ -66,8 +66,6 @@ in
         owner = "containers";
       };
 
-      networking.firewall.allowedTCPPorts = [ port ];
-
       home-manager.users.containers.virtualisation.quadlet = {
         networks.dawarich.networkConfig = { };
 

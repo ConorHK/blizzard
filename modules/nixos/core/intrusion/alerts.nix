@@ -25,7 +25,7 @@ _: {
 
         topicFile = lib.mkOption {
           type = lib.types.path;
-          description = "File sourced for NTFY_TOPIC.";
+          description = "File sourced for NTFY_TOPIC; override per-call with ALERT_TOPIC_FILE.";
         };
       };
 
@@ -52,7 +52,7 @@ _: {
 
             NTFY_TOPIC=""
             # shellcheck source=/dev/null
-            . ${cfg.topicFile}
+            . "''${ALERT_TOPIC_FILE:-${cfg.topicFile}}"
 
             jq -n \
               --arg topic "$NTFY_TOPIC" \

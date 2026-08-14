@@ -19,8 +19,10 @@
       };
       users.groups.containers = { };
 
-      # Runtime dir lets home-manager's system-run activation reach the user bus so sd-switch restarts changed containers.
-      systemd.services.home-manager-containers.environment.XDG_RUNTIME_DIR = "/run/user/%U";
+      # A PAM session gets the activation the containers user's own XDG_RUNTIME_DIR,
+      # so sd-switch reaches its bus and restarts changed containers. `%U` cannot be
+      # used here: for a system unit it is always 0, regardless of User=.
+      systemd.services.home-manager-containers.serviceConfig.PAMName = "systemd-user";
 
       environment.shellAliases = {
         podman-tui = "sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers) /etc/profiles/per-user/containers/bin/podman-tui";

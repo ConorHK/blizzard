@@ -104,8 +104,6 @@ _: {
         };
       in
       {
-        networking.firewall.allowedTCPPorts = [ port ];
-
         home-manager.users.containers.virtualisation.quadlet = {
           networks.glance.networkConfig = { };
 

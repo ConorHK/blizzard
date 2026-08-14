@@ -26,11 +26,6 @@ in
     };
 
     modules.nixos.calibre = _: {
-      networking.firewall.allowedTCPPorts = [
-        portCalibreWeb
-        portShelfmark
-      ];
-
       home-manager.users.containers.virtualisation.quadlet = {
         networks.calibre.networkConfig = { };
 

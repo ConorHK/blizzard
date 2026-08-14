@@ -23,11 +23,6 @@ in
     };
 
     modules.nixos.qbittorrent = _: {
-      networking.firewall.allowedTCPPorts = [
-        qbittorrentPort
-        qbitManagePort
-      ];
-
       home-manager.users.containers.virtualisation.quadlet = {
         networks.qbittorrent.networkConfig = { };
 

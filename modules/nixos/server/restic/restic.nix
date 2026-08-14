@@ -36,22 +36,25 @@ _: {
           default = [ ];
           description = "Container services to stop before backup and restart after.";
         };
+
+        passwordFile = lib.mkOption {
+          type = lib.types.path;
+          description = "File containing the repository password.";
+        };
+
+        environmentFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.path;
+          default = null;
+          description = "Environment file holding repository backend credentials.";
+        };
+
+        ntfyTopicFile = lib.mkOption {
+          type = lib.types.path;
+          description = "File sourced for the NTFY_TOPIC backup alerts go to.";
+        };
       };
 
       config = {
-        age.secrets = {
-          restic-password = {
-            rekeyFile = ./secrets/restic-password.age;
-            owner = "containers";
-          };
-
-          restic-env = {
-            rekeyFile = ./secrets/restic-env.age;
-            owner = "containers";
-          };
-          restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
-        };
-
         systemd = {
           services = {
             restic-backups-service-data = {
@@ -64,39 +67,41 @@ _: {
               description = "Notify restic backup failure via ntfy";
               serviceConfig = {
                 Type = "oneshot";
-                EnvironmentFile = config.age.secrets.restic-ntfy-topic.path;
+                Environment = "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}";
+                ExecStart = "${lib.getExe config.blizzard.alerts.send} 'Backup failed' 'restic backup service-data failed — check journalctl -u restic-backups-service-data' 4 warning";
               };
-              script = ''
-                ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
-                  -H "Content-Type: application/json" \
-                  -d "{\"topic\": \"$NTFY_TOPIC\", \"title\": \"Backup failed on ${config.networking.hostName}\", \"message\": \"restic backup service-data failed — check journalctl -u restic-backups-service-data\", \"priority\": 4, \"tags\": [\"warning\"]}"
-              '';
             };
 
             restic-backups-freshness = {
               description = "Alert if the newest restic snapshot is stale";
-              # Root, not the `containers` backup user: restic-ntfy-topic is root-owned.
+              # The watchdog itself must not fail silently.
+              unitConfig.OnFailure = "alert-failure@restic-backups-freshness.service";
+              # Root, not the `containers` backup user: the ntfy topic is root-owned.
               serviceConfig = {
                 Type = "oneshot";
-                EnvironmentFile = [
-                  config.age.secrets.restic-env.path
-                  config.age.secrets.restic-ntfy-topic.path
-                ];
+                EnvironmentFile = lib.optional (cfg.environmentFile != null) cfg.environmentFile;
+                # Units get no $HOME, and restic refuses to run without a cache
+                # location — without this it fails before it can ever report.
+                CacheDirectory = "restic-freshness";
+                CacheDirectoryMode = "0700";
                 Environment = [
                   "RESTIC_REPOSITORY=${cfg.repository}"
-                  "RESTIC_PASSWORD_FILE=${config.age.secrets.restic-password.path}"
+                  "RESTIC_PASSWORD_FILE=${cfg.passwordFile}"
+                  "RESTIC_CACHE_DIR=%C/restic-freshness"
+                  "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}"
                 ];
               };
               script = ''
                 set -uo pipefail
                 alert() {
-                  ${pkgs.curl}/bin/curl -fsS https://ntfy.sh \
-                    -H "Content-Type: application/json" \
-                    -d "$(${pkgs.jq}/bin/jq -n --arg topic "$NTFY_TOPIC" --arg msg "$1" \
-                      '{topic: $topic, title: "Backup stale on ${config.networking.hostName}", message: $msg, priority: 4, tags: ["warning"]}')"
+                  ${lib.getExe config.blizzard.alerts.send} "Backup stale" "$1" 4 warning
                 }
-                newest=$(${pkgs.restic}/bin/restic snapshots --json --latest 1 2>/dev/null \
-                  | ${pkgs.jq}/bin/jq -r 'max_by(.time).time // empty')
+                # `|| true`: the generated job script runs with -e, so an
+                # unreachable or uninitialized repo would abort before alerting.
+                # restic's stderr goes to the journal, not /dev/null, so the
+                # reason an alert fired is recoverable afterwards.
+                newest=$(${pkgs.restic}/bin/restic snapshots --json --latest 1 \
+                  | ${pkgs.jq}/bin/jq -r 'max_by(.time).time // empty' || true)
                 if [ -z "$newest" ]; then
                   alert "restic reports no snapshots (repo unreachable or empty) — check journalctl -u restic-backups-service-data"
                   exit 0
@@ -126,9 +131,12 @@ _: {
 
         services.restic.backups.service-data = {
           user = "containers";
-          inherit (cfg) repository paths;
-          passwordFile = config.age.secrets.restic-password.path;
-          environmentFile = config.age.secrets.restic-env.path;
+          inherit (cfg)
+            repository
+            paths
+            passwordFile
+            environmentFile
+            ;
           # Create the repo on first run instead of failing. Idempotent, and the
           # difference between a working DR restore and a silent failure at the
           # worst possible time if the B2 bucket ever has to be recreated.
