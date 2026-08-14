@@ -54,6 +54,7 @@ Host-based detection on all five hosts, imported via `modules/nixos/core/imports
 | Module | Detects | When |
 |--------|---------|------|
 | `alerts` | provides `alert-send` and the `alert-failure@` OnFailure template | — |
+| `alerts-secret` | points `alerts` at the `alert-ntfy-topic` agenix secret | — |
 | `auth-alerts` | Tailscale SSH grants/denials, sshd logins, sudo/su failures | live, journal follow |
 | `tripwire-fast` | credentials, keys, setuid binaries | every 15 min |
 | `tripwire-full` | the fast set plus listeners, units, modules | daily 01:30 |
@@ -77,6 +78,10 @@ Builds a manifest of live state, diffs it against `/var/lib/tripwire/baseline-<m
 systemctl start tripwire-fast          # run now
 rm /var/lib/tripwire/baseline-fast     # start a fresh baseline
 ```
+
+### tests
+
+`nix build .#checks.x86_64-linux.tripwire` boots a VM and drives the whole state machine: baseline creation, clean re-runs, setuid and account drift, re-baselining so a change reports once, and the fast/full split. It asserts on the delivered alert — title, priority, tags, diff body — by pointing `blizzard.alerts.endpoint` at a recorder inside the VM, so nothing leaves the machine and no secret is needed. `nix flake check` runs it; a nixpkgs bump re-runs it.
 
 ### auditd
 

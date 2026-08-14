@@ -83,7 +83,8 @@ _: {
 
             # Container image layers ship their own setuid binaries and churn on
             # every pull; the store can't hold setuid files at all.
-            for root in ${lib.escapeShellArgs cfg.scanRoots}; do
+            roots=(${lib.escapeShellArgs cfg.scanRoots})
+            for root in "''${roots[@]}"; do
               [ -d "$root" ] || continue
               find "$root" -xdev \
                 \( -path /nix/store -o -path '*/.local/share/containers' -o -path /var/lib/containers \) -prune \

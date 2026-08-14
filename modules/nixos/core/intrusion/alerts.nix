@@ -6,21 +6,35 @@ _: {
       pkgs,
       ...
     }:
+    let
+      cfg = config.blizzard.alerts;
+    in
     {
-      options.blizzard.alerts.send = lib.mkOption {
-        type = lib.types.package;
-        readOnly = true;
-        description = "alert-send <title> <message> [priority] [comma-tags] — pushes to the ntfy security topic.";
+      options.blizzard.alerts = {
+        send = lib.mkOption {
+          type = lib.types.package;
+          readOnly = true;
+          description = "alert-send <title> <message> [priority] [comma-tags] — pushes to the ntfy security topic.";
+        };
+
+        endpoint = lib.mkOption {
+          type = lib.types.str;
+          default = "https://ntfy.sh";
+          description = "Base URL alerts are POSTed to.";
+        };
+
+        topicFile = lib.mkOption {
+          type = lib.types.path;
+          description = "File sourced for NTFY_TOPIC.";
+        };
       };
 
       config = {
-        age.secrets.alert-ntfy-topic.rekeyFile = ./secrets/alert-ntfy-topic.age;
-
         systemd.services."alert-failure@" = {
           description = "Report a failed unit via ntfy";
           serviceConfig = {
             Type = "oneshot";
-            ExecStart = "${lib.getExe config.blizzard.alerts.send} 'Unit failed' '%i failed — check journalctl -u %i' 4 warning";
+            ExecStart = "${lib.getExe cfg.send} 'Unit failed' '%i failed — check journalctl -u %i' 4 warning";
           };
         };
 
@@ -38,7 +52,7 @@ _: {
 
             NTFY_TOPIC=""
             # shellcheck source=/dev/null
-            . ${config.age.secrets.alert-ntfy-topic.path}
+            . ${cfg.topicFile}
 
             jq -n \
               --arg topic "$NTFY_TOPIC" \
@@ -48,7 +62,7 @@ _: {
               --arg tags "$tags" \
               '{topic: $topic, title: $title, message: $message, priority: $priority, tags: ($tags | split(","))}' \
               | curl -fsS --max-time 20 --retry 3 --retry-delay 5 -o /dev/null \
-                  -H "Content-Type: application/json" --data-binary @- https://ntfy.sh
+                  -H "Content-Type: application/json" --data-binary @- ${cfg.endpoint}
           '';
         };
       };
