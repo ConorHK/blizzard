@@ -1,22 +1,9 @@
 topLevel: {
-  flake.modules.wrapper."hyprland/hosts/dullahan".settings = {
-    input.kb_layout = "gb";
-    workspace = [
-      "1,monitor:eDP-1"
-      "2,monitor:eDP-1"
-      "3,monitor:eDP-1"
-      "4,monitor:eDP-1"
-      "5,monitor:eDP-1"
-      "6,monitor:eDP-1"
-      "7,monitor:eDP-1"
-      "8,monitor:eDP-1"
-      "9,monitor:eDP-1"
-      "10,monitor:eDP-1"
-    ];
-    monitor = [
-      "eDP-1,1920x1080@60Hz,0x0,1"
-    ];
-  };
+  hyprland.perHost.dullahan = ''
+    hl.config({ input = { kb_layout = "gb" } })
+    hl.monitor({ output = "eDP-1", mode = "1920x1080@60Hz", position = "0x0", scale = "1" })
+    for i = 1, 10 do hl.workspace_rule({ workspace = tostring(i), monitor = "eDP-1" }) end
+  '';
 
   flake.modules.homeManager."homeConfigurations/dullahan" =
     { pkgs, inputs, ... }:

@@ -1,7 +1,7 @@
 {
-  flake.modules.wrapper."hyprland/vicinae".settings.bind = [
-    "SUPER, Space, exec, vicinae toggle"
-  ];
+  hyprland.lua.vicinae = ''
+    hl.bind("SUPER + Space", hl.dsp.exec_cmd("vicinae toggle"))
+  '';
 
   flake.modules.homeManager.vicinae =
     {

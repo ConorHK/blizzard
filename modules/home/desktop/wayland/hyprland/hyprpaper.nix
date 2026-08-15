@@ -1,8 +1,4 @@
 {
-  flake.modules.wrapper."hyprland/hyprpaper".settings.exec-once = [
-    "systemctl --user start hyprpaper"
-  ];
-
   flake.modules.homeManager.hyprpaper =
     {
       pkgs,

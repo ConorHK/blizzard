@@ -1,22 +1,11 @@
 topLevel: {
-  flake.modules.wrapper."hyprland/hosts/abhartach".settings = {
-    workspace = [
-      "1,monitor:DP-1"
-      "2,monitor:DP-1"
-      "3,monitor:DP-1"
-      "4,monitor:DP-1"
-      "5,monitor:DP-1"
-      "6,monitor:DP-1"
-      "7,monitor:DP-1"
-      "8,monitor:DP-1"
-      "9,monitor:DP-2"
-      "10,monitor:DP-2"
-    ];
-    monitor = [
-      "DP-1,2560x1440@144.00Hz,0x0,1"
-      "DP-2,2560x1440@59.95Hz,2560x0,1"
-    ];
-  };
+  hyprland.perHost.abhartach = ''
+    hl.config({ input = { kb_layout = "us" } })
+    hl.monitor({ output = "DP-1", mode = "2560x1440@144.00Hz", position = "0x0", scale = "1" })
+    hl.monitor({ output = "DP-2", mode = "2560x1440@59.95Hz", position = "2560x0", scale = "1" })
+    for i = 1, 8 do hl.workspace_rule({ workspace = tostring(i), monitor = "DP-1" }) end
+    for i = 9, 10 do hl.workspace_rule({ workspace = tostring(i), monitor = "DP-2" }) end
+  '';
 
   flake.modules.homeManager."homeConfigurations/abhartach" =
     { config, ... }:

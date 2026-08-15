@@ -1,13 +1,9 @@
 {
-  flake.modules.wrapper."hyprland/alacritty".settings = {
-    bind = [
-      "SUPER, Return, exec, uwsm app -- alacritty"
-    ];
-    windowrule = [
-      "float on, match:class alacritty-popup"
-      "center on, match:class alacritty-popup"
-    ];
-  };
+  hyprland.lua.alacritty = ''
+    hl.bind("SUPER + Return", hl.dsp.exec_cmd("uwsm app -- alacritty"))
+    hl.window_rule({ match = { class = "alacritty-popup" }, float = true })
+    hl.window_rule({ match = { class = "alacritty-popup" }, center = true })
+  '';
 
   flake.modules.homeManager.alacritty = {
     programs = {

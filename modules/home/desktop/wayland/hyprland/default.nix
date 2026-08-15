@@ -1,9 +1,5 @@
 { config, ... }:
 {
-  flake.modules.wrapper."hyprland/session".settings.exec-once = [
-    "systemctl --user start hyprland-session.service"
-  ];
-
   flake.modules.homeManager.hyprland =
     {
       lib,

@@ -1,7 +1,7 @@
 {
-  flake.modules.wrapper."hyprland/firefox".settings.bind = [
-    "SUPER_SHIFT, F, exec, uwsm app -- firefox"
-  ];
+  hyprland.lua.firefox = ''
+    hl.bind("SUPER + SHIFT + F", hl.dsp.exec_cmd("uwsm app -- firefox"))
+  '';
 
   flake.modules.homeManager.firefox =
     { inputs, ... }:

@@ -1,9 +1,4 @@
 {
-  # Not wired into the hyprland config; vicinae owns SUPER+Space.
-  flake.modules.wrapper."hyprland/rofi".settings.bind = [
-    "SUPER, Space, exec, uwsm app -- rofi -show drun -mode drun"
-  ];
-
   flake.modules.homeManager.rofi =
     { pkgs, ... }:
     {

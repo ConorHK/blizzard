@@ -8,136 +8,103 @@ topLevel: {
       ...
     }:
     let
-      # Vendored from home-manager's lib.hm.generators.toHyprconf so the
-      # hyprland config renders without any home-manager involvement.
-      toHyprconf =
-        {
-          attrs,
-          indentLevel ? 0,
-          importantPrefixes ? [ "$" ],
-        }:
-        let
-          inherit (lib)
-            all
-            concatMapStringsSep
-            concatStrings
-            concatStringsSep
-            filterAttrs
-            foldl
-            generators
-            hasPrefix
-            isAttrs
-            isList
-            mapAttrsToList
-            replicate
-            ;
+      resize = pkgs.writeShellScriptBin "resize" ''
+        #!/usr/bin/env bash
 
-          initialIndent = concatStrings (replicate indentLevel "  ");
+        # Initially inspired by https://github.com/exoess
 
-          toHyprconf' =
-            indent: attrs:
-            let
-              sections = filterAttrs (_: v: isAttrs v || (isList v && all isAttrs v)) attrs;
+        # Getting some information about the current window
+        # windowinfo=$(hyprctl activewindow) removes the newlines and won't work with grep
+        hyprctl activewindow > /tmp/windowinfo
+        windowinfo=/tmp/windowinfo
 
-              mkSection =
-                n: attrs:
-                if lib.isList attrs then
-                  (concatMapStringsSep "\n" (a: mkSection n a) attrs)
-                else
-                  ''
-                    ${indent}${n} {
-                    ${toHyprconf' "  ${indent}" attrs}${indent}}
-                  '';
+        # Run slurp to get position and size
+        if ! slurp=$(${pkgs.slurp}/bin/slurp); then
+            exit
+        fi
 
-              mkFields = generators.toKeyValue {
-                listsAsDuplicateKeys = true;
-                inherit indent;
-              };
+        # Parse the output
+        pos_x=$(echo $slurp | cut -d " " -f 1 | cut -d , -f 1)
+        pos_y=$(echo $slurp | cut -d " " -f 1 | cut -d , -f 2)
+        size_x=$(echo $slurp | cut -d " " -f 2 | cut -d x -f 1)
+        size_y=$(echo $slurp | cut -d " " -f 2 | cut -d x -f 2)
 
-              allFields = filterAttrs (_: v: !(isAttrs v || (isList v && all isAttrs v))) attrs;
+        # Keep the aspect ratio intact for PiP
+        if grep "title: Picture-in-Picture" $windowinfo; then
+            old_size=$(grep "size: " $windowinfo | cut -d " " -f 2)
+            old_size_x=$(echo $old_size | cut -d , -f 1)
+            old_size_y=$(echo $old_size | cut -d , -f 2)
+            size_x=$(((old_size_x * size_y + old_size_y / 2) / old_size_y))
+            echo $old_size_x $old_size_y $size_x $size_y
+        fi
 
-              isImportantField =
-                n: _: foldl (acc: prev: if hasPrefix prev n then true else acc) false importantPrefixes;
+        # Resize and move the (now) floating window
+        grep "fullscreen: 1" $windowinfo && hyprctl dispatch fullscreen
+        grep "floating: 0" $windowinfo && hyprctl dispatch togglefloating
+        hyprctl dispatch moveactive exact $pos_x $pos_y
+        hyprctl dispatch resizeactive exact $size_x $size_y
+      '';
 
-              importantFields = filterAttrs isImportantField allFields;
+      screenshot = pkgs.writeShellScriptBin "screenshot" ''
+        #!/usr/bin/env bash
+        ${lib.getExe pkgs.grimblast} save area - | ${lib.getExe pkgs.satty} --actions-on-escape exit -f -
+      '';
 
-              fields = builtins.removeAttrs allFields (mapAttrsToList (n: _: n) importantFields);
-            in
-            mkFields importantFields
-            + concatStringsSep "\n" (mapAttrsToList mkSection sections)
-            + mkFields fields;
-        in
-        toHyprconf' initialIndent attrs;
+      # Firefox titles extension popups only after mapping, past the create-time float rule.
+      floatExtensions = pkgs.writeShellScriptBin "float-firefox-extensions" ''
+        sock="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+        ${pkgs.socat}/bin/socat -u UNIX-CONNECT:"$sock" - | while read -r line; do
+          case "$line" in
+            windowtitlev2">>"*) ;;
+            *) continue ;;
+          esac
+          payload="''${line#windowtitlev2>>}"
+          addr="''${payload%%,*}"
+          title="''${payload#*,}"
+          case "$title" in
+            "Extension: "*) ;;
+            *) continue ;;
+          esac
+          state=$(hyprctl -j clients | ${pkgs.jq}/bin/jq -r --arg a "0x$addr" \
+            '.[] | select(.address==$a) | "\(.class) \(.floating)"')
+          set -- $state
+          [ "$1" = "firefox" ] && [ "$2" = "false" ] || continue
+          hyprctl dispatch setfloating "address:0x$addr"
+          # center on the monitor's usable area; centerwindow races the float
+          geo=$(hyprctl -j clients | ${pkgs.jq}/bin/jq -r --arg a "0x$addr" \
+            '.[] | select(.address==$a) | "\(.size[0]) \(.size[1]) \(.monitor)"')
+          set -- $geo
+          w="$1"; h="$2"; mon="$3"
+          mgeo=$(hyprctl -j monitors | ${pkgs.jq}/bin/jq -r --argjson id "$mon" \
+            '.[] | select(.id==$id) | "\(.x) \(.y) \(.width) \(.height) \(.reserved[0]) \(.reserved[1]) \(.reserved[2]) \(.reserved[3])"')
+          set -- $mgeo
+          x=$(( $1 + $5 + ($3 - $5 - $7 - w) / 2 ))
+          y=$(( $2 + $6 + ($4 - $6 - $8 - h) / 2 ))
+          hyprctl dispatch movewindowpixel "exact $x $y,address:0x$addr"
+        done
+      '';
 
-      # Extends the wrappers hyprland module with a structured settings
-      # option, the same shape the fragments under flake.modules.wrapper
-      # were written for when they lived in home-manager.
-      settingsFormat =
-        { config, lib, ... }:
-        {
-          options = {
-            settings = lib.mkOption {
-              type =
-                with lib.types;
-                let
-                  valueType =
-                    nullOr (oneOf [
-                      bool
-                      int
-                      float
-                      str
-                      path
-                      (attrsOf valueType)
-                      (listOf valueType)
-                    ])
-                    // {
-                      description = "Hyprland configuration value";
-                    };
-                in
-                valueType;
-              default = { };
-              description = "Hyprland settings rendered into hypr.conf.";
-            };
+      base =
+        builtins.replaceStrings
+          [ "@resize@" "@screenshot@" "@floatExtensions@" ]
+          [ (lib.getExe resize) (lib.getExe screenshot) (lib.getExe floatExtensions) ]
+          (builtins.readFile ./hypr.lua);
 
-            importantPrefixes = lib.mkOption {
-              type = with lib.types; listOf str;
-              default = [
-                "$"
-                "bezier"
-                "name"
-                "source"
-              ];
-              description = "Prefixes of settings to render at the top of the config.";
-            };
-          };
-
-          config."hypr.conf".content = toHyprconf {
-            attrs = config.settings;
-            inherit (config) importantPrefixes;
-          };
-        };
-
-      wrapperModules = topLevel.config.flake.modules.wrapper;
+      configText =
+        lib.concatStringsSep "\n\n" (
+          lib.filter (s: s != "") (
+            [
+              base
+              (topLevel.config.hyprland.perHost.${config.networking.hostName} or "")
+            ]
+            ++ lib.attrValues topLevel.config.hyprland.lua
+          )
+        )
+        + "\n";
 
       hyprland =
         (inputs.wrappers.wrapperModules.hyprland.apply {
-          imports = [
-            settingsFormat
-            wrapperModules."hyprland/hosts/${config.networking.hostName}"
-          ]
-          ++ map (name: wrapperModules."hyprland/${name}") [
-            "alacritty"
-            "firefox"
-            "hyprpaper"
-            "keybinds"
-            "rules"
-            "screenshot"
-            "session"
-            "settings"
-            "swayosd"
-            "theme"
-            "vicinae"
-          ];
+          "hypr.conf".path = pkgs.writeText "hyprland.lua" configText;
           inherit pkgs;
         }).wrapper;
     in
