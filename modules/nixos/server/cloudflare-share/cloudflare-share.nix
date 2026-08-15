@@ -59,7 +59,7 @@ in
           autoStart = false;
           containerConfig = {
             # renovate: datasource=docker depName=docker.io/cloudflare/cloudflared
-            image = "docker.io/cloudflare/cloudflared:2026.8.1";
+            image = "docker.io/cloudflare/cloudflared:2026.8.2";
             exec = "tunnel --no-autoupdate --config /etc/cloudflared/config.yml run";
             volumes = [
               "${mkConfig name share}:/etc/cloudflared/config.yml:ro"
