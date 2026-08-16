@@ -12,8 +12,8 @@
 
         containers = {
           wyoming-whisper.containerConfig = {
-            # renovate: datasource=docker depName=rhasspy/wyoming-whisper
-            image = "rhasspy/wyoming-whisper:3.6.0";
+            # renovate: datasource=docker depName=docker.io/rhasspy/wyoming-whisper
+            image = "docker.io/rhasspy/wyoming-whisper:3.6.0";
             publishPorts = [ "${toString whisperPort}:${toString whisperPort}" ];
             volumes = [ "${dataDir}/whisper:/data" ];
             exec = "--model base.en --language en";

@@ -13,6 +13,7 @@
     actual-budget
     audiobookshelf
     calibre
+    changedetection
     dawarich
     duckdns
     glance

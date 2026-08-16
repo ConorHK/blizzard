@@ -5,8 +5,10 @@
     inputs.nixos-facter-modules.nixosModules.facter
 
     agenix
+    alerts
+    alerts-secret
     determinate-nix
-    intrusion
+    login-alerts
     network
     nix
     root

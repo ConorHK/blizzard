@@ -48,8 +48,8 @@ in
           networks.photon.networkConfig = { };
 
           containers.photon.containerConfig = {
-            # renovate: datasource=docker depName=rtuszik/photon-docker
-            image = "rtuszik/photon-docker:2.3.1";
+            # renovate: datasource=docker depName=docker.io/rtuszik/photon-docker
+            image = "docker.io/rtuszik/photon-docker:2.3.1";
             publishPorts = [ "127.0.0.1:2322:2322" ];
             volumes = [ "${dataDir}:/photon/data" ];
             environments = {

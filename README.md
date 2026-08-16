@@ -15,6 +15,7 @@
 | `actual-budget` | actual-server | 5006 | budget.lep.goosebox.org |
 | `audiobookshelf` | audiobookshelf | 13378 | audiobookshelf.goosebox.org |
 | `calibre` | calibre-web, shelfmark | 8183, 8084 | calibre.goosebox.org, shelfmark.goosebox.org |
+| `changedetection` | changedetection.io, sockpuppetbrowser | 5000 | changedetection.lep.goosebox.org |
 | `dawarich` | redis, postgis, app, sidekiq | 3001 | dawarich.lep.goosebox.org |
 | `duckdns` | duckdns (timer, every 5 min) | — | — |
 | `github-runner` | github-runner | — | — |
@@ -47,37 +48,21 @@ The Ports column is what each service listens on, not what is reachable. Only `m
 
 Syncthing is core, so 22000 (TCP/UDP) and 21027 (UDP) are open on every host.
 
-## intrusion detection
+## login alerts
 
-Host-based detection on all five hosts, imported via `modules/nixos/core/imports.nix`. Alerts push to ntfy using the `alert-ntfy-topic` agenix secret.
+All five hosts alert when someone logs in, imported via `modules/nixos/core/imports.nix`. Alerts push to ntfy using the `alert-ntfy-topic` agenix secret.
 
-| Module | Detects | When |
-|--------|---------|------|
+| Module | Does | When |
+|--------|------|------|
 | `alerts` | provides `alert-send` and the `alert-failure@` OnFailure template | — |
 | `alerts-secret` | points `alerts` at the `alert-ntfy-topic` agenix secret | — |
-| `auth-alerts` | Tailscale SSH grants/denials, sshd logins, sudo/su failures | live, journal follow |
-| `tripwire-fast` | credentials, keys, setuid binaries | every 15 min |
-| `tripwire-full` | the fast set plus listeners, units, modules | daily 01:30 |
+| `login-alerts` | alerts on every login | live, journal follow |
 
-`auth-alerts` is rate-limited; any suppressed entries are logged to `journalctl -u auth-alerts`.
+Logins are read from `systemd-logind`, which opens a session for every path that goes through PAM — sshd, console and greetd alike — so a single source covers all of them without per-service pattern matching. The alert names the user, and adds the PAM service and origin when the session is still open to be queried.
 
-### tripwire
+Tailscale SSH is matched separately because it announces its own grant and may not go through PAM. When it does both, the PAM session is suppressed if a grant for that user landed within 15s, so one login alerts once.
 
-Builds a manifest of live state, diffs it against `/var/lib/tripwire/baseline-<mode>`, alerts with the diff, then re-baselines so each change reports once. The two modes share one script and keep separate baselines.
-
-| Mode | Tracked | Why this interval |
-|------|---------|-------------------|
-| `fast` | `passwd`/`group` entries, digests of `shadow`/`sudoers`/`sshd_config`, authorized-key and host-key fingerprints, setuid binaries and wrappers | changes only on deploy, so frequent checks are quiet |
-| `full` | the above plus non-loopback listeners below port 32768, enabled units, loaded modules, non-symlink `/etc` entries | containers cycle and modules load on hotplug, so it needs a quiet slot |
-
-- First run of each mode creates its baseline silently. Verify that baseline against what the flake declares before relying on it.
-- `full` runs at 01:30 to stay clear of `nh clean` (00:00), dawarich (02:45), restic (03:00, which stops containers and would otherwise look like drift), and every autoUpgrade window (05:00+).
-- Container image layers and `/nix/store` are pruned from the setuid scan; on leprechaun that is the difference between 1s and 50s+.
-
-```
-systemctl start tripwire-fast          # run now
-rm /var/lib/tripwire/baseline-fast     # start a fresh baseline
-```
+Nothing else pages: failed passwords, sudo refusals and system drift are deliberately not reported. Alerts are capped at ten per ten minutes; suppressed entries are logged to `journalctl -u login-alerts`.
 
 ### auditd
 
@@ -91,8 +76,7 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 
 | Check | Asserts | Runtime |
 |-------|---------|---------|
-| `tripwire` | baseline creation, clean re-runs, setuid and account drift, re-baselining so a change reports once, the fast/full split | ~30s |
-| `auth-alerts` | every classifier branch with its title/priority/tags, that tailscaled chatter cannot forge an sshd alert, the ten-per-window cap | ~20s |
+| `login-alerts` | a real ssh login reported once with its service and origin, tailscale grants, that a tailscale session reaching PAM alerts once, that failures and drift stay quiet, the ten-per-window cap | ~30s |
 | `alerts` | the `alert-failure@` OnFailure template pages | ~20s |
 | `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
 | `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
