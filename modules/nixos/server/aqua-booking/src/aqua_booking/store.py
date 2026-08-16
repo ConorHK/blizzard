@@ -15,6 +15,7 @@ from pathlib import Path
 class Store:
     def __init__(self, state_dir: Path):
         self.path = state_dir / "booked.jsonl"
+        self.heartbeat = state_dir / "last_run"
 
     def _entries(self) -> list[dict]:
         try:
@@ -40,6 +41,11 @@ class Store:
         )
         self._write(entries)
 
+    def record_run(self) -> None:
+        """Heartbeat for the freshness watchdog: this run completed cleanly."""
+        self.heartbeat.parent.mkdir(parents=True, exist_ok=True)
+        self.heartbeat.write_text(datetime.now(timezone.utc).isoformat() + "\n")
+
     def prune_before(self, cutoff: datetime) -> None:
         """Drop entries for classes that have already happened, keeping it small."""
         kept = []
@@ -49,6 +55,9 @@ class Store:
             except (KeyError, ValueError):
                 kept.append(entry)
                 continue
+            # A naive stamp would raise TypeError below and wedge every later run.
+            if when.tzinfo is None:
+                when = when.replace(tzinfo=cutoff.tzinfo)
             if when >= cutoff:
                 kept.append(entry)
         self._write(kept)

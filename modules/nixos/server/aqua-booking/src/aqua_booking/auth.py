@@ -12,6 +12,7 @@ import base64
 import hashlib
 import http.cookiejar
 import json
+import os
 import re
 import secrets
 import urllib.error
@@ -93,8 +94,10 @@ class Authenticator:
     def _persist_refresh(self, token: str) -> None:
         self.cfg.state_dir.mkdir(parents=True, exist_ok=True)
         tmp = self._token_file.with_suffix(".tmp")
-        tmp.write_text(token)
-        tmp.chmod(0o600)
+        # Created 0600 rather than chmod'd after, so it is never briefly world-readable.
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as handle:
+            handle.write(token)
         tmp.replace(self._token_file)
 
     def _exchange(self, grant: dict[str, str]) -> str:

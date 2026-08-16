@@ -51,7 +51,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="aqua-booking")
     parser.add_argument("--config", default=os.environ.get("AQUA_CONFIG"))
     parser.add_argument("--credentials", default=os.environ.get("AQUA_CREDENTIALS"))
-    parser.add_argument("--dry-run", action="store_true", help="discover only; never book or notify")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="discover only; never book, notify or touch the ledger (still authenticates)",
+    )
     parser.add_argument("--login-only", action="store_true", help="authenticate and exit")
     args = parser.parse_args()
 
@@ -72,6 +76,14 @@ def main() -> int:
         print("auth ok")
         return 0
 
+    store = Store(cfg.state_dir)
+    code = _acquire(args, cfg, tz, policy, auth, store)
+    if not args.dry_run:
+        store.record_run()
+    return code
+
+
+def _acquire(args, cfg, tz, policy, auth, store) -> int:
     now = datetime.now(tz)
     target_date = (now + timedelta(days=cfg.release_horizon_days)).date()
     weekday = target_date.strftime("%A").lower()
@@ -87,8 +99,8 @@ def main() -> int:
     day_start = datetime.combine(target_date, time(0, 0), tz)
     day_end = datetime.combine(target_date, time(23, 59, 59), tz)
 
-    store = Store(cfg.state_dir)
-    store.prune_before(datetime.now(tz) - timedelta(days=1))
+    if not args.dry_run:
+        store.prune_before(datetime.now(tz) - timedelta(days=1))
 
     label = f"{cfg.gym_name} {weekday.capitalize()} {scheduled}"
     booked_this_run = False
@@ -109,6 +121,13 @@ def main() -> int:
             if policy.wait():
                 print(f"target not in the feed yet; retrying ({policy.time_left():.0f}s left)")
                 continue
+            if booked_this_run:
+                # A POST went out and the class then vanished: it may have landed.
+                msg = f"{label} disappeared from the feed after a booking attempt — check the booking site"
+                print(msg)
+                if not args.dry_run:
+                    notify(f"{cfg.class_name}: check needed", msg, priority=4, tags="warning")
+                return 0
             msg = f"No {cfg.class_name} at {scheduled} on {weekday} {target_date} at {cfg.gym_name} — schedule change?"
             print(msg)
             if not args.dry_run:

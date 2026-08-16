@@ -19,6 +19,7 @@
         MODE_FILE = STATE + "/mode"
         COUNT_FILE = STATE + "/bookings-count"
         ITEMS_FILE = STATE + "/items-count"
+        AUTH_FILE = STATE + "/authorize-count"
 
 
         def mode():
@@ -82,6 +83,7 @@
 
             def do_GET(self):
                 if "/oauth2/v2.0/authorize" in self.path:
+                    bump(AUTH_FILE)
                     html = (
                         '<html><script>var SETTINGS = {"csrf":"TESTCSRF",'
                         '"transId":"TESTTX","api":"CombinedSigninAndSignup"};'
@@ -164,6 +166,20 @@
       '';
     in
     {
+      # Pure-logic cover for the bits the VM cannot reach cheaply: London/BST
+      # matching, ledger pruning, and the retry budget.
+      checks.aqua-booking-unit =
+        pkgs.runCommand "aqua-booking-unit"
+          {
+            nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.tzdata ])) ];
+          }
+          ''
+            cp -r ${./src} src
+            chmod -R +w src
+            cd src
+            python -m unittest discover -s tests -t . -v 2>&1 | tee "$out"
+          '';
+
       checks.aqua-booking = pkgs.testers.runNixOSTest {
         name = "aqua-booking";
 
@@ -173,8 +189,13 @@
             config.flake.modules.nixos.aqua-booking
           ];
 
+          # A topic distinct from the alert topic, so the test can tell booking
+          # outcomes apart from operational pages.
+          environment.etc."aqua-topic".text = "NTFY_TOPIC=aqua-test";
+
           blizzard.aqua-booking = {
             credentialsFile = creds;
+            successTopicFile = "/etc/aqua-topic";
             apiBase = "http://127.0.0.1:9090/booking/";
             authInstance = "http://127.0.0.1:9090/";
             timezone = "UTC";
@@ -212,6 +233,14 @@
               machine.succeed(f"echo {mode} > /var/lib/aqua-stub/mode")
 
 
+          def authorize_count():
+              return int(
+                  machine.succeed(
+                      "cat /var/lib/aqua-stub/authorize-count 2>/dev/null || echo 0"
+                  ).strip()
+              )
+
+
           def bookings_count():
               return int(
                   machine.succeed(
@@ -229,7 +258,7 @@
 
 
           def success_posts():
-              return [post for post in posts() if post["topic"] == "test-notification"]
+              return [post for post in posts() if post["topic"] == "aqua-test"]
 
 
           def error_posts():
@@ -245,11 +274,43 @@
               raise Exception(f"expected {count} success posts, got {len(success_posts())}")
 
 
+          def wait_for_error(count, timeout=30):
+              deadline = time.time() + timeout
+              while time.time() < deadline:
+                  if len(error_posts()) >= count:
+                      return error_posts()
+                  time.sleep(0.5)
+              raise Exception(f"expected {count} error posts, got {len(error_posts())}")
+
+
           start_recorder()
           machine.wait_for_unit("aqua-stub.service")
           machine.wait_for_open_port(9090)
-          # Drive runs by hand; the real 07:00 timer must not fire mid-test.
-          machine.succeed("systemctl stop aqua-booking.timer")
+          # Drive runs by hand; the real timers must not fire mid-test. Both are
+          # Persistent=true, so clear anything they posted before we caught them.
+          machine.succeed(
+              "systemctl stop aqua-booking.timer aqua-booking-freshness.timer"
+          )
+          machine.succeed(": > /var/lib/fake-ntfy/posts.jsonl")
+
+          with subtest("the dry-run entrypoint reports the target without booking"):
+              set_mode("book")
+              out = machine.succeed("aqua-booking-dry-run")
+              assert "would book a seat" in out, out
+              assert "sfid=S1" in out, out
+              assert bookings_count() == 0, bookings_count()
+              assert success_posts() == [], success_posts()
+              # Discovery only: no ledger entry, and no heartbeat for the watchdog.
+              machine.fail("test -e /var/lib/aqua-booking/booked.jsonl")
+              machine.fail("test -e /var/lib/aqua-booking/last_run")
+              dir_mode = machine.succeed("stat -c %a /var/lib/aqua-booking").strip()
+              assert dir_mode == "700", dir_mode
+
+          with subtest("the dry-run entrypoint reports a full class as a waitlist join"):
+              set_mode("waitlist")
+              out = machine.succeed("aqua-booking-dry-run")
+              assert "FULL, would join waitlist" in out, out
+              assert bookings_count() == 0, bookings_count()
 
           with subtest("scripted login books a free seat and notifies the success topic"):
               set_mode("book")
@@ -261,11 +322,18 @@
               assert post["priority"] == 4, post
               # The login exchange must have persisted a rolling refresh token.
               machine.succeed("test -s /var/lib/aqua-booking/refresh_token")
+              token_mode = machine.succeed(
+                  "stat -c %a /var/lib/aqua-booking/refresh_token"
+              ).strip()
+              assert token_mode == "600", token_mode
               assert bookings_count() == 1, bookings_count()
+              # The freshness watchdog reads this heartbeat.
+              machine.succeed("test -s /var/lib/aqua-booking/last_run")
 
           with subtest("a cancelled booking is a durable override — never rebooked"):
               before = len(success_posts())
               count_before = bookings_count()
+              auth_before = authorize_count()
               # Still looks bookable (user cancelled), but the ledger blocks it.
               machine.succeed("systemctl start aqua-booking.service")
               machine.wait_until_succeeds(
@@ -275,6 +343,8 @@
               time.sleep(1)
               assert len(success_posts()) == before, success_posts()
               assert bookings_count() == count_before, bookings_count()
+              # The stored refresh token was reused: no second scripted login.
+              assert authorize_count() == auth_before, authorize_count()
 
           with subtest("a full class joins the waitlist and reports the position"):
               set_mode("waitlist")
@@ -325,6 +395,28 @@
               assert len(errors) == seen + 1, errors
               assert errors[-1]["title"] == "machine: Unit failed", errors[-1]
               assert "aqua-booking" in errors[-1]["message"], errors[-1]
+
+          with subtest("the freshness watchdog stays quiet after a recent run"):
+              machine.succeed("touch /var/lib/aqua-booking/last_run")
+              seen = len(error_posts())
+              machine.succeed("systemctl start aqua-booking-freshness.service")
+              time.sleep(1)
+              assert len(error_posts()) == seen, error_posts()
+
+          with subtest("a timer that never fired is caught by the watchdog"):
+              seen = len(error_posts())
+              machine.succeed("touch -d '3 days ago' /var/lib/aqua-booking/last_run")
+              machine.succeed("systemctl start aqua-booking-freshness.service")
+              errors = wait_for_error(seen + 1)
+              assert errors[-1]["title"] == "machine: Aqua Aerobics booking stale", errors[-1]
+              assert "72h" in errors[-1]["message"], errors[-1]
+
+          with subtest("a service that has never completed a run is caught too"):
+              seen = len(error_posts())
+              machine.succeed("rm -f /var/lib/aqua-booking/last_run")
+              machine.succeed("systemctl start aqua-booking-freshness.service")
+              errors = wait_for_error(seen + 1)
+              assert "never completed a run" in errors[-1]["message"], errors[-1]
         '';
       };
     };

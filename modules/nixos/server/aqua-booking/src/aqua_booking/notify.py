@@ -16,11 +16,15 @@ def notify(title: str, message: str, priority: int = 3, tags: str = "swimmer") -
     if topic_file:
         env["ALERT_TOPIC_FILE"] = topic_file
     try:
-        subprocess.run(
+        # 120s: alert-send's own worst case is --max-time 20 over 3 retries 5s apart.
+        done = subprocess.run(
             [alert_send, title, message, str(priority), tags],
             env=env,
             check=False,
-            timeout=60,
+            timeout=120,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         print(f"notify failed: {exc}")
+        return
+    if done.returncode != 0:
+        print(f"notify failed: {alert_send} exited {done.returncode}")

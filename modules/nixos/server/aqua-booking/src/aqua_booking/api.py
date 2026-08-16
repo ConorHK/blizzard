@@ -53,9 +53,7 @@ class GymClass:
     title: str
     from_date: str
     is_full: bool
-    members_on_waiting_list: int
     my_booking: dict | None
-    raw: dict
 
 
 class BookingApi:
@@ -108,9 +106,7 @@ class BookingApi:
                         title=item["title"],
                         from_date=item["from_date"],
                         is_full=bool(item.get("is_full")),
-                        members_on_waiting_list=int(item.get("members_on_waiting_list") or 0),
                         my_booking=item.get("my_booking"),
-                        raw=item,
                     )
                 )
             except (KeyError, TypeError) as exc:
