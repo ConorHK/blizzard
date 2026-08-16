@@ -47,7 +47,7 @@ in
 
           qbit-manage.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/stuffanthings/qbit_manage
-            image = "ghcr.io/stuffanthings/qbit_manage:v4.11.0";
+            image = "ghcr.io/stuffanthings/qbit_manage:v4.12.0";
             publishPorts = [ "127.0.0.1:${toString qbitManagePort}:8181" ];
             volumes = [
               "${qbitManageDir}:/config:rw"
