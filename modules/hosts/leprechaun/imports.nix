@@ -11,6 +11,8 @@
 
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     actual-budget
+    aqua-booking
+    aqua-booking-secret
     audiobookshelf
     calibre
     changedetection
