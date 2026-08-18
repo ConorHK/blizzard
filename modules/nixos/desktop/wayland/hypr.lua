@@ -35,7 +35,8 @@ hl.config({
     },
 
     misc = {
-        animate_manual_resizes = true,
+        animate_manual_resizes     = true,
+        initial_workspace_tracking = 2,
 
         disable_hyprland_logo    = true,
         disable_splash_rendering = true,

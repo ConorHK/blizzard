@@ -9,6 +9,16 @@
       ...
     }:
     let
+      hyprLaunch = pkgs.writeShellScriptBin "hypr-launch" ''
+        # Relaunch via Hyprland so the exec dispatcher mints a fresh initial-workspace token.
+        if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && [ -z "$_HYPR_LAUNCH_DISPATCHED" ]; then
+          cmd=$(printf '%q ' "$0" "$@")
+          exec hyprctl dispatch "hl.dsp.exec_cmd([==[_HYPR_LAUNCH_DISPATCHED=1 exec $cmd]==])"
+        fi
+
+        exec uwsm app -- "$@"
+      '';
+
       rayCli = pkgs.fetchurl {
         url = "https://cli.raycast.com/1.86.0-alpha.65/linux/ray";
         sha256 = "sha256-UgDA2hIH7HwKl3j4UEGIlvh6eE+IWUlSML0wloHFPQw=";
@@ -70,9 +80,11 @@
           "bitwarden"
         ];
         settings = {
-          providers."@samlinville/tailscale".preferences.tailscalePath =
-            "/run/current-system/sw/bin/tailscale";
-          providers."@gebeto/translate".preferences.lang2 = "es";
+          providers = {
+            applications.preferences.launchPrefix = "${hyprLaunch}/bin/hypr-launch";
+            "@samlinville/tailscale".preferences.tailscalePath = "/run/current-system/sw/bin/tailscale";
+            "@gebeto/translate".preferences.lang2 = "es";
+          };
           pop_to_root_on_close = true;
           close_on_focus_loss = true;
           escape_key_behavior = "navigate_back";
