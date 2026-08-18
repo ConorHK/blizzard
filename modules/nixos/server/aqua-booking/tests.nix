@@ -13,6 +13,7 @@
       stub = pkgs.writeText "aqua-stub.py" ''
         import http.server
         import json
+        import urllib.parse
         from datetime import datetime, timedelta, timezone
 
         STATE = "/var/lib/aqua-stub"
@@ -53,7 +54,7 @@
             if current == "waitlist":
                 return [item("S2", is_full=True)]
             if current == "preexisting":
-                return [item("S3", my_booking={"waitlist_position": None})]
+                return [item("S3", my_booking={"status": "Booked", "waitlist_position": None})]
             return []
 
 
@@ -97,10 +98,12 @@
                     return
                 if "/CombinedSigninAndSignup/confirmed" in self.path:
                     self.send_response(302)
+                    # Implicit flow: the token comes back in the fragment, not a code.
                     self.send_header(
                         "Location",
                         "https://nh-booking-microsite.nuffieldhealth.com/auth/callback/"
-                        "?code=TESTCODE&state=xyz",
+                        "#access_token=TESTACCESS&token_type=Bearer&expires_in=3600"
+                        "&state=xyz",
                     )
                     self.send_header("Content-Length", "0")
                     self.end_headers()
@@ -115,7 +118,7 @@
                         # After a POST has landed (even though its response 503'd),
                         # the class comes back showing my_booking set.
                         landed = read(COUNT_FILE) >= 1
-                        items = [item("S4", my_booking={"waitlist_position": None} if landed else None)]
+                        items = [item("S4", my_booking={"status": "Booked", "waitlist_position": None} if landed else None)]
                     else:
                         items = items_for(current)
                     self._json(200, {"class_available_time": "7:00", "items": items})
@@ -124,19 +127,17 @@
 
             def do_POST(self):
                 length = int(self.headers.get("Content-Length", "0"))
-                self.rfile.read(length)
-                if "/oauth2/v2.0/token" in self.path:
-                    self._json(
-                        200,
-                        {
-                            "access_token": "TESTACCESS",
-                            "refresh_token": "TESTREFRESH",
-                            "token_type": "Bearer",
-                            "expires_in": 3600,
-                        },
-                    )
-                    return
+                body = self.rfile.read(length)
                 if "SelfAsserted" in self.path:
+                    # B2C answers 200, naming the first claim it wanted and did not get.
+                    form = urllib.parse.parse_qs(body.decode())
+                    missing = [f for f in ("Email", "password") if not form.get(f)]
+                    if missing:
+                        self._json(
+                            200,
+                            {"status": "400", "message": f"Missing required element [{missing[0]}]"},
+                        )
+                        return
                     self._json(200, {"status": "200"})
                     return
                 if "bookings" in self.path:
@@ -147,9 +148,10 @@
                         self._json(503, {"error": "overloaded"})
                         return
                     if current == "waitlist":
-                        self._json(200, {"my_booking": {"waitlist_position": 3}})
+                        self._json(200, {"my_booking": {"status": "Waitlist", "waitlist_position": 3}})
                     else:
-                        self._json(200, {"my_booking": {"waitlist_position": None}})
+                        # Production returns a position on confirmed bookings too.
+                        self._json(200, {"my_booking": {"status": "Booked", "waitlist_position": 1}})
                     return
                 self._json(404, {"path": self.path})
 
@@ -160,10 +162,22 @@
         http.server.HTTPServer(("127.0.0.1", 9090), Handler).serve_forever()
       '';
 
-      creds = pkgs.writeText "aqua-creds" ''
-        NUFFIELD_USERNAME=test@example.com
-        NUFFIELD_PASSWORD=test-password
-      '';
+      # Stands in for the agenix secret: the private half of the config.
+      secretsFile = (pkgs.formats.json { }).generate "aqua-secrets.json" {
+        username = "test@example.com";
+        password = "test-password";
+        facilityId = "a2T4J000001JJfnUAG";
+        gymName = "Crawley";
+        schedule = {
+          monday = "12:00";
+          tuesday = "12:00";
+          wednesday = "12:00";
+          thursday = "12:00";
+          friday = "12:00";
+          saturday = "12:00";
+          sunday = "12:00";
+        };
+      };
     in
     {
       # Pure-logic cover for the bits the VM cannot reach cheaply: London/BST
@@ -194,7 +208,7 @@
           environment.etc."aqua-topic".text = "NTFY_TOPIC=aqua-test";
 
           blizzard.aqua-booking = {
-            credentialsFile = creds;
+            inherit secretsFile;
             successTopicFile = "/etc/aqua-topic";
             apiBase = "http://127.0.0.1:9090/booking/";
             authInstance = "http://127.0.0.1:9090/";
@@ -206,15 +220,6 @@
               baseSeconds = 0.2;
               maxBackoffSeconds = 0.5;
               maxRetryAfterSeconds = 1;
-            };
-            schedule = {
-              monday = "12:00";
-              tuesday = "12:00";
-              wednesday = "12:00";
-              thursday = "12:00";
-              friday = "12:00";
-              saturday = "12:00";
-              sunday = "12:00";
             };
           };
 
@@ -298,6 +303,12 @@
               out = machine.succeed("aqua-booking-dry-run")
               assert "would book a seat" in out, out
               assert "sfid=S1" in out, out
+              # The raw item is the only way to debug a schema surprise after the fact.
+              assert "raw item" in out, out
+              assert "is_full=False" in out, out
+              # A dry run is read by a human: levels are visible, debug included.
+              assert "INFO" in out, out
+              assert "DEBUG" in out, out
               assert bookings_count() == 0, bookings_count()
               assert success_posts() == [], success_posts()
               # Discovery only: no ledger entry, and no heartbeat for the watchdog.
@@ -312,20 +323,31 @@
               assert "FULL, would join waitlist" in out, out
               assert bookings_count() == 0, bookings_count()
 
+          with subtest("the dry-run entrypoint leaves a pre-existing booking unrecorded"):
+              # Recording one would be a durable override: a class the service then
+              # refuses to rebook if it were cancelled.
+              set_mode("preexisting")
+              out = machine.succeed("aqua-booking-dry-run")
+              assert "already booked outside this service" in out, out
+              # Two dry runs have already happened: the output must not replay them.
+              assert out.count("target:") == 1, out
+              machine.fail("test -e /var/lib/aqua-booking/booked.jsonl")
+
           with subtest("scripted login books a free seat and notifies the success topic"):
               set_mode("book")
-              machine.succeed("rm -f /var/lib/aqua-booking/refresh_token")
               machine.succeed("systemctl start aqua-booking.service")
               post = wait_for_success(1)[0]
               assert post["title"] == "machine: Aqua Aerobics booked", post
               assert "confirmed seat" in post["message"], post
+              # A position on a class with space is not a waitlist place.
+              assert "#1" not in post["message"], post
               assert post["priority"] == 4, post
-              # The login exchange must have persisted a rolling refresh token.
-              machine.succeed("test -s /var/lib/aqua-booking/refresh_token")
-              token_mode = machine.succeed(
-                  "stat -c %a /var/lib/aqua-booking/refresh_token"
-              ).strip()
-              assert token_mode == "600", token_mode
+              machine.succeed(
+                  "journalctl --sync; journalctl -u aqua-booking.service -o cat"
+                  " | grep -q 'result: booked S1'"
+              )
+              # Implicit flow hands back no refresh token, so none is ever written.
+              machine.fail("test -e /var/lib/aqua-booking/refresh_token")
               assert bookings_count() == 1, bookings_count()
               # The freshness watchdog reads this heartbeat.
               machine.succeed("test -s /var/lib/aqua-booking/last_run")
@@ -343,8 +365,8 @@
               time.sleep(1)
               assert len(success_posts()) == before, success_posts()
               assert bookings_count() == count_before, bookings_count()
-              # The stored refresh token was reused: no second scripted login.
-              assert authorize_count() == auth_before, authorize_count()
+              # Nothing to reuse without a refresh token: every run signs in afresh.
+              assert authorize_count() == auth_before + 1, authorize_count()
 
           with subtest("a full class joins the waitlist and reports the position"):
               set_mode("waitlist")
@@ -352,6 +374,12 @@
               post = wait_for_success(2)[1]
               assert post["title"] == "machine: Aqua Aerobics waitlisted", post
               assert "#3" in post["message"], post
+              # journald must have parsed the <4> prefix into a real priority,
+              # so `journalctl -p warning` surfaces the days that missed a seat.
+              machine.succeed(
+                  "journalctl --sync; journalctl -u aqua-booking.service -p warning -o cat"
+                  " | grep -q 'result: waitlisted'"
+              )
 
           with subtest("a missing class posts a low-priority schedule-change note"):
               set_mode("missing")

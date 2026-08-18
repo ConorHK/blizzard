@@ -3,6 +3,6 @@ _: {
     { config, ... }:
     {
       age.secrets.aqua-credentials.rekeyFile = ./secrets/aqua-credentials.age;
-      blizzard.aqua-booking.credentialsFile = config.age.secrets.aqua-credentials.path;
+      blizzard.aqua-booking.secretsFile = config.age.secrets.aqua-credentials.path;
     };
 }

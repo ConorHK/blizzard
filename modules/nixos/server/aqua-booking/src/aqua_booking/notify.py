@@ -8,6 +8,8 @@ from __future__ import annotations
 import os
 import subprocess
 
+from .log import log
+
 
 def notify(title: str, message: str, priority: int = 3, tags: str = "swimmer") -> None:
     alert_send = os.environ.get("ALERT_SEND", "alert-send")
@@ -24,7 +26,7 @@ def notify(title: str, message: str, priority: int = 3, tags: str = "swimmer") -
             timeout=120,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        print(f"notify failed: {exc}")
+        log.error("notify failed: %s", exc)
         return
     if done.returncode != 0:
-        print(f"notify failed: {alert_send} exited {done.returncode}")
+        log.error("notify failed: %s exited %d", alert_send, done.returncode)

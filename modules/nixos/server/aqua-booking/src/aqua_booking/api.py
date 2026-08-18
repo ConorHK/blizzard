@@ -54,6 +54,7 @@ class GymClass:
     from_date: str
     is_full: bool
     my_booking: dict | None
+    raw: dict | None = None
 
 
 class BookingApi:
@@ -107,6 +108,7 @@ class BookingApi:
                         from_date=item["from_date"],
                         is_full=bool(item.get("is_full")),
                         my_booking=item.get("my_booking"),
+                        raw=item,
                     )
                 )
             except (KeyError, TypeError) as exc:
@@ -120,9 +122,37 @@ class BookingApi:
         return payload
 
 
+# Observed on a confirmed booking: {"status": "Booked", "waitlist_position": None}.
+_CONFIRMED_STATUS = {"booked", "confirmed", "attended", "checkedin", "checked_in"}
+
+
 def waitlist_position(booking_response: dict, gym_class: GymClass) -> int | None:
-    """None => a confirmed seat; an int => that position on the waitlist."""
-    for source in (booking_response, booking_response.get("my_booking") or {}, gym_class.my_booking or {}):
-        if isinstance(source, dict) and source.get("waitlist_position") is not None:
-            return int(source["waitlist_position"])
+    """None => a confirmed seat; a positive int => that place on the waitlist.
+
+    The booking's own record decides: its status says whether it is a seat or a
+    waitlist entry, and only then does waitlist_position mean anything. The
+    class-level is_full is no help — it reports remaining availability, and the
+    member holding the last seat is confirmed in a class that now reads full.
+    """
+    for source in (
+        booking_response.get("my_booking"),
+        booking_response,
+        gym_class.my_booking,
+    ):
+        if not isinstance(source, dict):
+            continue
+        status = str(source.get("status", "")).strip().lower().replace(" ", "")
+        if status in _CONFIRMED_STATUS:
+            return None
+        position = _positive_int(source.get("waitlist_position"))
+        if position is not None:
+            return position
     return None
+
+
+def _positive_int(value: object) -> int | None:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None

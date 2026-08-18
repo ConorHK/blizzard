@@ -9,17 +9,6 @@ _: {
     let
       cfg = config.blizzard.aqua-booking;
 
-      weekdays = [
-        "monday"
-        "tuesday"
-        "wednesday"
-        "thursday"
-        "friday"
-        "saturday"
-        "sunday"
-      ];
-      unknownDays = lib.subtractLists weekdays (lib.attrNames cfg.schedule);
-
       app = pkgs.python3.pkgs.buildPythonApplication {
         pname = "aqua-booking";
         version = "0.1.0";
@@ -34,6 +23,7 @@ _: {
           "aqua_booking.api"
           "aqua_booking.auth"
           "aqua_booking.config"
+          "aqua_booking.log"
           "aqua_booking.notify"
           "aqua_booking.retry"
           "aqua_booking.run"
@@ -42,14 +32,12 @@ _: {
         meta.mainProgram = "aqua-booking";
       };
 
+      # Public half only: the gym, the times and the login live in the secret.
       configJson = (pkgs.formats.json { }).generate "aqua-booking.json" {
         inherit (cfg)
-          facilityId
-          gymName
           className
           timezone
           releaseHorizonDays
-          schedule
           ;
         api = {
           inherit (cfg) subscriptionKey userAgent;
@@ -61,7 +49,7 @@ _: {
           tenant = "mynuffield.onmicrosoft.com";
           policy = "B2C_1A_NUFFV2_SignInOrSignUpLoA1";
           clientId = "d88bdc88-b6a5-48a3-9619-7311cd904761";
-          scope = "openid offline_access https://mynuffield.onmicrosoft.com/BookingAPIM/booking_api_access";
+          scope = "openid https://mynuffield.onmicrosoft.com/BookingAPIM/booking_api_access";
           redirectUri = "https://nh-booking-microsite.nuffieldhealth.com/auth/callback/";
         };
         retry = {
@@ -78,24 +66,27 @@ _: {
       start = pkgs.writeShellScript "aqua-booking-start" ''
         exec ${lib.getExe app} \
           --config ${configJson} \
-          --credentials "$CREDENTIALS_DIRECTORY/credentials" "$@"
+          --secrets "$CREDENTIALS_DIRECTORY/secrets" "$@"
       '';
 
       runEnvironment = {
         ALERT_SEND = lib.getExe config.blizzard.alerts.send;
         AQUA_SUCCESS_TOPIC_FILE = "${cfg.successTopicFile}";
         TZDIR = "${pkgs.tzdata}/share/zoneinfo";
+        # Without this the journal gets every line at exit, losing the timeline.
+        PYTHONUNBUFFERED = "1";
       };
 
       # Shared so the dry-run entrypoint cannot drift from the unit it stands in for.
       runServiceConfig = {
         Type = "oneshot";
-        LoadCredential = "credentials:${cfg.credentialsFile}";
+        LoadCredential = "secrets:${cfg.secretsFile}";
         StateDirectory = "aqua-booking";
-        # 0700: the state dir holds the rolling refresh token.
+        # 0700: the state dir holds the booking ledger.
         StateDirectoryMode = "0700";
         WorkingDirectory = "/var/lib/aqua-booking";
         NoNewPrivileges = true;
+        ReadWritePaths = [ config.blizzard.alerts.spoolDir ];
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
@@ -105,29 +96,25 @@ _: {
       # journal for exactly that invocation rather than running the app directly.
       dryRun = pkgs.writeShellScriptBin "aqua-booking-dry-run" ''
         set -uo pipefail
+        # Anchor on a cursor taken before the run: a finished oneshot reports an
+        # empty InvocationID, and keying off that replayed every earlier run.
+        cursor=$(${pkgs.systemd}/bin/journalctl -n 1 --show-cursor 2>/dev/null \
+          | ${pkgs.gnused}/bin/sed -n 's/^-- cursor: //p')
         rc=0
         ${pkgs.systemd}/bin/systemctl start aqua-booking-dry-run.service || rc=$?
         ${pkgs.systemd}/bin/journalctl --sync
-        inv=$(${pkgs.systemd}/bin/systemctl show -P InvocationID aqua-booking-dry-run.service)
-        if [ -n "$inv" ]; then
-          ${pkgs.systemd}/bin/journalctl _SYSTEMD_INVOCATION_ID="$inv" -o cat --no-pager
+        if [ -n "$cursor" ]; then
+          ${pkgs.systemd}/bin/journalctl --after-cursor "$cursor" \
+            -u aqua-booking-dry-run.service -o cat --no-pager
         else
-          ${pkgs.systemd}/bin/journalctl -u aqua-booking-dry-run.service -o cat --no-pager -n 50
+          ${pkgs.systemd}/bin/journalctl -u aqua-booking-dry-run.service \
+            -o cat --no-pager --since "-1min"
         fi
         exit "$rc"
       '';
     in
     {
       options.blizzard.aqua-booking = {
-        facilityId = lib.mkOption {
-          type = lib.types.str;
-          default = "a2T4J000001JJfnUAG";
-          description = "Salesforce facility ID of the gym (Crawley).";
-        };
-        gymName = lib.mkOption {
-          type = lib.types.str;
-          default = "Crawley";
-        };
         className = lib.mkOption {
           type = lib.types.str;
           default = "Aqua Aerobics";
@@ -138,19 +125,8 @@ _: {
         };
         releaseHorizonDays = lib.mkOption {
           type = lib.types.ints.positive;
-          default = 7;
-          description = "Days ahead a class opens at 07:00. Measured 7; the user recalled 8.";
-        };
-        schedule = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.strMatching "([01][0-9]|2[0-3]):[0-5][0-9]");
-          default = {
-            monday = "11:15";
-            tuesday = "09:30";
-            wednesday = "14:00";
-            thursday = "10:45";
-            friday = "14:00";
-          };
-          description = "Local (Europe/London) HH:MM start time to book, keyed by lowercase weekday.";
+          default = 8;
+          description = "Days ahead a class opens at 07:00.";
         };
         successTopicFile = lib.mkOption {
           type = lib.types.path;
@@ -199,26 +175,24 @@ _: {
             description = "Cap on an honoured server Retry-After, so a bogus value cannot stall the run.";
           };
         };
-        credentialsFile = lib.mkOption {
+        secretsFile = lib.mkOption {
           type = lib.types.path;
-          description = "File with NUFFIELD_USERNAME= and NUFFIELD_PASSWORD= lines; wired by aqua-booking-secret.";
+          description = ''
+            JSON with the private half of the config, wired by aqua-booking-secret:
+            username, password, facilityId, gymName, and schedule (an attrset of
+            lowercase weekday to local HH:MM). Kept out of the store because a gym
+            and a weekly timetable say where someone is and when.
+          '';
         };
       };
 
       config = {
-        assertions = [
-          {
-            assertion = unknownDays == [ ];
-            message = "blizzard.aqua-booking.schedule has non-weekday keys: ${lib.concatStringsSep ", " unknownDays}";
-          }
-        ];
-
         environment.systemPackages = [ dryRun ];
 
         systemd = {
           services = {
             aqua-booking = {
-              description = "Book ${cfg.className} classes at ${cfg.gymName}";
+              description = "Book ${cfg.className} classes";
               after = [ "network-online.target" ];
               wants = [ "network-online.target" ];
               environment = runEnvironment;
@@ -285,7 +259,7 @@ _: {
                 OnCalendar = "*-*-* 07:00:05 Europe/London";
                 # Jitter the hit off the exact release instant; AccuracySec must be
                 # sub-minute or systemd quantizes the randomization away.
-                RandomizedDelaySec = "35s";
+                RandomizedDelaySec = "6s";
                 AccuracySec = "1s";
                 # A late catch-up can still take a seat or a waitlist slot; nothing can't.
                 Persistent = true;

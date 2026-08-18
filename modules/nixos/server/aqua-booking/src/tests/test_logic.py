@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -9,17 +10,26 @@ from pathlib import Path
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
-from aqua_booking.api import GymClass
+from aqua_booking.api import GymClass, waitlist_position
+from aqua_booking.config import ConfigError, load_secrets
 from aqua_booking.retry import RetryPolicy, RetrySettings
 from aqua_booking.run import _find_match
 from aqua_booking.store import Store
 
 LONDON = ZoneInfo("Europe/London")
 CFG = SimpleNamespace(class_name="Aqua Aerobics")
+WHEN = "2026-08-24T10:15:00+00:00"
 
 
-def _cls(from_date: str, title: str = "Aqua Aerobics") -> GymClass:
-    return GymClass(sfid="S1", title=title, from_date=from_date, is_full=False, my_booking=None)
+def _cls(
+    from_date: str,
+    title: str = "Aqua Aerobics",
+    is_full: bool = False,
+    my_booking: dict | None = None,
+) -> GymClass:
+    return GymClass(
+        sfid="S1", title=title, from_date=from_date, is_full=is_full, my_booking=my_booking
+    )
 
 
 class FindMatchTz(unittest.TestCase):
@@ -60,6 +70,86 @@ class FindMatchTz(unittest.TestCase):
         # BST -> GMT falls on 2026-10-25; +7 days must stay calendar-exact.
         now = datetime(2026, 10, 22, 7, 0, tzinfo=LONDON)
         self.assertEqual((now + timedelta(days=7)).date(), datetime(2026, 10, 29).date())
+
+
+class LoadSecrets(unittest.TestCase):
+    """The schedule used to be checked by a Nix assertion at build time. It is a
+    runtime secret now, so a typo has to fail loudly here instead."""
+
+    def _write(self, payload) -> Path:
+        path = Path(tempfile.mkdtemp()) / "secrets.json"
+        path.write_text(payload if isinstance(payload, str) else json.dumps(payload))
+        return path
+
+    def _valid(self, **overrides) -> dict:
+        return {
+            "username": "someone@example.com",
+            "password": "hunter2",
+            "facilityId": "F1",
+            "gymName": "Somewhere",
+            "schedule": {"monday": "11:15"},
+        } | overrides
+
+    def test_reads_a_valid_secret(self):
+        secrets = load_secrets(self._write(self._valid()))
+        self.assertEqual(secrets["schedule"], {"monday": "11:15"})
+        self.assertEqual(secrets["gymName"], "Somewhere")
+
+    def test_weekday_keys_are_lowercased(self):
+        secrets = load_secrets(self._write(self._valid(schedule={"Monday": "11:15"})))
+        self.assertEqual(secrets["schedule"], {"monday": "11:15"})
+
+    def test_rejects_a_non_weekday_key(self):
+        with self.assertRaisesRegex(ConfigError, "non-weekday"):
+            load_secrets(self._write(self._valid(schedule={"tuseday": "11:15"})))
+
+    def test_rejects_a_malformed_time(self):
+        with self.assertRaisesRegex(ConfigError, "HH:MM"):
+            load_secrets(self._write(self._valid(schedule={"monday": "25:00"})))
+
+    def test_rejects_a_missing_field(self):
+        payload = self._valid()
+        del payload["gymName"]
+        with self.assertRaisesRegex(ConfigError, "gymName"):
+            load_secrets(self._write(payload))
+
+    def test_names_the_superseded_format(self):
+        # The migration failure mode: the secret is still KEY=value lines.
+        with self.assertRaisesRegex(ConfigError, "KEY=value"):
+            load_secrets(self._write("NUFFIELD_USERNAME=a\nNUFFIELD_PASSWORD=b\n"))
+
+
+class WaitlistPosition(unittest.TestCase):
+    """Regression: a confirmed booking was announced as waitlist #1. The booking's
+    own status decides; a position alongside a confirmed status is not a place in
+    a queue, and class-level fullness says nothing either way."""
+
+    def test_a_confirmed_status_beats_a_position(self):
+        response = {"my_booking": {"status": "Booked", "waitlist_position": 1}}
+        self.assertIsNone(waitlist_position(response, _cls(WHEN)))
+
+    def test_a_full_class_can_still_hold_a_confirmed_booking(self):
+        # Observed live: is_full is about remaining seats, not about this booking.
+        response = {"my_booking": {"status": "Booked", "waitlist_position": None}}
+        self.assertIsNone(waitlist_position(response, _cls(WHEN, is_full=True)))
+
+    def test_a_waitlist_status_reports_its_position(self):
+        response = {"my_booking": {"status": "Waitlist", "waitlist_position": 3}}
+        self.assertEqual(waitlist_position(response, _cls(WHEN, is_full=True)), 3)
+
+    def test_a_position_without_a_status_is_believed(self):
+        self.assertEqual(waitlist_position({"waitlist_position": "2"}, _cls(WHEN)), 2)
+
+    def test_zero_is_not_a_waitlist_place(self):
+        self.assertIsNone(waitlist_position({"waitlist_position": 0}, _cls(WHEN)))
+
+    def test_falls_back_to_the_feed_entry(self):
+        booked = _cls(WHEN, my_booking={"waitlist_position": 4})
+        self.assertEqual(waitlist_position({}, booked), 4)
+
+    def test_the_feed_entry_status_is_honoured(self):
+        booked = _cls(WHEN, is_full=True, my_booking={"status": "Booked", "waitlist_position": None})
+        self.assertIsNone(waitlist_position({}, booked))
 
 
 class StorePrune(unittest.TestCase):

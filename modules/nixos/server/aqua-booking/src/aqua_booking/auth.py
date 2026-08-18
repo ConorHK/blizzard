@@ -1,25 +1,23 @@
-"""Azure AD B2C auth: rolling refresh token, scripted login as the fallback.
+"""Azure AD B2C auth: the scripted sign-in, mirroring what the booking site does.
 
-No ROPC policy is published for this tenant, so a full login replays the
-interactive SelfAsserted flow with curl-equivalent requests (verified: no
-CAPTCHA). Once logged in, the rotating refresh token keeps us in without
-touching the password again.
+No ROPC policy is published for this tenant, so a login replays the interactive
+SelfAsserted flow with curl-equivalent requests (verified: no CAPTCHA). The site
+uses the implicit flow, so the access token arrives in the fragment of the final
+redirect: there is no code to redeem, and no refresh token to keep. Redeeming a
+code is not an option — /auth/callback/ is registered as a confidential client,
+so the token endpoint answers AADB2C90079 without a client secret.
 """
 
 from __future__ import annotations
 
-import base64
-import hashlib
 import http.cookiejar
 import json
-import os
 import re
 import secrets
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
 
 from .config import Config
 from .retry import transient_status
@@ -30,7 +28,7 @@ class AuthError(Exception):
 
 
 class TransientAuthError(AuthError):
-    """A retryable auth failure (token endpoint 5xx, timeout, connection reset)."""
+    """A retryable auth failure (5xx, timeout, connection reset)."""
 
 
 @dataclass(frozen=True)
@@ -39,27 +37,13 @@ class Credentials:
     password: str
 
     @staticmethod
-    def load(path: str | Path) -> Credentials:
-        values: dict[str, str] = {}
-        for line in Path(path).read_text().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, value = line.partition("=")
-            values[key.strip()] = value.strip()
-        try:
-            return Credentials(values["NUFFIELD_USERNAME"], values["NUFFIELD_PASSWORD"])
-        except KeyError as exc:
-            raise AuthError(f"credentials file missing {exc}") from exc
-
-
-def _b64url(raw: bytes) -> str:
-    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+    def from_secrets(values: dict) -> Credentials:
+        return Credentials(values["username"], values["password"])
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Hand 3xx responses back unfollowed so the auth code can be read out of
-    the Location header (returning the response, not None, or urllib raises)."""
+    """Hand 3xx responses back unfollowed so the token can be read out of the
+    Location header (returning the response, not None, or urllib raises)."""
 
     def http_error_302(self, req, fp, code, msg, headers):  # noqa: ANN001, ANN201
         return fp
@@ -72,81 +56,15 @@ class Authenticator:
         self.cfg = config
         self.creds = credentials
         self.b2c = f"{config.auth.instance}{config.auth.tenant}/{config.auth.policy}"
-        self._token_file = config.state_dir / "refresh_token"
 
     def access_token(self) -> str:
-        refresh = self._stored_refresh()
-        if refresh:
-            try:
-                return self._exchange({"grant_type": "refresh_token", "refresh_token": refresh})
-            except TransientAuthError:
-                raise  # server hiccup, not a bad token — let the caller retry
-            except AuthError:
-                pass  # the refresh token is genuinely invalid — log in afresh
-        return self._login()
-
-    def _stored_refresh(self) -> str | None:
-        try:
-            return self._token_file.read_text().strip() or None
-        except FileNotFoundError:
-            return None
-
-    def _persist_refresh(self, token: str) -> None:
-        self.cfg.state_dir.mkdir(parents=True, exist_ok=True)
-        tmp = self._token_file.with_suffix(".tmp")
-        # Created 0600 rather than chmod'd after, so it is never briefly world-readable.
-        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "w") as handle:
-            handle.write(token)
-        tmp.replace(self._token_file)
-
-    def _exchange(self, grant: dict[str, str]) -> str:
-        body = {
-            "client_id": self.cfg.auth.client_id,
-            "scope": self.cfg.auth.scope,
-            **grant,
-        }
-        data = urllib.parse.urlencode(body).encode()
-        req = urllib.request.Request(
-            f"{self.b2c}/oauth2/v2.0/token",
-            data=data,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                payload = json.loads(resp.read())
-        except urllib.error.HTTPError as exc:
-            detail = f"token endpoint {exc.code}: {exc.read()[:200]!r}"
-            if transient_status(exc.code):
-                raise TransientAuthError(detail) from exc
-            raise AuthError(detail) from exc
-        except (urllib.error.URLError, TimeoutError) as exc:
-            raise TransientAuthError(f"token endpoint failed: {exc}") from exc
-        if "access_token" not in payload:
-            raise AuthError(f"token response had no access_token: {payload}")
-        if payload.get("refresh_token"):
-            self._persist_refresh(payload["refresh_token"])
-        return payload["access_token"]
-
-    def _login(self) -> str:
-        verifier = _b64url(secrets.token_bytes(48))
-        challenge = _b64url(hashlib.sha256(verifier.encode()).digest())
         jar = http.cookiejar.CookieJar()
         opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(jar), _NoRedirect
         )
-
-        csrf, trans_id = self._begin_authorize(opener, challenge)
+        csrf, trans_id = self._begin_authorize(opener)
         self._submit_credentials(opener, csrf, trans_id)
-        code = self._collect_code(opener, csrf, trans_id)
-        return self._exchange(
-            {
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": self.cfg.auth.redirect_uri,
-                "code_verifier": verifier,
-            }
-        )
+        return self._collect_token(opener, csrf, trans_id)
 
     def _open(self, opener, req):
         try:
@@ -158,16 +76,13 @@ class Authenticator:
         except (urllib.error.URLError, TimeoutError) as exc:
             raise TransientAuthError(f"{req.full_url} failed: {exc}") from exc
 
-    def _begin_authorize(self, opener, challenge: str) -> tuple[str, str]:
+    def _begin_authorize(self, opener) -> tuple[str, str]:
         params = urllib.parse.urlencode(
             {
                 "client_id": self.cfg.auth.client_id,
                 "redirect_uri": self.cfg.auth.redirect_uri,
-                "response_type": "code",
+                "response_type": "token id_token",
                 "scope": self.cfg.auth.scope,
-                "response_mode": "query",
-                "code_challenge": challenge,
-                "code_challenge_method": "S256",
                 "state": secrets.token_hex(8),
                 "nonce": secrets.token_hex(8),
             }
@@ -187,7 +102,7 @@ class Authenticator:
         body = urllib.parse.urlencode(
             {
                 "request_type": "RESPONSE",
-                "signInName": self.creds.username,
+                "Email": self.creds.username,
                 "password": self.creds.password,
             }
         ).encode()
@@ -206,7 +121,7 @@ class Authenticator:
         if str(payload.get("status")) != "200":
             raise AuthError(f"login rejected: {payload}")
 
-    def _collect_code(self, opener, csrf: str, trans_id: str) -> str:
+    def _collect_token(self, opener, csrf: str, trans_id: str) -> str:
         query = urllib.parse.urlencode(
             {
                 "rememberMe": "false",
@@ -221,11 +136,13 @@ class Authenticator:
         )
         with self._open(opener, req) as resp:
             location = resp.headers.get("Location", "")
-        parsed = urllib.parse.urlparse(location)
-        code = urllib.parse.parse_qs(parsed.query).get("code", [None])[0]
-        if not code:
-            raise AuthError(f"no auth code in redirect: {location!r}")
-        return code
+        fragment = urllib.parse.parse_qs(urllib.parse.urlparse(location).fragment)
+        token = fragment.get("access_token", [None])[0]
+        if not token:
+            # Never echo the fragment itself; on a partial success it holds an id_token.
+            detail = fragment.get("error_description") or fragment.get("error") or ["no access_token"]
+            raise AuthError(f"sign-in redirect carried no access token: {detail[0]}")
+        return token
 
 
 def _first(pattern: str, text: str, what: str) -> str:
