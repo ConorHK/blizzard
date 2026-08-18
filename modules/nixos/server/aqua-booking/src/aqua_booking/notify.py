@@ -18,7 +18,7 @@ def notify(title: str, message: str, priority: int = 3, tags: str = "swimmer") -
     if topic_file:
         env["ALERT_TOPIC_FILE"] = topic_file
     try:
-        # 120s: alert-send's own worst case is --max-time 20 over 3 retries 5s apart.
+        # 120s: alert-send spools then makes one attempt, worst case --max-time 20.
         done = subprocess.run(
             [alert_send, title, message, str(priority), tags],
             env=env,

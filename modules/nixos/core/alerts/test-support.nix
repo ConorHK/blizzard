@@ -16,8 +16,16 @@
           class Handler(http.server.BaseHTTPRequestHandler):
               def do_POST(self):
                   body = self.rfile.read(int(self.headers["Content-Length"]))
+                  try:
+                      parsed = json.loads(body)
+                  except ValueError:
+                      # ntfy rejects a malformed payload rather than dropping the
+                      # connection, and alert-drain keys off that difference.
+                      self.send_response(400)
+                      self.end_headers()
+                      return
                   with open(LOG, "a") as log:
-                      json.dump(json.loads(body), log)
+                      json.dump(parsed, log)
                       log.write("\n")
                   self.send_response(200)
                   self.end_headers()

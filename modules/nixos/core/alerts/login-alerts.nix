@@ -75,25 +75,29 @@ _: {
                   ["session", .USER_ID, .SESSION_ID] | @tsv
                 elif (.MESSAGE | type) == "string"
                      and (.MESSAGE | test("access granted to ")) then
-                  ["tailscale", (.MESSAGE | capture("access granted to (?<u>[^ ]+)").u), "-"] | @tsv
+                  (.MESSAGE | capture("access granted to (?<who>[^ ]+)( as ssh-user \"(?<local>[^\"]+)\")?"))
+                  | ["tailscale", (.local // .who), .who] | @tsv
                 else empty end
               ' \
-            | while IFS=$'\t' read -r kind user id; do
+            | while IFS=$'\t' read -r kind user detail; do
                 now=$(date +%s)
 
+                # Keyed on the local user, which is what logind reports for the session.
                 if [ "$kind" = tailscale ]; then
                   tailscale_grant[$user]=$now
-                  notify "Tailscale SSH login" "$user logged in via Tailscale SSH"
+                  message="$detail logged in via Tailscale SSH"
+                  if [ "$detail" != "$user" ]; then message="$message as $user"; fi
+                  notify "Tailscale SSH login" "$message"
                   continue
                 fi
 
-                # Tailscale SSH announces its own grant and may then open a PAM
+                # Tailscale SSH announces its own grant and then opens a PAM
                 # session; one login should not alert twice.
                 if [ $(( now - ''${tailscale_grant[$user]:-0} )) -le 15 ]; then
                   continue
                 fi
 
-                session_props "$id"
+                session_props "$detail"
 
                 # The per-user systemd manager opens a session of its own, as do
                 # greeters; only a real login has class "user". An ended session
@@ -134,6 +138,7 @@ _: {
           Restart = "always";
           RestartSec = 10;
           StateDirectory = "login-alerts";
+          ReadWritePaths = [ config.blizzard.alerts.spoolDir ];
           NoNewPrivileges = true;
           ProtectHome = true;
           ProtectSystem = "strict";
