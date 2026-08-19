@@ -13,6 +13,24 @@
       programs.waybar = {
         enable = true;
         systemd.enable = true;
+        # This Hyprland parses IPC dispatches as Lua, so waybar's legacy dispatch strings never fire.
+        package = pkgs.waybar.overrideAttrs (old: {
+          postPatch = (old.postPatch or "") + ''
+            substituteInPlace src/modules/hyprland/workspace.cpp \
+              --replace-fail '"dispatch focusworkspaceoncurrentmonitor " + std::to_string(id())' \
+                             '"dispatch hl.dsp.focus({workspace = " + std::to_string(id()) + ", on_current_monitor = true})"' \
+              --replace-fail '"dispatch workspace " + std::to_string(id())' \
+                             '"dispatch hl.dsp.focus({workspace = " + std::to_string(id()) + "})"' \
+              --replace-fail '"dispatch focusworkspaceoncurrentmonitor name:" + name()' \
+                             '"dispatch hl.dsp.focus({workspace = \"name:" + name() + "\", on_current_monitor = true})"' \
+              --replace-fail '"dispatch workspace name:" + name()' \
+                             '"dispatch hl.dsp.focus({workspace = \"name:" + name() + "\"})"' \
+              --replace-fail '"dispatch togglespecialworkspace " + name()' \
+                             '"dispatch hl.dsp.workspace.toggle_special(\"" + name() + "\")"' \
+              --replace-fail '"dispatch togglespecialworkspace"' \
+                             '"dispatch hl.dsp.workspace.toggle_special()"'
+          '';
+        });
         style = builtins.readFile ./style.css;
         settings.main = {
           name = "sidebar";
@@ -33,7 +51,6 @@
           ];
           "hyprland/workspaces" = {
             disable-scroll = true;
-            on-click = "activate";
             format = "{icon}";
             format-icons = {
               active = "•";
