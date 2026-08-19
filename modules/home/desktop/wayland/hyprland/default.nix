@@ -11,6 +11,7 @@
         hypridle
         hyprlock
         hyprpaper
+        hypr-workspace-pin
         waybar
         wayland
       ];
