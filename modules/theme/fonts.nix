@@ -18,6 +18,7 @@
           creeper
           gohu
           pkgs.lexend
+          pkgs.siji
         ];
         enableDefaultPackages = true;
         fontDir.enable = true;

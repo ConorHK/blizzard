@@ -27,18 +27,19 @@ if [ -z "$LOCAL_COMMIT" ] || [ -z "$REMOTE_COMMIT" ]; then
     exit 1
 fi
 
-LOCAL_LOCK_HASH=$(git rev-parse HEAD 2>/dev/null)
-REMOTE_LOCK_HASH=$(git rev-parse "$REMOTE/$BRANCH" 2>/dev/null)
+LOCAL_LOCK_HASH=$(git rev-parse HEAD:flake.lock 2>/dev/null)
+REMOTE_LOCK_HASH=$(git rev-parse "$REMOTE/$BRANCH:flake.lock" 2>/dev/null)
 
 LOCAL_DATE=$(git log -1 --format=%ai 2>/dev/null | cut -d' ' -f1)
 REMOTE_DATE=$(git log -1 --format=%ai "$REMOTE/$BRANCH" 2>/dev/null | cut -d' ' -f1)
 COMMITS_BEHIND=$(git rev-list --count HEAD.."$REMOTE/$BRANCH" 2>/dev/null)
+COMMITS_BEHIND=${COMMITS_BEHIND:-0}
 
-if [ "$LOCAL_LOCK_HASH" = "$REMOTE_LOCK_HASH" ]; then
+if [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ]; then
     TOOLTIP="✓ Up to date ($(echo "$LOCAL_DATE" | cut -d' ' -f1))"
     TEXT="$ICON_UP_TO_DATE"
     CLASS="up-to-date"
-elif [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ]; then
+elif [ -n "$LOCAL_LOCK_HASH" ] && [ "$LOCAL_LOCK_HASH" != "$REMOTE_LOCK_HASH" ]; then
     TOOLTIP="󰔄 Updates available ($(echo "$REMOTE_DATE" | cut -d' ' -f1))"
     TEXT="$ICON_OUTDATED"
     CLASS="needs-update"

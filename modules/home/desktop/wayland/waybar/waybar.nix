@@ -1,14 +1,15 @@
 {
   flake.modules.homeManager.waybar =
     { lib, pkgs, ... }:
+    let
+      icon = cp: builtins.fromJSON ''"\u${cp}"'';
+    in
     {
-
       systemd.user.services.waybar = {
         Install = {
           WantedBy = [ "graphical-session.target" ];
         };
       };
-
       stylix.targets.waybar.enable = lib.mkForce false;
       programs.waybar = {
         enable = true;
@@ -34,6 +35,7 @@
         style = builtins.readFile ./style.css;
         settings.main = {
           name = "sidebar";
+          reload_style_on_change = true;
           layer = "top";
           position = "left";
           spacing = 5;
@@ -44,6 +46,7 @@
           modules-right = [
             "privacy"
             "wireplumber"
+            "bluetooth"
             "network"
             "custom/separator"
             "systemd-failed-units"
@@ -73,12 +76,18 @@
             tooltip-format-disconnected = "disconnected";
           };
           wireplumber = {
-            format = "v:{volume}%";
-            format-muted = "m:{volume}%";
+            format = "{icon}{volume}";
+            format-icons = [
+              (icon "E04E")
+              (icon "E053")
+              (icon "E050")
+            ];
+            format-muted = "${icon "E04F"}{volume}";
             max-volume = 100;
             scroll-step = 5;
             on-click = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
             on-click-right = "${lib.getExe pkgs.pwvucontrol}";
+            tooltip-format = "{node_name}";
           };
           battery = {
             states = {
@@ -88,6 +97,18 @@
             };
             format = "b:{capacity}%";
             format-charging = "c:{capacity}%";
+          };
+          backlight = {
+            format = "l:{percent}%";
+          };
+          bluetooth = {
+            format = "bt:on";
+            format-off = "bt:off";
+            format-disabled = "bt:dis";
+            format-connected = "bt:{num_connections}";
+            tooltip-format = "{controller_alias}";
+            tooltip-format-connected = "{device_enumerate}";
+            on-click = lib.getExe' pkgs.blueman "blueman-manager";
           };
           privacy = {
             modules = [
@@ -104,7 +125,6 @@
               );
               git-status = pkgs.writeShellScriptBin "gitstatus" ''
                 #!/usr/bin/env bash
-
                 cd /home/goose/repositories/blizzard && git fetch origin && git status
                 read -n 1 -s -r -p "Press any key to exit"
               '';
@@ -122,16 +142,12 @@
             let
               check-failing-units = pkgs.writeShellScriptBin "check-failing-units" ''
                 #!/usr/bin/env bash
-
-
                 BLUE_BOLD="\033[1;34m"
                 RESET="\033[0m"
-
                 echo -e "''${BLUE_BOLD}User units:''${RESET}"
                 systemctl --user list-units --state=failed
                 echo -e "''${BLUE_BOLD}System units:''${RESET}"
                 systemctl list-units --state=failed
-
                 read -n 1 -s -r -p "Press any key to exit"
               '';
             in
