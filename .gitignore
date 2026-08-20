@@ -12,3 +12,5 @@ devenv.local.nix
 
 # Claude Code
 CLAUDE.md
+
+__pycache__/

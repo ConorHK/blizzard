@@ -4,12 +4,13 @@
     { pkgs, ... }:
     let
       inherit (config.flake.testSupport) alertRecorder alertHelpers;
+      inherit (pkgs) lib;
 
       # One stub for both the APIM gateway and the B2C auth endpoints, routed by
       # path and driven by a mode file the test flips between scenarios. Each
       # mode books a distinct sfid so the app's persistent ledger does not carry
-      # one scenario's booking into the next. The class it serves lands on the
-      # release-horizon day at 12:00 UTC, matching the test's schedule.
+      # one scenario's booking into the next. The classes it serves land on the
+      # release-horizon day, matching the test's schedule.
       stub = pkgs.writeText "aqua-stub.py" ''
         import http.server
         import json
@@ -36,12 +37,12 @@
             return (datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat()
 
 
-        def item(sfid, is_full=False, my_booking=None):
+        def item(sfid, is_full=False, my_booking=None, title="Aqua Aerobics", hour=12):
             return {
                 "sfid": sfid,
-                "title": "Aqua Aerobics",
-                "from_date": f"{target_day()}T12:00:00+00:00",
-                "to_date": f"{target_day()}T13:00:00+00:00",
+                "title": title,
+                "from_date": f"{target_day()}T{hour:02d}:00:00+00:00",
+                "to_date": f"{target_day()}T{hour + 1:02d}:00:00+00:00",
                 "is_full": is_full,
                 "members_on_waiting_list": 5 if is_full else 0,
                 "my_booking": my_booking,
@@ -55,6 +56,11 @@
                 return [item("S2", is_full=True)]
             if current == "preexisting":
                 return [item("S3", my_booking={"status": "Booked", "waitlist_position": None})]
+            if current == "multi":
+                return [item("S5"), item("S6", title="Yoga", hour=18)]
+            if current == "partial":
+                # The morning class never shows up; the evening one is there at once.
+                return [item("S7", title="Yoga", hour=18)]
             return []
 
 
@@ -162,26 +168,80 @@
         http.server.HTTPServer(("127.0.0.1", 9090), Handler).serve_forever()
       '';
 
-      # Stands in for the agenix secret: the private half of the config.
-      secretsFile = (pkgs.formats.json { }).generate "aqua-secrets.json" {
-        username = "test@example.com";
-        password = "test-password";
-        facilityId = "a2T4J000001JJfnUAG";
-        gymName = "Crawley";
-        schedule = {
-          monday = "12:00";
-          tuesday = "12:00";
-          wednesday = "12:00";
-          thursday = "12:00";
-          friday = "12:00";
-          saturday = "12:00";
-          sunday = "12:00";
+      weekdays = [
+        "monday"
+        "tuesday"
+        "wednesday"
+        "thursday"
+        "friday"
+        "saturday"
+        "sunday"
+      ];
+
+      # Stands in for the agenix secret: the private half of the config. Every
+      # weekday is the same, because the release horizon decides which one runs.
+      secretsFor =
+        name: entries:
+        (pkgs.formats.json { }).generate "aqua-secrets-${name}.json" {
+          username = "test@example.com";
+          password = "test-password";
+          facilityId = "a2T4J000001JJfnUAG";
+          gymName = "Crawley";
+          schedule = lib.genAttrs weekdays (_: entries);
+        };
+
+      # The one-class shorthand: a bare time, booking the default class.
+      secretsFile = secretsFor "single" "12:00";
+
+      # Two classes a day, the second naming a class of its own.
+      multiSecretsFile = secretsFor "multi" [
+        "12:00"
+        {
+          time = "18:00";
+          className = "Yoga";
+        }
+      ];
+
+      # Shared so the multi-class node cannot drift from the single-class one.
+      node = secrets: {
+        imports = [
+          alertRecorder
+          config.flake.modules.nixos.aqua-booking
+        ];
+
+        # A topic distinct from the alert topic, so the test can tell booking
+        # outcomes apart from operational pages.
+        environment.etc."aqua-topic".text = "NTFY_TOPIC=aqua-test";
+
+        blizzard.aqua-booking = {
+          secretsFile = secrets;
+          successTopicFile = "/etc/aqua-topic";
+          apiBase = "http://127.0.0.1:9090/booking/";
+          authInstance = "http://127.0.0.1:9090/";
+          timezone = "UTC";
+          releaseHorizonDays = 1;
+          # Tiny budget so the retry loop exercises quickly instead of the 90s default.
+          retry = {
+            budgetSeconds = 3;
+            baseSeconds = 0.2;
+            maxBackoffSeconds = 0.5;
+            maxRetryAfterSeconds = 1;
+          };
+        };
+
+        systemd.services.aqua-stub = {
+          description = "Stub Nuffield APIM + B2C endpoints";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            ExecStart = "${pkgs.python3}/bin/python3 ${stub}";
+            StateDirectory = "aqua-stub";
+          };
         };
       };
     in
     {
       # Pure-logic cover for the bits the VM cannot reach cheaply: London/BST
-      # matching, ledger pruning, and the retry budget.
+      # matching, schedule parsing, ledger pruning, and the retry budget.
       checks.aqua-booking-unit =
         pkgs.runCommand "aqua-booking-unit"
           {
@@ -197,86 +257,54 @@
       checks.aqua-booking = pkgs.testers.runNixOSTest {
         name = "aqua-booking";
 
-        nodes.machine = {
-          imports = [
-            alertRecorder
-            config.flake.modules.nixos.aqua-booking
-          ];
-
-          # A topic distinct from the alert topic, so the test can tell booking
-          # outcomes apart from operational pages.
-          environment.etc."aqua-topic".text = "NTFY_TOPIC=aqua-test";
-
-          blizzard.aqua-booking = {
-            inherit secretsFile;
-            successTopicFile = "/etc/aqua-topic";
-            apiBase = "http://127.0.0.1:9090/booking/";
-            authInstance = "http://127.0.0.1:9090/";
-            timezone = "UTC";
-            releaseHorizonDays = 1;
-            # Tiny budget so the retry loop exercises quickly instead of the 90s default.
-            retry = {
-              budgetSeconds = 3;
-              baseSeconds = 0.2;
-              maxBackoffSeconds = 0.5;
-              maxRetryAfterSeconds = 1;
-            };
-          };
-
-          systemd.services.aqua-stub = {
-            description = "Stub Nuffield APIM + B2C endpoints";
-            wantedBy = [ "multi-user.target" ];
-            serviceConfig = {
-              ExecStart = "${pkgs.python3}/bin/python3 ${stub}";
-              StateDirectory = "aqua-stub";
-            };
-          };
-        };
+        nodes.machine = node secretsFile;
+        nodes.multi = node multiSecretsFile;
 
         testScript = alertHelpers + ''
-          def set_mode(mode):
-              machine.succeed(f"echo {mode} > /var/lib/aqua-stub/mode")
+          def set_mode(mode, node=machine):
+              node.succeed(f"echo {mode} > /var/lib/aqua-stub/mode")
+
+
+          def counter(name, node=machine):
+              return int(
+                  node.succeed(f"cat /var/lib/aqua-stub/{name} 2>/dev/null || echo 0").strip()
+              )
 
 
           def authorize_count():
-              return int(
-                  machine.succeed(
-                      "cat /var/lib/aqua-stub/authorize-count 2>/dev/null || echo 0"
-                  ).strip()
-              )
+              return counter("authorize-count")
 
 
-          def bookings_count():
-              return int(
-                  machine.succeed(
-                      "cat /var/lib/aqua-stub/bookings-count 2>/dev/null || echo 0"
-                  ).strip()
-              )
+          def bookings_count(node=machine):
+              return counter("bookings-count", node)
 
 
           def items_count():
-              return int(
-                  machine.succeed(
-                      "cat /var/lib/aqua-stub/items-count 2>/dev/null || echo 0"
-                  ).strip()
-              )
+              return counter("items-count")
 
 
-          def success_posts():
-              return [post for post in posts() if post["topic"] == "aqua-test"]
+          def aqua_posts(node=machine):
+              raw = node.succeed("cat /var/lib/fake-ntfy/posts.jsonl 2>/dev/null || true")
+              return [json.loads(line) for line in raw.splitlines() if line.strip()]
+
+
+          def success_posts(node=machine):
+              return [post for post in aqua_posts(node) if post["topic"] == "aqua-test"]
 
 
           def error_posts():
               return [post for post in posts() if post["topic"] == "blizzard-test"]
 
 
-          def wait_for_success(count, timeout=30):
+          def wait_for_success(count, timeout=30, node=machine):
               deadline = time.time() + timeout
               while time.time() < deadline:
-                  if len(success_posts()) >= count:
-                      return success_posts()
+                  if len(success_posts(node)) >= count:
+                      return success_posts(node)
                   time.sleep(0.5)
-              raise Exception(f"expected {count} success posts, got {len(success_posts())}")
+              raise Exception(
+                  f"expected {count} success posts, got {len(success_posts(node))}"
+              )
 
 
           def wait_for_error(count, timeout=30):
@@ -288,15 +316,21 @@
               raise Exception(f"expected {count} error posts, got {len(error_posts())}")
 
 
+          def quiesce(node):
+              """Drive runs by hand; the real timers must not fire mid-test. Both are
+              Persistent=true, so stop the catch-up run and drop whatever it posted."""
+              node.wait_for_unit("multi-user.target")
+              node.wait_for_unit("fake-ntfy.service")
+              node.wait_for_unit("aqua-stub.service")
+              node.wait_for_open_port(8080)
+              node.wait_for_open_port(9090)
+              node.succeed("systemctl stop aqua-booking.timer aqua-booking-freshness.timer")
+              node.succeed("systemctl stop aqua-booking.service")
+              node.succeed(": > /var/lib/fake-ntfy/posts.jsonl")
+
+
           start_recorder()
-          machine.wait_for_unit("aqua-stub.service")
-          machine.wait_for_open_port(9090)
-          # Drive runs by hand; the real timers must not fire mid-test. Both are
-          # Persistent=true, so clear anything they posted before we caught them.
-          machine.succeed(
-              "systemctl stop aqua-booking.timer aqua-booking-freshness.timer"
-          )
-          machine.succeed(": > /var/lib/fake-ntfy/posts.jsonl")
+          quiesce(machine)
 
           with subtest("the dry-run entrypoint reports the target without booking"):
               set_mode("book")
@@ -305,6 +339,8 @@
               assert "sfid=S1" in out, out
               # The raw item is the only way to debug a schema surprise after the fact.
               assert "raw item" in out, out
+              # The exact titles on the day: what a new schedule entry has to name.
+              assert "feed: 12:00 Aqua Aerobics" in out, out
               assert "is_full=False" in out, out
               # A dry run is read by a human: levels are visible, debug included.
               assert "INFO" in out, out
@@ -330,7 +366,7 @@
               out = machine.succeed("aqua-booking-dry-run")
               assert "already booked outside this service" in out, out
               # Two dry runs have already happened: the output must not replay them.
-              assert out.count("target:") == 1, out
+              assert out.count("targets on ") == 1, out
               machine.fail("test -e /var/lib/aqua-booking/booked.jsonl")
 
           with subtest("scripted login books a free seat and notifies the success topic"):
@@ -436,7 +472,7 @@
               machine.succeed("touch -d '3 days ago' /var/lib/aqua-booking/last_run")
               machine.succeed("systemctl start aqua-booking-freshness.service")
               errors = wait_for_error(seen + 1)
-              assert errors[-1]["title"] == "machine: Aqua Aerobics booking stale", errors[-1]
+              assert errors[-1]["title"] == "machine: Gym booking stale", errors[-1]
               assert "72h" in errors[-1]["message"], errors[-1]
 
           with subtest("a service that has never completed a run is caught too"):
@@ -445,6 +481,41 @@
               machine.succeed("systemctl start aqua-booking-freshness.service")
               errors = wait_for_error(seen + 1)
               assert "never completed a run" in errors[-1]["message"], errors[-1]
+
+          quiesce(multi)
+
+          with subtest("a day of two different classes books both, in one sign-in"):
+              set_mode("multi", multi)
+              auth_before = counter("authorize-count", multi)
+              multi.succeed("systemctl start aqua-booking.service")
+              got = sorted(post["title"] for post in wait_for_success(2, node=multi))
+              assert got == ["multi: Aqua Aerobics booked", "multi: Yoga booked"], got
+              assert bookings_count(multi) == 2, bookings_count(multi)
+              # One feed sweep resolved both, so both rode the same token.
+              assert counter("authorize-count", multi) == auth_before + 1, counter(
+                  "authorize-count", multi
+              )
+              ledger = multi.succeed("cat /var/lib/aqua-booking/booked.jsonl")
+              assert '"sfid": "S5"' in ledger, ledger
+              assert '"sfid": "S6"' in ledger, ledger
+
+          with subtest("one class missing does not cost the other its seat"):
+              set_mode("partial", multi)
+              before = len(success_posts(multi))
+              count_before = bookings_count(multi)
+              multi.succeed("systemctl start aqua-booking.service")
+              got = {
+                  post["title"]: post for post in wait_for_success(before + 2, node=multi)[before:]
+              }
+              assert "multi: Yoga booked" in got, got
+              # The morning class never appeared; only it gets the schedule-change note.
+              note = got.get("multi: Aqua Aerobics: nothing to book")
+              assert note is not None, got
+              assert note["priority"] == 2, note
+              # The evening class was booked once, on the first sweep, and the
+              # retries for the missing one never went back over it.
+              assert bookings_count(multi) == count_before + 1, bookings_count(multi)
+              multi.succeed("test -s /var/lib/aqua-booking/last_run")
         '';
       };
     };

@@ -118,6 +118,7 @@ _: {
         className = lib.mkOption {
           type = lib.types.str;
           default = "Aqua Aerobics";
+          description = "Class booked for schedule entries that give only a time.";
         };
         timezone = lib.mkOption {
           type = lib.types.str;
@@ -179,9 +180,22 @@ _: {
           type = lib.types.path;
           description = ''
             JSON with the private half of the config, wired by aqua-booking-secret:
-            username, password, facilityId, gymName, and schedule (an attrset of
-            lowercase weekday to local HH:MM). Kept out of the store because a gym
-            and a weekly timetable say where someone is and when.
+            username, password, facilityId, gymName, and schedule. Kept out of the
+            store because a gym and a weekly timetable say where someone is and when.
+
+            schedule maps a lowercase weekday to the classes booked that day: a
+            local HH:MM booking className, an object naming another class, or a
+            list of either.
+
+            ```json
+            {
+              "monday": "11:15",
+              "wednesday": [
+                "14:00",
+                { "time": "18:30", "className": "Spin" }
+              ]
+            }
+            ```
           '';
         };
       };
@@ -192,7 +206,7 @@ _: {
         systemd = {
           services = {
             aqua-booking = {
-              description = "Book ${cfg.className} classes";
+              description = "Book the day's gym classes";
               after = [ "network-online.target" ];
               wants = [ "network-online.target" ];
               environment = runEnvironment;
@@ -210,7 +224,7 @@ _: {
             # Manual entrypoint: same credentials and hardening, but discovery only.
             # It still authenticates, so it also proves the stored refresh token works.
             aqua-booking-dry-run = {
-              description = "Show what ${cfg.className} booking would do, without booking";
+              description = "Show what the booking run would do, without booking";
               after = [ "network-online.target" ];
               wants = [ "network-online.target" ];
               environment = runEnvironment;
@@ -228,7 +242,7 @@ _: {
             # Alerts go to the default topic, not successTopicFile: a run that never
             # happened is an operational failure, not a booking outcome.
             aqua-booking-freshness = {
-              description = "Alert if the daily ${cfg.className} booking run has not happened";
+              description = "Alert if the daily gym booking run has not happened";
               # The watchdog itself must not fail silently.
               unitConfig.OnFailure = "alert-failure@aqua-booking-freshness.service";
               serviceConfig.Type = "oneshot";
@@ -236,7 +250,7 @@ _: {
                 set -uo pipefail
                 stamp=/var/lib/aqua-booking/last_run
                 alert() {
-                  ${lib.getExe config.blizzard.alerts.send} "${cfg.className} booking stale" "$1" 4 warning
+                  ${lib.getExe config.blizzard.alerts.send} "Gym booking stale" "$1" 4 warning
                 }
                 if [ ! -e "$stamp" ]; then
                   alert "aqua-booking has never completed a run — check journalctl -u aqua-booking"
@@ -253,7 +267,7 @@ _: {
 
           timers = {
             aqua-booking = {
-              description = "Fire ${cfg.className} booking just after the 07:00 release";
+              description = "Fire the gym booking run just after the 07:00 release";
               wantedBy = [ "timers.target" ];
               timerConfig = {
                 OnCalendar = "*-*-* 07:00:05 Europe/London";
@@ -267,7 +281,7 @@ _: {
             };
 
             aqua-booking-freshness = {
-              description = "Check that the ${cfg.className} booking run happened";
+              description = "Check that the gym booking run happened";
               wantedBy = [ "timers.target" ];
               timerConfig = {
                 OnCalendar = "*-*-* 08:00 Europe/London";
