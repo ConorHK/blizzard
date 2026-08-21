@@ -22,7 +22,6 @@ _: {
         text = ''
           window=0
           count=0
-          declare -A tailscale_grant
 
           # Cap alerts at 10 per 10 minutes so a flood can't spam the topic.
           throttled() {
@@ -69,35 +68,9 @@ _: {
           journalctl --follow --lines=0 --output=json \
             --cursor-file=/var/lib/login-alerts/cursor \
             MESSAGE_ID=${sessionStart} \
-            + SYSLOG_IDENTIFIER=tailscaled \
-            | jq --unbuffered -r '
-                if .MESSAGE_ID == "${sessionStart}" then
-                  ["session", .USER_ID, .SESSION_ID] | @tsv
-                elif (.MESSAGE | type) == "string"
-                     and (.MESSAGE | test("access granted to ")) then
-                  (.MESSAGE | capture("access granted to (?<who>[^ ]+)( as ssh-user \"(?<local>[^\"]+)\")?"))
-                  | ["tailscale", (.local // .who), .who] | @tsv
-                else empty end
-              ' \
-            | while IFS=$'\t' read -r kind user detail; do
-                now=$(date +%s)
-
-                # Keyed on the local user, which is what logind reports for the session.
-                if [ "$kind" = tailscale ]; then
-                  tailscale_grant[$user]=$now
-                  message="$detail logged in via Tailscale SSH"
-                  if [ "$detail" != "$user" ]; then message="$message as $user"; fi
-                  notify "Tailscale SSH login" "$message"
-                  continue
-                fi
-
-                # Tailscale SSH announces its own grant and then opens a PAM
-                # session; one login should not alert twice.
-                if [ $(( now - ''${tailscale_grant[$user]:-0} )) -le 15 ]; then
-                  continue
-                fi
-
-                session_props "$detail"
+            | jq --unbuffered -r '[.USER_ID, .SESSION_ID] | @tsv' \
+            | while IFS=$'\t' read -r user session; do
+                session_props "$session"
 
                 # The per-user systemd manager opens a session of its own, as do
                 # greeters; only a real login has class "user". An ended session

@@ -14,30 +14,32 @@
         remove
         ;
 
+      # Rootless service accounts are normal users too; only a keyed one can log in.
+      adminUser =
+        value:
+        value.config.users.users
+        |> filterAttrs (_: user: user.isNormalUser && user.openssh.authorizedKeys.keys != [ ])
+        |> attrNames
+        |> remove "root"
+        |> head;
+
+      sshHosts =
+        config.flake.nixosConfigurations |> filterAttrs (_: value: value.config.services.openssh.enable);
+
       hosts =
-        config.flake.nixosConfigurations
-        |> filterAttrs (_: value: value.config.services.openssh.enable)
+        sshHosts
         |> mapAttrs (
           _: value: {
-            User =
-              value.config.users.users
-              |> filterAttrs (_: value: value.isNormalUser)
-              |> attrNames
-              |> remove "root"
-              |> head;
+            User = adminUser value;
+
+            Port = head value.config.services.openssh.ports;
           }
         );
       localHosts =
-        config.flake.nixosConfigurations
-        |> filterAttrs (_: value: value.config.services.openssh.enable)
+        sshHosts
         |> mapAttrs (
           _name: value: {
-            User =
-              value.config.users.users
-              |> filterAttrs (_: value: value.isNormalUser)
-              |> attrNames
-              |> remove "root"
-              |> head;
+            User = adminUser value;
 
             HostName = value.config.networking.ipv4.address;
 

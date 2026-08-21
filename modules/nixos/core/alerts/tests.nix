@@ -92,43 +92,8 @@
                 assert alert["title"] == "machine: Login", alert
                 assert alert["message"] == "mallory logged in", alert
 
-            with subtest("a tailscale grant names the tailnet identity and the local user"):
-                seen = len(posts())
-                emit(
-                    "tailscaled",
-                    'ssh-session(sess-1): access granted to tagged-devices as ssh-user "conor"',
-                )
-                alert = wait_for_posts(seen + 1)[seen]
-                assert alert["title"] == "machine: Tailscale SSH login", alert
-                assert alert["message"] == (
-                    "tagged-devices logged in via Tailscale SSH as conor"
-                ), alert
-                assert alert["tags"] == ["key"], alert
-
-            with subtest("a grant that names no local user still reports who"):
-                seen = len(posts())
-                emit("tailscaled", "ssh-session(conn=1): access granted to erin")
-                alert = wait_for_posts(seen + 1)[seen]
-                assert alert["message"] == "erin logged in via Tailscale SSH", alert
-
-            with subtest("a tailscale login that also opens a session alerts once"):
-                seen = len(posts())
-                emit(
-                    "tailscaled",
-                    'ssh-session(sess-2): access granted to tagged-devices as ssh-user "dave"',
-                )
-                wait_for_posts(seen + 1)
-                session("dave", 902)
-
-                session("marker", 903)
-                new = wait_for_posts(seen + 2)[seen:]
-                assert len(new) == 2, new
-                assert new[0]["title"] == "machine: Tailscale SSH login", new
-                assert new[1]["message"] == "marker logged in", new
-
             with subtest("everything that is not a login stays quiet"):
                 seen = len(posts())
-                emit("tailscaled", "ssh-session(conn=3): access denied to mallory")
                 emit("sshd", "Failed password for invalid user admin from 203.0.113.5 port 22 ssh2")
                 emit("sudo", "conor : user NOT in sudoers ; TTY=pts/0 ; PWD=/ ; USER=root")
                 emit("su", "FAILED su for root by conor")

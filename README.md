@@ -60,7 +60,7 @@ All five hosts alert when someone logs in, imported via `modules/nixos/core/impo
 
 Logins are read from `systemd-logind`, which opens a session for every path that goes through PAM — sshd, console and greetd alike — so a single source covers all of them without per-service pattern matching. The alert names the user, and adds the PAM service and origin when the session is still open to be queried.
 
-Tailscale SSH is matched separately because it announces its own grant and may not go through PAM. When it does both, the PAM session is suppressed if a grant for that user landed within 15s, so one login alerts once.
+Tailscale SSH is being retired in favour of sshd on port 2222; the `tailscaleSsh` flag in `modules/nixos/core/network/tailscale.nix` still leaves both paths up, and flipping it to `false` drives `tailscale set --ssh=false` on every host. Only the PAM path alerts, so until that flip a Tailscale SSH login that bypasses PAM is not reported.
 
 Nothing else pages: failed passwords, sudo refusals and system drift are deliberately not reported. Alerts are capped at ten per ten minutes; suppressed entries are logged to `journalctl -u login-alerts`.
 
