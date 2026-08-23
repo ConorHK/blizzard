@@ -1,16 +1,22 @@
 {
   flake.modules.nixos.tailscale =
-    { lib, pkgs, ... }:
-    let
-      # Keeps both login paths up; flip false in a second deploy, once sshd:2222 answers everywhere.
-      tailscaleSsh = true;
-    in
     {
-      services.tailscale = {
-        enable = true;
-        extraSetFlags = [ "--ssh=${lib.boolToString tailscaleSsh}" ];
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      # Bypasses sshd and PAM, so it sets no loginuid; kept only where sshd has no other route.
+      options.blizzard.tailscaleSsh = lib.mkEnableOption "Tailscale SSH";
+
+      config = {
+        services.tailscale = {
+          enable = true;
+          extraSetFlags = [ "--ssh=${lib.boolToString config.blizzard.tailscaleSsh}" ];
+        };
+        networking.firewall.trustedInterfaces = [ "tailscale0" ];
+        environment.systemPackages = [ pkgs.tailscale ];
       };
-      networking.firewall.trustedInterfaces = [ "tailscale0" ];
-      environment.systemPackages = [ pkgs.tailscale ];
     };
 }

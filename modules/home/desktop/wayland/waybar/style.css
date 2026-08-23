@@ -43,7 +43,8 @@ tooltip label {
 /* Something is wrong and you can act on it. */
 #battery.critical,
 #network.disconnected,
-#systemd-failed-units.degraded {
+#systemd-failed-units.degraded,
+#custom-system-up-to-date.error {
     color: @base08;
 }
 

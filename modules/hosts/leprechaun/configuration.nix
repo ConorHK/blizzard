@@ -28,7 +28,7 @@
 
       networking = {
         hostName = "leprechaun";
-        ipv4.address = "192.168.0.145";
+        ipv4.address = "192.168.0.234";
         # head -c4 /dev/urandom | od -A none -t x4
         hostId = "748fda6c";
       };

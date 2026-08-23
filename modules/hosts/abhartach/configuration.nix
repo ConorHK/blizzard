@@ -28,7 +28,7 @@
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBeGvQMzAFPToh87kRuK4ogdA3OCFXIiEPuohfcLPWx";
 
       networking.hostName = "abhartach";
-      networking.ipv4.address = "192.168.0.58";
+      networking.ipv4.address = "192.168.0.38";
 
       security.sudo.wheelNeedsPassword = false;
       programs.nix-ld.enable = true;

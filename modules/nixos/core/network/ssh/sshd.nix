@@ -2,18 +2,17 @@
   flake.modules.nixos.sshd =
     { lib, ... }:
     let
-      port = 2222;
+      port = 22;
     in
     {
       programs.mosh = {
         enable = lib.mkDefault true;
-        # SSH/mosh are reachable over tailscale0 (a trusted interface); don't
-        # expose them on every interface.
+        # mosh stays tailnet-only; sshd is reachable on every interface.
         openFirewall = lib.mkDefault false;
       };
       services.openssh = {
         enable = lib.mkDefault true;
-        openFirewall = lib.mkDefault false;
+        openFirewall = lib.mkDefault true;
         ports = [ port ];
         allowSFTP = false;
 

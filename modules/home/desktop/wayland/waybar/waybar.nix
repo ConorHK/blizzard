@@ -30,6 +30,10 @@
                              '"dispatch hl.dsp.workspace.toggle_special(\"" + name() + "\")"' \
               --replace-fail '"dispatch togglespecialworkspace"' \
                              '"dispatch hl.dsp.workspace.toggle_special()"'
+            # Class follows the real failed-unit count, not the managers' transient SystemState.
+            substituteInPlace src/modules/systemd_failed_units.cpp \
+              --replace-fail 'if (overall_state == "degraded") RequestFailedUnits();' \
+                             'RequestFailedUnits(); overall_state = nr_failed == 0 ? "ok" : "degraded";'
           '';
         });
         style = builtins.readFile ./style.css;
