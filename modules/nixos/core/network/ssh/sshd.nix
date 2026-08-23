@@ -32,6 +32,9 @@
           TCPKeepAlive = false;
 
           KexAlgorithms = [
+            "mlkem768x25519-sha256"
+            "sntrup761x25519-sha512@openssh.com"
+            "curve25519-sha256"
             "curve25519-sha256@libssh.org"
             "ecdh-sha2-nistp521"
             "ecdh-sha2-nistp384"
