@@ -49,6 +49,22 @@
         "type": "github"
       }
     },
+    "backpressured": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780227858,
+        "narHash": "sha256-cJuThox/UodhynO8K53qhBNjyf56o15+ojEc3pHSyRk=",
+        "owner": "lucasfcosta",
+        "repo": "backpressured",
+        "rev": "1487004ae744199761c0562a4c695d6a1872d3a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lucasfcosta",
+        "repo": "backpressured",
+        "type": "github"
+      }
+    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -1386,6 +1402,7 @@
       "inputs": {
         "agenix": "agenix",
         "agenix-rekey": "agenix-rekey",
+        "backpressured": "backpressured",
         "claude-code": "claude-code",
         "cnvim": "cnvim",
         "crash": "crash",

@@ -7,6 +7,8 @@
     agenix.inputs.home-manager.follows = "home-manager";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
+    backpressured.flake = false;
+    backpressured.url = "github:lucasfcosta/backpressured";
     claude-code.url = "github:sadjow/claude-code-nix";
     cnvim.inputs.nixpkgs.follows = "nixpkgs";
     cnvim.url = "github:conorhk/vimrc";
