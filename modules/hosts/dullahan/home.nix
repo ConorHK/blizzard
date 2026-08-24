@@ -19,11 +19,6 @@ topLevel: {
         };
       };
 
-      # services.syncthing.settings = {
-      #   devices.abhartach.id = "6UC67WT-CMLMJIP-JA6Z2H2-2H2ICCF-N7VRJBY-4XOMVIO-A6E7TN4-JVSW4A4";
-      #   folders.share.devices = [ "abhartach" ];
-      # };
-
       programs.waybar.settings.main.output = "eDP-1";
 
       imports = with topLevel.config.flake.modules.homeManager; [

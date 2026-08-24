@@ -16,11 +16,6 @@ topLevel: {
         hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
       };
 
-      services.syncthing.settings = {
-        devices.dullahan.id = "LAIGIVW-EIN4X7E-NTWJJ7D-XE6UBDQ-LXALLB6-UR77FXM-JZJMQJ7-5TKPNAX";
-        folders.share.devices = [ "dullahan" ];
-      };
-
       home.sessionVariables = {
         JJ_USER = "$(cat ${config.age.secrets.git-name.path})";
         JJ_EMAIL = "$(cat ${config.age.secrets.git-email.path})";

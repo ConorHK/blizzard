@@ -35,6 +35,7 @@
     satisfactory
     server-users
     smartd
+    syncthing-server
     systemd-boot
     voice
     wireguard-gateway
