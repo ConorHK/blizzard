@@ -18,6 +18,7 @@
           creeper
           gohu
           pkgs.lexend
+          pkgs.nerd-fonts.symbols-only
           pkgs.siji
         ];
         enableDefaultPackages = true;
