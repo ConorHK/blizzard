@@ -22,6 +22,7 @@
     github-nix-access
     github-runner
     immich
+    matrix
     mealie
     music-assistant
     nginx

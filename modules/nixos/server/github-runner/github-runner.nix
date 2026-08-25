@@ -1,12 +1,12 @@
 {
+  nixpkgs.allowedInsecurePackages = [
+    "nodejs-20.20.2"
+    "nodejs-slim-20.20.2"
+  ];
+
   flake.modules.nixos.github-runner =
     { config, pkgs, ... }:
     {
-      nixpkgs.config.permittedInsecurePackages = [
-        "nodejs-20.20.2"
-        "nodejs-slim-20.20.2"
-      ];
-
       users.users.github-runner-blizzard = {
         isSystemUser = true;
         group = "github-runner-blizzard";
