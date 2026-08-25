@@ -54,6 +54,7 @@ let
     "nixos-icons"
     "qt"
     "starship"
+    "tmux"
     "vesktop"
     "xresources"
     "zathura"

@@ -36,8 +36,8 @@ topLevel: {
         jujutsu
         ntfy
         ssh
+        tmux
         xdg
-        zellij
       ];
     };
 }

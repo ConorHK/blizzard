@@ -30,7 +30,7 @@
 
         testUserHasOwnGroup = {
           expr = {
-            group = user.users.users.alice.group;
+            inherit (user.users.users.alice) group;
             declared = builtins.attrNames user.users.groups;
           };
           expected = {

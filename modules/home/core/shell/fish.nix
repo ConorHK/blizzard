@@ -6,11 +6,13 @@
         sessionVariables.SHELLS = lib.getExe pkgs.fish;
         shell.enableFishIntegration = true;
       };
+      # Whichever multiplexer a host imports opens its panes in fish.
       xdg.configFile."zellij/config.kdl".text = lib.concatStringsSep "\n" [
         ''
           default_shell "fish"
         ''
       ];
+      programs.tmux.shell = lib.getExe pkgs.fish;
 
       programs = {
         zsh.initExtra = "exec fish";

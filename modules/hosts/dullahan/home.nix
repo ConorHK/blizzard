@@ -34,8 +34,8 @@ topLevel: {
         laptop
         ntfy
         ssh
+        tmux
         xdg
-        zellij
       ];
     };
 }

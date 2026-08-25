@@ -11,8 +11,8 @@ _topLevel: {
         inputs.blizzard.modules.homeManager.agenix
         inputs.blizzard.modules.homeManager.cnvim
         inputs.blizzard.modules.homeManager.core
+        inputs.blizzard.modules.homeManager.tmux
         inputs.blizzard.modules.homeManager.xdg
-        inputs.blizzard.modules.homeManager.zellij
       ];
     };
 }
