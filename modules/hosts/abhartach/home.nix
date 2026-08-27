@@ -31,6 +31,7 @@ topLevel: {
         jujutsu
         ntfy
         ssh
+        syncthing
         xdg
         zellij
       ];

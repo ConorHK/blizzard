@@ -7,6 +7,5 @@
     nh
     nix
     nix-index-database
-    syncthing
   ];
 }

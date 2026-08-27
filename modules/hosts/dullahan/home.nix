@@ -29,6 +29,7 @@ topLevel: {
         laptop
         ntfy
         ssh
+        syncthing
         xdg
         zellij
       ];
