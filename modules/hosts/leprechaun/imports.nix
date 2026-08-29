@@ -37,6 +37,7 @@
     restic
     restic-secrets
     satisfactory
+    selkie
     server-users
     smartd
     syncthing-server

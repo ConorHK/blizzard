@@ -19,6 +19,8 @@ topLevel: {
         };
       };
 
+      programs.claude-code.aperture.enable = true;
+
       programs.waybar.settings.main.output = "eDP-1";
 
       imports = with topLevel.config.flake.modules.homeManager; [

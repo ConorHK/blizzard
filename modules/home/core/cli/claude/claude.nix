@@ -30,13 +30,24 @@
         runtimeInputs = [ pkgs.jq ];
         text = builtins.readFile ./statusline.sh;
       };
+      # Model names are gateway-scoped, so they only apply alongside the base URL.
+      apertureEnv = {
+        ANTHROPIC_BASE_URL = "https://ai.goat-lionfish.ts.net";
+        ANTHROPIC_DEFAULT_OPUS_MODEL = "anthropic-sub/claude-opus-5";
+        ANTHROPIC_DEFAULT_SONNET_MODEL = "anthropic-sub/claude-sonnet-5";
+        ANTHROPIC_DEFAULT_HAIKU_MODEL = "anthropic-sub/claude-haiku-4-5-20251001";
+        ANTHROPIC_DEFAULT_FABLE_MODEL = "anthropic-sub/claude-fable-5";
+      };
       settings = {
         alwaysThinkingEnabled = true;
         enabledPlugins = {
           "backpressured@lucasfcosta" = true;
         };
-        # Auto mode will not engage without this opt-in.
-        env.CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
+        env = {
+          # Auto mode will not engage without this opt-in.
+          CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
+        }
+        // lib.optionalAttrs config.programs.claude-code.aperture.enable apertureEnv;
         extraKnownMarketplaces = {
           lucasfcosta = {
             source = {
@@ -97,9 +108,12 @@
       writingStyle = ./writing-style-do-not-delete.md;
     in
     {
-      home.packages = [ pkgs.claude-code ];
+      options.programs.claude-code.aperture.enable =
+        lib.mkEnableOption "routing Claude Code through the Aperture gateway";
 
-      home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      config.home.packages = [ pkgs.claude-code ];
+
+      config.home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         run install -Dm644 ${settingsFile} ${config.home.homeDirectory}/.claude/settings.json
         run install -Dm644 ${engineeringStandards} ${config.home.homeDirectory}/.claude/rules/engineering-standards-do-not-delete.md
         run install -Dm644 ${writingStyle} ${config.home.homeDirectory}/.claude/rules/writing-style-do-not-delete.md
