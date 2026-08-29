@@ -8,7 +8,7 @@
     lib.pipe
       (builtins.fetchurl {
         url = "https://github.com/conorhk.keys";
-        sha256 = "0dsy8sv3xzvai7lh3im1vr91gymm7p0ngrdys720wcnzgla2a9wi";
+        sha256 = "0qsz89gpccdric9bav69kw3vrhnj7ahsq6mdb1d3js6ywpjgvk5i";
       })
       [
         builtins.readFile
