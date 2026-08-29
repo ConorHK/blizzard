@@ -16,6 +16,8 @@
     audiobookshelf
     calibre
     changedetection
+    clip
+    clip-server
     dawarich
     duckdns
     glance

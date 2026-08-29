@@ -8,6 +8,7 @@
     imports = with config.flake.modules.nixos; [
       battery
       cachix
+      clip
       cnvim
       desktop
       github-nix-access

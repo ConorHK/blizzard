@@ -9,6 +9,7 @@
       amdgpu
       beeper
       cachix
+      clip
       cnvim
       desktop
       gaming
