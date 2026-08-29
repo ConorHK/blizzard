@@ -18,7 +18,7 @@
         policies = {
           AutofillAddressEnabled = false;
           AutofillCreditCardEnabled = false;
-          DefaultDownloadDirectory = "~/dl";
+          DefaultDownloadDirectory = "\${home}/dl";
           DisableBuiltinPDFViewer = true;
           DisableMasterPasswordCreation = true;
           DisablePocket = true;
