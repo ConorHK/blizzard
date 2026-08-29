@@ -14,5 +14,9 @@
         builtins.readFile
         (lib.splitString "\n")
         (builtins.filter (x: x != ""))
-      ];
+      ]
+    # Not published on GitHub.
+    ++ [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJC0hbyeb1uaX+SyTDEBsIC/U72sCswjnRS+flLi+gNf phone@conorknowles.com"
+    ];
 }
