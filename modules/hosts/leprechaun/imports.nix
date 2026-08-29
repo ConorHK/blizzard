@@ -14,6 +14,7 @@
     aqua-booking
     aqua-booking-secret
     audiobookshelf
+    bitbang
     calibre
     changedetection
     clip

@@ -8,6 +8,7 @@
     imports = with config.flake.modules.nixos; [
       amdgpu
       beeper
+      bitbang
       cachix
       clip
       cnvim

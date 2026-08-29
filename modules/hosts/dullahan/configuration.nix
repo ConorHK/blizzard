@@ -5,6 +5,8 @@
     networking.hostName = "dullahan";
     networking.ipv4.address = "192.168.0.183";
 
+    blizzard.bitbang.shareMembers = [ "goose" ];
+
     security.sudo.wheelNeedsPassword = false;
 
     system = {

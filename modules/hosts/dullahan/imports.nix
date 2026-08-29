@@ -7,6 +7,7 @@
   flake.modules.nixos."nixosConfigurations/dullahan" = {
     imports = with config.flake.modules.nixos; [
       battery
+      bitbang
       cachix
       clip
       cnvim

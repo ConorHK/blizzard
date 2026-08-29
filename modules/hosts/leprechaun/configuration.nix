@@ -6,6 +6,8 @@
 
       restic.repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
 
+      blizzard.bitbang.shareMembers = [ "driver" ];
+
       # gatus cannot usefully page about its own UI being down.
       blizzard.monitoring.exempt = [ "monitor.goosebox.org" ];
 
