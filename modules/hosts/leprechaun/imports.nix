@@ -25,6 +25,8 @@
     github-nix-access
     github-runner
     immich
+    immich-public-proxy
+    immich-stack
     matrix
     mealie
     music-assistant
