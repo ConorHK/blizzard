@@ -60,6 +60,11 @@
             "*" = {
               SetEnv.COLORTERM = "truecolor";
               SetEnv.TERM = "xterm-256color";
+
+              # New panes reuse the connection instead of a handshake.
+              ControlMaster = "auto";
+              ControlPath = "~/.ssh/master-%r@%n:%p";
+              ControlPersist = "10m";
             };
           };
       };
