@@ -50,6 +50,7 @@ let
     "gtk"
     "gtksourceview"
     "hyprlock"
+    "kitty"
     "mpv"
     "nixos-icons"
     "qt"

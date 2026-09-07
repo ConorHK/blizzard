@@ -4,6 +4,7 @@
     alacritty
     firefox
     hyprland
+    kitty
     media
     network-manager
     social

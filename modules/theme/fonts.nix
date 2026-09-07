@@ -11,6 +11,7 @@
       # Try pkgs first (for downstream with overlay), fallback to inputs.self.packages (for blizzard itself)
       inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) creeper;
       inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) gohu;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) gohu-otb;
     in
     {
       fonts = {
@@ -40,6 +41,17 @@
                </pattern>
               </acceptfont>
              </selectfont>
+            <!-- fonts.packages would cache before these edits -->
+             <dir>${gohu-otb}/share/fonts</dir>
+            <!-- Kitty only loads scalable fonts: https://github.com/kovidgoyal/kitty/issues/97 -->
+             <match target="scan">
+              <test name="family">
+                <string>GohuOTB</string>
+              </test>
+              <edit name="spacing"><int>100</int></edit>
+              <edit name="scalable"><bool>true</bool></edit>
+              <edit name="outline"><bool>true</bool></edit>
+             </match>
             </fontconfig>
           '';
         };

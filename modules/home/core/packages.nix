@@ -10,7 +10,6 @@
           jq
           netcat
           net-snmp
-          ripgrep
           sshuttle
           unzip
           ;

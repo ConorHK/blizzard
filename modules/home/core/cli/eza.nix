@@ -4,6 +4,7 @@
     let
       ls = lib.concatStringsSep " " [
         "${pkgs.eza}/bin/eza"
+        "--hyperlink=auto"
         "--group"
         "--icons"
         "--git"
