@@ -41,11 +41,32 @@
         extraSpecialArgs = { inherit inputs; };
         sharedModules = [ inputs.quadlet-nix.homeManagerModules.quadlet ];
 
-        users.containers.home = {
-          stateVersion = "25.05";
-          username = "containers";
-          homeDirectory = "/home/containers";
-          packages = [ pkgs.podman-tui ];
+        users.containers = {
+          home = {
+            stateVersion = "25.05";
+            username = "containers";
+            homeDirectory = "/home/containers";
+            packages = [ pkgs.podman-tui ];
+          };
+
+          # Renovate bumps leave old images unreaped.
+          systemd.user = {
+            services.podman-image-prune = {
+              Unit.Description = "Prune unused podman images";
+              Service = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.podman}/bin/podman image prune --all --force --filter until=168h";
+              };
+            };
+            timers.podman-image-prune = {
+              Unit.Description = "Prune unused podman images daily";
+              Timer = {
+                OnCalendar = "daily";
+                Persistent = true;
+              };
+              Install.WantedBy = [ "timers.target" ];
+            };
+          };
         };
       };
     };
