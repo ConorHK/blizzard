@@ -16,5 +16,6 @@
     substituters
     syncthing
     update
+    zmx
   ];
 }
