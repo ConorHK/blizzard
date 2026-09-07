@@ -5,7 +5,12 @@
   ];
 
   flake.modules.nixos.github-runner =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       users.users.github-runner-blizzard = {
         isSystemUser = true;
@@ -40,6 +45,17 @@
           jq
           renovate
         ];
+        serviceOverrides = {
+          Restart = lib.mkForce "always";
+          RestartSec = "30s";
+          MemoryHigh = "5G";
+          MemoryMax = "7G";
+        };
+      };
+
+      systemd.services.github-runner-blizzard.unitConfig = {
+        StartLimitIntervalSec = 300;
+        StartLimitBurst = 5;
       };
     };
 }

@@ -63,11 +63,15 @@
           dates = lib.mkForce "daily";
         };
         settings = {
+          eval-cores = lib.mkForce 2;
+          max-jobs = lib.mkForce 2;
           min-free = lib.mkForce 10737418240; # 10 GB
           max-free = lib.mkForce 21474836480; # 20 GB
           trusted-users = [ "github-runner-blizzard" ];
         };
       };
+
+      systemd.services.nix-daemon.serviceConfig.MemoryHigh = "5G";
 
       programs.nh = {
         enable = true;
