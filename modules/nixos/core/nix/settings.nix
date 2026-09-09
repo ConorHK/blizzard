@@ -24,7 +24,11 @@
       };
 
       settings = {
-        experimental-features = "nix-command flakes pipe-operators";
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "pipe-operators"
+        ];
 
         # --- Determinate Nix tuning -------------------------------------------
         # Evaluate flakes without first copying the whole source tree into the

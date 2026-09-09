@@ -83,7 +83,11 @@ topLevel: {
               services.nix-daemon.enable = false;
               sockets.nix-daemon.enable = false;
             };
-            nix.settings.experimental-features = "nix-command flakes pipe-operators";
+            nix.settings.experimental-features = [
+              "nix-command"
+              "flakes"
+              "pipe-operators"
+            ];
 
             users = {
               mutableUsers = false;
