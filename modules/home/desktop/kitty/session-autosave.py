@@ -11,7 +11,7 @@ from kitty.utils import log_error
 if config_dir not in sys.path:
     sys.path.append(config_dir)
 
-from zmx_kitten import SESSION_DIR, rewrite_launch
+from zmx_kitten import AUTOSAVE_DIR, SESSION_DIR, rewrite_launch
 
 PREFIX = "auto-"
 
@@ -26,11 +26,20 @@ KEEP_FILES = 40
 state = {"path": "", "last": ""}
 
 
+# Autosaves once lived beside named saves.
+def sweep_legacy():
+    for name in os.listdir(SESSION_DIR):
+        if name.startswith(PREFIX) and name.endswith(SUFFIX):
+            os.replace(
+                os.path.join(SESSION_DIR, name), os.path.join(AUTOSAVE_DIR, name)
+            )
+
+
 # Age by mtime; a long run keeps its file.
 def prune():
     found = []
-    for name in os.listdir(SESSION_DIR):
-        path = os.path.join(SESSION_DIR, name)
+    for name in os.listdir(AUTOSAVE_DIR):
+        path = os.path.join(AUTOSAVE_DIR, name)
         if not name.startswith(PREFIX) or not name.endswith(SUFFIX):
             continue
         if path == state["path"]:
@@ -65,9 +74,10 @@ def save(boss):
 # One file per kitty process, never reused.
 def on_load(boss, data):
     stamp = time.strftime("%Y-%m-%d-%H%M%S")
-    state["path"] = os.path.join(SESSION_DIR, f"{PREFIX}{stamp}-{os.getpid()}{SUFFIX}")
+    state["path"] = os.path.join(AUTOSAVE_DIR, f"{PREFIX}{stamp}-{os.getpid()}{SUFFIX}")
     try:
-        os.makedirs(SESSION_DIR, exist_ok=True)
+        os.makedirs(AUTOSAVE_DIR, exist_ok=True)
+        sweep_legacy()
         prune()
     except OSError as err:
         log_error(f"kitty session autosave setup failed: {err}")

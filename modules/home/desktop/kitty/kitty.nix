@@ -10,6 +10,7 @@
       "kitty/save-session.py".source = ./save-session.py;
       "kitty/session-autosave.py".source = ./session-autosave.py;
       "kitty/zmx-clean.py".source = ./zmx-clean.py;
+      "kitty/zmx-close.py".source = ./zmx-close.py;
       "kitty/zmx-host.py".source = ./zmx-host.py;
       "kitty/zmx_kitten.py".source = ./zmx_kitten.py;
     };

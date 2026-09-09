@@ -19,6 +19,8 @@ SESSION_INDEX = re.compile(r"\.\d+$")
 
 SESSION_DIR = os.path.expanduser("~/.local/share/kitty/sessions")
 
+AUTOSAVE_DIR = os.path.join(SESSION_DIR, "autosave")
+
 UNSERIALIZE = "kitty-unserialize-data="
 
 HOST_VAR = re.compile(r"^--var=remote_host=(.+)$")
