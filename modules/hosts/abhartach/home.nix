@@ -16,7 +16,7 @@ topLevel: {
           localStorageDir = ../../../.secrets/homes/abhartach;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
         };
-        secrets.mistral-api-key.rekeyFile = ./mistral-api-key.age;
+        secrets.zai-api-key.rekeyFile = ./zai-api-key.age;
       };
 
       home.sessionVariables = {
@@ -27,20 +27,18 @@ topLevel: {
       programs = {
         claude-code.aperture.enable = true;
 
-        # Mistral via its OpenAI-compatible chat API.
-        pi.models.providers.mistral = {
-          baseUrl = "https://api.mistral.ai/v1";
+        # GLM via Z.ai's OpenAI-compatible chat API.
+        pi.models.providers.zai = {
+          baseUrl = "https://api.z.ai/api/paas/v4";
           api = "openai-completions";
-          apiKey = "!cat ${config.age.secrets.mistral-api-key.path}";
-          # Mistral rejects the "developer" role and the "store" field.
+          apiKey = "!cat ${config.age.secrets.zai-api-key.path}";
+          # GLM rejects the "developer" role and "store" field.
           compat = {
             supportsDeveloperRole = false;
             supportsStore = false;
           };
           models = [
-            { id = "mistral-large-latest"; }
-            { id = "devstral-medium-latest"; }
-            { id = "codestral-latest"; }
+            { id = "glm-5.2"; }
           ];
         };
 
