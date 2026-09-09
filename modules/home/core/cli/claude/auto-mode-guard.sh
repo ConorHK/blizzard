@@ -160,6 +160,8 @@ done <<< "$norm"
 k=0
 while [ "$k" -lt "$n_seg" ]; do
   seg=$(printf '%s' "${SEGS[k]}" | sed "s/[\"']//g")
+  # Parens stripped: see through subshell wrapping.
+  gitseg=$(printf '%s' "$seg" | tr '()' '  ')
   presep="${PRESEP[k]}"
   # Following separator is the next segment's preceding separator (END if last).
   nextsep="${PRESEP[k + 1]:-END}"
@@ -185,7 +187,7 @@ while [ "$k" -lt "$n_seg" ]; do
     fi
     continue
   fi
-  if segment_is_git "$seg"; then
+  if segment_is_git "$gitseg"; then
     case "$SEG_GIT_SUBCMD" in
       # `send-pack` is the plumbing command that performs the same wire push, so
       # it is denied too; other indirection (eval, bash -c) is not statically
