@@ -1,5 +1,11 @@
 # Engineering Standards
 
+Canonical source: `~/repositories/blizzard/modules/home/core/cli/claude/engineering-standards-do-not-delete.md`. Installed copies under `~/.claude/rules/` are deployed by Nix; edit the source only.
+
+## Preferences
+
+Do not store user preferences in agent memory. Write them in this file.
+
 ## Code Comments Must Earn Their Stay
 
 Applies to every edit, in every language:

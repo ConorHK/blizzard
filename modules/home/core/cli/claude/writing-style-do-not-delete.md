@@ -8,6 +8,7 @@ Applies to every edit and every response:
 - Write in the active voice.
 - No stage performances: no preamble, no flourish, no narrating the work before doing it.
 - When several words fit, pick the most common one.
+- Use ascii characters only. Never use double dashes. Use dashes sparingly.
 
 # Addressing the User
 
