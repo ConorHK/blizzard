@@ -22,22 +22,29 @@ def count_label(names):
 
 def group_sessions(hosts):
     groups = {}
+    titles = {}
     errors = []
     for host in hosts:
-        names, err = list_sessions(host)
+        sessions, err = list_sessions(host)
         if err:
             errors.append(f"{host_label(host)}: {err}")
-        for name in names:
+        for name, title in sessions:
             groups.setdefault((host, family(name)), []).append(name)
-    return groups, errors
+            if title:
+                titles[(host, name)] = title
+    return groups, titles, errors
 
 
-def build_entries(groups):
+def build_entries(groups, titles):
     entries = []
     for key in sorted(groups):
         host, base = key
         names = sorted(groups[key])
-        entries.append(((host, names), f"{base} - {count_label(names)} on {host_label(host)}"))
+        distinct = sorted({titles[(host, n)] for n in names if (host, n) in titles})
+        suffix = f" [{', '.join(distinct)}]" if distinct else ""
+        entries.append(
+            ((host, names), f"{base} - {count_label(names)} on {host_label(host)}{suffix}")
+        )
     for host in sorted({h for h, _ in groups}):
         keys = [k for k in groups if k[0] == host]
         if len(keys) < 2:
@@ -54,7 +61,7 @@ def handle_result(args, answer, target_window_id, boss):
         return
 
     host, _, _ = remote_context(window)
-    groups, errors = group_sessions([""] + ([host] if host else []))
+    groups, titles, errors = group_sessions([""] + ([host] if host else []))
 
     if not groups:
         boss.show_error("No sessions", "\n".join(errors) or "zmx has no sessions")
@@ -81,5 +88,5 @@ def handle_result(args, answer, target_window_id, boss):
         )
 
     boss.choose_entry(
-        "Kill zmx sessions:", build_entries(groups), pick, subtitle="; ".join(errors)
+        "Kill zmx sessions:", build_entries(groups, titles), pick, subtitle="; ".join(errors)
     )

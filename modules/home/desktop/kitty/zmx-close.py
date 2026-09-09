@@ -5,7 +5,7 @@ from kittens.tui.handler import result_handler
 # kitty re-execs kittens but caches their imports.
 sys.modules.pop("zmx_kitten", None)
 
-from zmx_kitten import kill_sessions, remote_context
+from zmx_kitten import kill_sessions, list_sessions, remote_context
 
 
 def main(args):
@@ -19,6 +19,22 @@ def tab_sessions(tab):
         if session:
             found.append((host, session))
     return found
+
+
+# One ls per host beats a get per session.
+def titles_for(hosts):
+    titles = {}
+    for host in hosts:
+        sessions, _ = list_sessions(host)
+        for name, title in sessions:
+            if title:
+                titles[(host, name)] = title
+    return titles
+
+
+def display(titles, host, session):
+    title = titles.get((host, session))
+    return f"{title} ({session})" if title else session
 
 
 def kill_all(found):
@@ -50,13 +66,14 @@ def close_tab(boss, tab):
         for window in list(tab.windows):
             boss.mark_window_for_close(window)
 
+    titles = titles_for({host for host, _ in found})
     count = len(found)
     label = "1 session" if count == 1 else f"{count} sessions"
     boss.choose_entry(
         f"Close tab holding {label}:",
         [("detach", "Detach all - keep the sessions"), ("kill", f"Kill {label}")],
         pick,
-        subtitle=", ".join(session for _, session in found),
+        subtitle=", ".join(display(titles, host, session) for host, session in found),
     )
 
 
@@ -76,10 +93,11 @@ def close_window(boss, window):
                 return
         boss.mark_window_for_close(window)
 
+    shown = display(titles_for([host]), host, session)
     where = f" on {host}" if host else ""
     boss.choose_entry(
-        f"Close pane attached to {session}{where}:",
-        [("detach", "Detach - keep the session"), ("kill", f"Kill {session}")],
+        f"Close pane attached to {shown}{where}:",
+        [("detach", "Detach - keep the session"), ("kill", f"Kill {shown}")],
         pick,
     )
 

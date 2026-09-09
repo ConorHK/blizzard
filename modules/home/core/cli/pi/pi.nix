@@ -119,6 +119,7 @@
         '';
       };
       settingsFile = settingsFormat.generate "pi-settings.json" cfg.settings;
+      modelsFile = settingsFormat.generate "pi-models.json" cfg.models;
     in
     {
       options.programs.pi = {
@@ -136,6 +137,11 @@
           inherit (settingsFormat) type;
           default = { };
           description = "Contents of ~/.pi/agent/settings.json.";
+        };
+        models = lib.mkOption {
+          inherit (settingsFormat) type;
+          default = { };
+          description = "Contents of ~/.pi/agent/models.json (custom providers).";
         };
         extensions = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
@@ -206,6 +212,9 @@
             ) cfg.extensions
             // lib.optionalAttrs cfg.guard.enable {
               ".pi/agent/extensions/guard.ts".source = guardExtension;
+            }
+            // lib.optionalAttrs (cfg.models != { }) {
+              ".pi/agent/models.json".source = modelsFile;
             };
           # Writable copy: pi rewrites settings.json.
           # AGENTS.md concatenation: pi lacks glob support.

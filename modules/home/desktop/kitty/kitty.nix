@@ -12,6 +12,7 @@
       "kitty/zmx-clean.py".source = ./zmx-clean.py;
       "kitty/zmx-close.py".source = ./zmx-close.py;
       "kitty/zmx-host.py".source = ./zmx-host.py;
+      "kitty/zmx-rename.py".source = ./zmx-rename.py;
       "kitty/zmx_kitten.py".source = ./zmx_kitten.py;
     };
 

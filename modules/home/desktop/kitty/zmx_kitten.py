@@ -166,14 +166,14 @@ def run_zmx(host, args):
 
 def list_sessions(host):
     out, err = run_zmx(host, ["ls"])
-    names = []
+    sessions = []
     for line in out.splitlines():
         fields = dict(f.split("=", 1) for f in line.strip().split("\t") if "=" in f)
         name = fields.get("name")
         if name:
-            names.append(name)
+            sessions.append((name, fields.get("title", "")))
     # Empty list means none, not failure.
-    return (names, "") if names else ([], err)
+    return (sessions, "") if sessions else ([], err)
 
 
 def kill_sessions(host, names):

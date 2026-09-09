@@ -30,9 +30,10 @@
             esac
           done
 
+          # kitty opens its first window with no base.
           if [ -z "$attach" ] && [ -z "$base" ]; then
-            printf 'zmx-open: --attach or --base is required\n' >&2
-            exit 2
+            base=$(uname -n)
+            base=''${base%%.*}
           fi
 
           if [ -n "$attach" ]; then

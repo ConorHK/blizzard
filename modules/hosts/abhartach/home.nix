@@ -11,9 +11,12 @@ topLevel: {
     { config, ... }:
     {
 
-      age.rekey = {
-        localStorageDir = ../../../.secrets/homes/abhartach;
-        hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
+      age = {
+        rekey = {
+          localStorageDir = ../../../.secrets/homes/abhartach;
+          hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
+        };
+        secrets.mistral-api-key.rekeyFile = ./mistral-api-key.age;
       };
 
       home.sessionVariables = {
@@ -21,9 +24,28 @@ topLevel: {
         JJ_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
       };
 
-      programs.claude-code.aperture.enable = true;
+      programs = {
+        claude-code.aperture.enable = true;
 
-      programs.waybar.settings.main.output = "DP-1";
+        # Mistral via its OpenAI-compatible chat API.
+        pi.models.providers.mistral = {
+          baseUrl = "https://api.mistral.ai/v1";
+          api = "openai-completions";
+          apiKey = "!cat ${config.age.secrets.mistral-api-key.path}";
+          # Mistral rejects the "developer" role and the "store" field.
+          compat = {
+            supportsDeveloperRole = false;
+            supportsStore = false;
+          };
+          models = [
+            { id = "mistral-large-latest"; }
+            { id = "devstral-medium-latest"; }
+            { id = "codestral-latest"; }
+          ];
+        };
+
+        waybar.settings.main.output = "DP-1";
+      };
 
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
@@ -32,6 +54,7 @@ topLevel: {
         git-identity
         jujutsu
         ntfy
+        pi
         ssh
         syncthing
         xdg
