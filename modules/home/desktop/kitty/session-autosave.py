@@ -13,8 +13,6 @@ if config_dir not in sys.path:
 
 from zmx_kitten import AUTOSAVE_DIR, SESSION_DIR, rewrite_launch
 
-PREFIX = "auto-"
-
 SUFFIX = ".kitty-session"
 
 INTERVAL = 60
@@ -29,7 +27,7 @@ state = {"path": "", "last": ""}
 # Autosaves once lived beside named saves.
 def sweep_legacy():
     for name in os.listdir(SESSION_DIR):
-        if name.startswith(PREFIX) and name.endswith(SUFFIX):
+        if name.startswith("auto-") and name.endswith(SUFFIX):
             os.replace(
                 os.path.join(SESSION_DIR, name), os.path.join(AUTOSAVE_DIR, name)
             )
@@ -40,7 +38,7 @@ def prune():
     found = []
     for name in os.listdir(AUTOSAVE_DIR):
         path = os.path.join(AUTOSAVE_DIR, name)
-        if not name.startswith(PREFIX) or not name.endswith(SUFFIX):
+        if not name.endswith(SUFFIX) or not name.startswith("autosave-"):
             continue
         if path == state["path"]:
             continue
@@ -74,7 +72,7 @@ def save(boss):
 # One file per kitty process, never reused.
 def on_load(boss, data):
     stamp = time.strftime("%Y-%m-%d-%H%M%S")
-    state["path"] = os.path.join(AUTOSAVE_DIR, f"{PREFIX}{stamp}-{os.getpid()}{SUFFIX}")
+    state["path"] = os.path.join(AUTOSAVE_DIR, f"autosave-{stamp}{SUFFIX}")
     try:
         os.makedirs(AUTOSAVE_DIR, exist_ok=True)
         sweep_legacy()
