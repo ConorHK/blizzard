@@ -1,6 +1,6 @@
 {
   hyprland.lua.kitty = ''
-    hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("uwsm app -- kitty"))
+    hl.bind("SUPER + Return", hl.dsp.exec_cmd("uwsm app -- kitty"))
   '';
 
   flake.modules.homeManager.kitty = {
