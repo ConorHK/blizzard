@@ -41,6 +41,11 @@ def sanitize(name):
     return kept.strip("-")[:48]
 
 
+# NULs in argv crash kitty overlay spawn.
+def no_nuls(text):
+    return text.replace("\x00", "")
+
+
 def family(session):
     return SESSION_INDEX.sub("", session)
 
@@ -140,7 +145,7 @@ def remote_context(window):
     if not session and osc_host == (host or local):
         cwd = osc_path
 
-    return host, session, cwd
+    return no_nuls(host), no_nuls(session), no_nuls(cwd)
 
 
 # Queries need no tty, unlike open_command.
@@ -171,7 +176,7 @@ def list_sessions(host):
         fields = dict(f.split("=", 1) for f in line.strip().split("\t") if "=" in f)
         name = fields.get("name")
         if name:
-            sessions.append((name, fields.get("title", "")))
+            sessions.append((no_nuls(name), no_nuls(fields.get("title", ""))))
     # Empty list means none, not failure.
     return (sessions, "") if sessions else ([], err)
 
