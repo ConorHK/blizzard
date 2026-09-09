@@ -29,7 +29,12 @@ def handle_result(args, answer, target_window_id, boss):
     # A local pane escapes the remote context.
     local = location == "local"
     tab = location == "tab"
-    host, session, cwd = ("", "", "") if local else remote_context(window)
+    if local:
+        # Still check for local zmx session
+        _, session, cwd = remote_context(window)
+        host = ""
+    else:
+        host, session, cwd = remote_context(window)
 
     launch = ["launch"]
     if tab:
