@@ -55,6 +55,7 @@ topLevel: {
         jujutsu
         ntfy
         pi
+        pi-zvec-grep
         ssh
         syncthing
         xdg

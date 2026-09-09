@@ -148,6 +148,11 @@
           default = { };
           description = "Extra extensions installed to ~/.pi/agent/extensions/<name>.ts. The name guard is reserved.";
         };
+        extensionDirs = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Extra multi-file extensions installed to ~/.pi/agent/extensions/<name>/.";
+        };
         claudeRulesAsContext = lib.mkOption {
           type = lib.types.bool;
           default = true;
@@ -210,6 +215,9 @@
             lib.mapAttrs' (
               name: src: lib.nameValuePair ".pi/agent/extensions/${name}.ts" { source = src; }
             ) cfg.extensions
+            // lib.mapAttrs' (
+              name: src: lib.nameValuePair ".pi/agent/extensions/${name}" { source = src; }
+            ) cfg.extensionDirs
             // lib.optionalAttrs cfg.guard.enable {
               ".pi/agent/extensions/guard.ts".source = guardExtension;
             }
