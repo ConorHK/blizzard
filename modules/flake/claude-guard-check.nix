@@ -8,14 +8,15 @@
   perSystem =
     { pkgs, ... }:
     let
-      guardDir = ../home/core/cli/ai;
       guard = pkgs.writeShellApplication {
         name = "claude-auto-mode-guard";
         runtimeInputs = [
           pkgs.jq
           pkgs.git
         ];
-        text = builtins.readFile "${guardDir}/auto-mode-guard.sh";
+        # Path literal, not "${dir}/file": a whole-dir
+        # store copy breaks --no-build and busts caching.
+        text = builtins.readFile ../home/core/cli/ai/auto-mode-guard.sh;
       };
     in
     {
@@ -32,7 +33,7 @@
             # A clean HOME so git uses no user config, and a deterministic identity.
             export HOME="$TMPDIR/home"
             mkdir -p "$HOME"
-            bash ${guardDir}/auto-mode-guard-test.sh ${guard}/bin/claude-auto-mode-guard
+            bash ${../home/core/cli/ai/auto-mode-guard-test.sh} ${guard}/bin/claude-auto-mode-guard
             touch "$out"
           '';
     };
