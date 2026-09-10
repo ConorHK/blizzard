@@ -49,7 +49,7 @@
           pkgs.jq
           pkgs.git
         ];
-        text = builtins.readFile ../claude/auto-mode-guard.sh;
+        text = builtins.readFile ../auto-mode-guard.sh;
       };
       guardExtension = pkgs.writeText "pi-guard.ts" (
         builtins.replaceStrings [ "@guard@" ] [ (lib.getExe cfg.guard.script) ] (
@@ -120,6 +120,8 @@
       };
       settingsFile = settingsFormat.generate "pi-settings.json" cfg.settings;
       modelsFile = settingsFormat.generate "pi-models.json" cfg.models;
+      # attrValues sorts by name, so order is stable.
+      rulesFile = pkgs.concatText "pi-agents.md" (lib.attrValues cfg.rules);
     in
     {
       options.programs.pi = {
@@ -153,10 +155,10 @@
           default = { };
           description = "Extra multi-file extensions installed to ~/.pi/agent/extensions/<name>/.";
         };
-        claudeRulesAsContext = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = "Concatenate ~/.claude/rules/*.md into pi's global AGENTS.md.";
+        rules = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Instruction files concatenated into ~/.pi/agent/AGENTS.md.";
         };
         guard = {
           enable = lib.mkOption {
@@ -224,22 +226,16 @@
             // lib.optionalAttrs (cfg.models != { }) {
               ".pi/agent/models.json".source = modelsFile;
             };
-          # Writable copy: pi rewrites settings.json.
-          # AGENTS.md concatenation: pi lacks glob support.
-          activation.piSettings = lib.hm.dag.entryAfter [ "writeBoundary" "claudeSettings" ] ''
+          # Writable copies: pi rewrites settings.json.
+          activation.piSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run install -Dm644 ${settingsFile} ${config.home.homeDirectory}/.pi/agent/settings.json
-            ${lib.optionalString cfg.claudeRulesAsContext ''
-              # Empty rules glob leaves no stale AGENTS.md.
-              run ${pkgs.runtimeShell} -c ${lib.escapeShellArg ''
-                shopt -s nullglob
-                files=(${config.home.homeDirectory}/.claude/rules/*.md)
-                if [ ''${#files[@]} -gt 0 ]; then
-                  cat "''${files[@]}" > ${config.home.homeDirectory}/.pi/agent/AGENTS.md
-                else
-                  rm -f ${config.home.homeDirectory}/.pi/agent/AGENTS.md
-                fi
-              ''}
-            ''}
+            ${
+              if cfg.rules != { } then
+                "run install -Dm644 ${rulesFile} ${config.home.homeDirectory}/.pi/agent/AGENTS.md"
+              else
+                # No stale AGENTS.md when rules empty.
+                "run rm -f ${config.home.homeDirectory}/.pi/agent/AGENTS.md"
+            }
           '';
         };
       };

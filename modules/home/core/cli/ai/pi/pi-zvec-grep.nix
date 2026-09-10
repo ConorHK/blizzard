@@ -1,7 +1,12 @@
 { inputs, ... }:
 {
-  flake.modules.homeManager.pi-zvec-grep =
-    { pkgs, ... }:
+  flake.modules.homeManager.pi =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       # No runtime deps; only pi-bundled peer deps,
       # so the npm tarball needs no npm build.
@@ -23,11 +28,19 @@
       };
     in
     {
-      programs.pi.extensionDirs.zvec-grep = pi-zvec-grep;
+      options.programs.pi.zvecGrep.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Install the zvec-grep extension.";
+      };
 
-      # zg must be on PATH; the extension shells out to it.
-      home.packages = [
-        (inputs.blizzard or inputs.self).packages.${pkgs.stdenv.hostPlatform.system}.zvec-grep
-      ];
+      config = lib.mkIf config.programs.pi.zvecGrep.enable {
+        programs.pi.extensionDirs.zvec-grep = pi-zvec-grep;
+
+        # zg must be on PATH; the extension shells out to it.
+        home.packages = [
+          (inputs.blizzard or inputs.self).packages.${pkgs.stdenv.hostPlatform.system}.zvec-grep
+        ];
+      };
     };
 }

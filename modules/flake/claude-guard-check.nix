@@ -8,7 +8,7 @@
   perSystem =
     { pkgs, ... }:
     let
-      guardDir = ../home/core/cli/claude;
+      guardDir = ../home/core/cli/ai;
       guard = pkgs.writeShellApplication {
         name = "claude-auto-mode-guard";
         runtimeInputs = [

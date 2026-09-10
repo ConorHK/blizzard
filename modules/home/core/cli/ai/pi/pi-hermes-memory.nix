@@ -1,6 +1,11 @@
 {
-  flake.modules.homeManager.pi-hermes-memory =
-    { pkgs, ... }:
+  flake.modules.homeManager.pi =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       # Pure-JS deps only; compiled pi is Bun and
       # the extension falls back to bun:sqlite itself.
@@ -33,6 +38,14 @@
       };
     in
     {
-      programs.pi.extensionDirs.hermes-memory = pi-hermes-memory;
+      options.programs.pi.hermesMemory.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Install the hermes-memory extension.";
+      };
+
+      config = lib.mkIf config.programs.pi.hermesMemory.enable {
+        programs.pi.extensionDirs.hermes-memory = pi-hermes-memory;
+      };
     };
 }

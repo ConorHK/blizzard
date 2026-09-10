@@ -52,9 +52,6 @@ topLevel: {
         git-identity
         jujutsu
         ntfy
-        pi
-        pi-hermes-memory
-        pi-zvec-grep
         ssh
         syncthing
         xdg

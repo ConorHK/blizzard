@@ -1,7 +1,7 @@
 { config, ... }:
 {
   flake.modules.homeManager.core.imports = with config.flake.modules.homeManager; [
-    claude
+    ai
     direnv
     home-manager
     nh

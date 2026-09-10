@@ -10,6 +10,7 @@
       ...
     }:
     let
+      cfg = config.programs.claude-code;
       # Deterministic PreToolUse guard: a machine "no" for the hard rules in
       # auto mode (never git push; git commit only on ai-* branches).
       # writeShellApplication adds a build-time shellcheck pass and pins jq/git
@@ -21,7 +22,7 @@
           pkgs.jq
           pkgs.git
         ];
-        text = builtins.readFile ./auto-mode-guard.sh;
+        text = builtins.readFile ../auto-mode-guard.sh;
       };
       # Statusline renderer (binary claude-statusline), wired to settings.statusLine
       # below. jq pinned on PATH; shellcheck runs at build.
@@ -47,7 +48,7 @@
           # Auto mode will not engage without this opt-in.
           CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
         }
-        // lib.optionalAttrs config.programs.claude-code.aperture.enable apertureEnv;
+        // lib.optionalAttrs cfg.aperture.enable apertureEnv;
         extraKnownMarketplaces = {
           lucasfcosta = {
             source = {
@@ -100,23 +101,31 @@
       };
       settingsFile = pkgs.writeText "claude-settings.json" (builtins.toJSON settings);
 
-      # Global instructions loaded into every session. Claude Code auto-reads
-      # every ~/.claude/rules/*.md as user-scope memory; the other files there
-      # are not repo-managed, so these are installed by the activation script
-      # below to keep them declarative.
-      engineeringStandards = ./engineering-standards-do-not-delete.md;
-      writingStyle = ./writing-style-do-not-delete.md;
+      # Claude Code auto-reads every ~/.claude/rules/*.md as user-scope memory;
+      # the other files there are not repo-managed, so rules are installed by
+      # the activation script below to keep them declarative. The suffix warns
+      # sessions off deleting deployed copies.
+      ruleInstalls = lib.mapAttrsToList (
+        name: src:
+        "run install -Dm644 ${src} ${config.home.homeDirectory}/.claude/rules/${name}-do-not-delete.md"
+      ) cfg.managedRules;
     in
     {
-      options.programs.claude-code.aperture.enable =
-        lib.mkEnableOption "routing Claude Code through the Aperture gateway";
+      options.programs.claude-code = {
+        aperture.enable = lib.mkEnableOption "routing Claude Code through the Aperture gateway";
+        # Upstream home-manager owns programs.claude-code.rules.
+        managedRules = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Instruction files installed to ~/.claude/rules/<name>-do-not-delete.md.";
+        };
+      };
 
       config.home.packages = [ pkgs.claude-code ];
 
       config.home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         run install -Dm644 ${settingsFile} ${config.home.homeDirectory}/.claude/settings.json
-        run install -Dm644 ${engineeringStandards} ${config.home.homeDirectory}/.claude/rules/engineering-standards-do-not-delete.md
-        run install -Dm644 ${writingStyle} ${config.home.homeDirectory}/.claude/rules/writing-style-do-not-delete.md
+        ${lib.concatStringsSep "\n" ruleInstalls}
         run install -Dm644 ${./skills/handoff/SKILL.md} ${config.home.homeDirectory}/.claude/skills/handoff/SKILL.md
         run install -Dm644 ${./skills/pickup/SKILL.md} ${config.home.homeDirectory}/.claude/skills/pickup/SKILL.md
       '';

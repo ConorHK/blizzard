@@ -1,6 +1,6 @@
 # Engineering Standards
 
-Canonical source: `~/repositories/blizzard/modules/home/core/cli/claude/engineering-standards-do-not-delete.md`. Installed copies under `~/.claude/rules/` are deployed by Nix; edit the source only.
+Canonical source: `~/repositories/blizzard/modules/home/core/cli/ai/rules/engineering-standards.md`. Copies deployed to each agent (`~/.claude/rules/`, `~/.pi/agent/AGENTS.md`) come from Nix; edit the source only.
 
 ## Preferences
 
