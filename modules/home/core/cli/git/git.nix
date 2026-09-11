@@ -16,6 +16,8 @@
           enable = true;
           lfs.enable = true;
 
+          ignores = [ ".zvec-grep/" ];
+
           settings = lib.mkDefault {
             init.defaultBranch = lib.mkDefault "main";
 
