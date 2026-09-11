@@ -98,15 +98,26 @@
       };
     in
     {
-      options.programs.pi.lens.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install the pi-lens package.";
+      options.programs.pi.lens = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Install the pi-lens package.";
+        };
+        tools = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [ pkgs.ast-grep ];
+          description = "Language tools pi-lens resolves from PATH.";
+        };
       };
 
       config = lib.mkIf config.programs.pi.lens.enable {
         # Package entry: loads manifest extensions and skills.
         programs.pi.settings.packages = [ "${pi-lens}" ];
+
+        # Tools come from PATH only, never runtime installs.
+        programs.pi.env.PI_LENS_DISABLE_TOOL_INSTALL = "1";
+        home.packages = config.programs.pi.lens.tools;
       };
     };
 }
