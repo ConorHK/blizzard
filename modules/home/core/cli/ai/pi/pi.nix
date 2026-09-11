@@ -160,6 +160,11 @@
           default = { };
           description = "Instruction files concatenated into ~/.pi/agent/AGENTS.md.";
         };
+        themes = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Theme files installed to ~/.pi/agent/themes/<name>.json.";
+        };
         guard = {
           enable = lib.mkOption {
             type = lib.types.bool;
@@ -207,9 +212,12 @@
       };
 
       config = {
-        programs.pi.settings = {
-          enableInstallTelemetry = lib.mkDefault false;
-          theme = lib.mkDefault "dark";
+        programs.pi = {
+          settings = {
+            enableInstallTelemetry = lib.mkDefault false;
+            theme = lib.mkDefault "blizzard";
+          };
+          themes.blizzard = ./themes/blizzard.json;
         };
         home = {
           packages = [ piPackage ] ++ lib.optional cfg.jail.enable jailScript;
@@ -220,6 +228,9 @@
             // lib.mapAttrs' (
               name: src: lib.nameValuePair ".pi/agent/extensions/${name}" { source = src; }
             ) cfg.extensionDirs
+            // lib.mapAttrs' (
+              name: src: lib.nameValuePair ".pi/agent/themes/${name}.json" { source = src; }
+            ) cfg.themes
             // lib.optionalAttrs cfg.guard.enable {
               ".pi/agent/extensions/guard.ts".source = guardExtension;
             }
