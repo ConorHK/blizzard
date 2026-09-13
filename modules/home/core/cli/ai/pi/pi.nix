@@ -219,7 +219,11 @@
           themes.blizzard = ./themes/blizzard.json;
         };
         home = {
-          packages = [ piPackage ] ++ lib.optional cfg.jail.enable jailScript;
+          packages = [
+            piPackage
+            pkgs.nixd
+          ]
+          ++ lib.optional cfg.jail.enable jailScript;
           file =
             lib.mapAttrs' (
               name: src: lib.nameValuePair ".pi/agent/extensions/${name}.ts" { source = src; }
