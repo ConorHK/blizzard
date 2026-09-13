@@ -49,12 +49,12 @@ _: {
                         }
                         {
                           type = "rss";
-                          title = "404 Media";
+                          title = "Irish Independent";
                           style = "vertical-list";
                           "single-line-titles" = false;
                           limit = 12;
                           "collapse-after" = -1;
-                          feeds = [ { url = "https://www.404media.co/rss/"; } ];
+                          feeds = [ { url = "https://www.independent.ie/rss"; } ];
                         }
                         {
                           type = "rss";
