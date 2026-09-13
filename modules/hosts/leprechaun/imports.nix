@@ -30,6 +30,7 @@
     matrix
     mealie
     music-assistant
+    nextdns
     nginx
     nvidia
     photon
