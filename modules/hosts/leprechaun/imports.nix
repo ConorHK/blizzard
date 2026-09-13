@@ -33,6 +33,7 @@
     nginx
     nvidia
     photon
+    pi
     podman
     qbittorrent
     quadlet

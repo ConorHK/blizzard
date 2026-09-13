@@ -33,7 +33,6 @@
       networking.ipv4.address = "192.168.0.38";
 
       security.sudo.wheelNeedsPassword = false;
-      programs.nix-ld.enable = true;
 
       # LACT rewrites its config at runtime, so seed a writable copy each
       # rebuild rather than a read-only /nix/store symlink. This repo is

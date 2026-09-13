@@ -17,6 +17,13 @@ Applies to every edit, in every language:
 
 When in doubt, delete the comment and let the code speak.
 
+## Remote Hosts Require Confirmation
+
+Never ssh into a host, or run any remote or write operation against one, without
+explicit confirmation first. This includes read-only inspection commands
+(`ssh host 'iptables-save'`, `ss`, `nix eval`, status checks). Show the exact
+command and wait for approval. Local repo edits do not need confirmation.
+
 ## Investigations Must Cite Sources
 
 Every factual claim in an investigation, debugging writeup, or root-cause analysis MUST link to the primary source it rests on. An unsourced claim is untrusted and forces the reader to re-find the evidence — wasting time and tokens.

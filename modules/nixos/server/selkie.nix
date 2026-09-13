@@ -59,18 +59,23 @@ topLevel: {
               inputs.home-manager.nixosModules.home-manager
             ]
             ++ (with topLevel.config.flake.modules.nixos; [
+              agenix
               bitbang
               claude
               clip
+              pi
               ssh
               tailscale
             ]);
 
             blizzard.bitbang.shareMembers = [ "goose" ];
 
-            networking.defaultGateway = {
-              address = hostAddress;
-              interface = "eth0";
+            networking = {
+              hostName = "selkie";
+              defaultGateway = {
+                address = hostAddress;
+                interface = "eth0";
+              };
             };
 
             nixpkgs = {
@@ -111,12 +116,20 @@ topLevel: {
               useGlobalPkgs = true;
               useUserPackages = true;
               extraSpecialArgs = { inherit inputs; };
-              users.goose.imports = with topLevel.config.flake.modules.homeManager; [
-                cnvim
-                core
-                ssh
-                zellij
-              ];
+              users.goose = {
+                imports = with topLevel.config.flake.modules.homeManager; [
+                  agenix
+                  cnvim
+                  core
+                  git-identity
+                  ssh
+                  zellij
+                ];
+                age.rekey = {
+                  localStorageDir = ../../../.secrets/homes/selkie;
+                  hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL70IYhLosuJQKeTdA2tYRIUjCgcRGcQXAD3oyq7Wz+p";
+                };
+              };
             };
 
             system.stateVersion = "25.05";

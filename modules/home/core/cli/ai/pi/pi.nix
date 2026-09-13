@@ -10,7 +10,6 @@
       cfg = config.programs.pi;
       settingsFormat = pkgs.formats.json { };
       # Prebuilt binary; patchelf corrupts bun executables.
-      # NixOS hosts need programs.nix-ld.
       pi-bin = pkgs.stdenvNoCC.mkDerivation rec {
         pname = "pi";
         version = "0.85.1";
@@ -251,4 +250,9 @@
         };
       };
     };
+
+  # pi is a prebuilt binary; it needs the nix-ld loader.
+  flake.modules.nixos.pi = {
+    programs.nix-ld.enable = true;
+  };
 }

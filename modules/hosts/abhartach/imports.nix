@@ -19,6 +19,7 @@
       kubernetes
       kvm-amd
       nixbuild
+      pi
       secure-boot
       sunshine
       virtualization
