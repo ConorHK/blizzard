@@ -13,6 +13,7 @@
     nix
     root
     security
+    storage
     substituters
     syncthing
     update

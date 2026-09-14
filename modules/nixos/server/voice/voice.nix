@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.voice =
-    _:
+    { config, ... }:
     let
-      dataDir = "/storage/data/voice";
+      dataDir = "${config.blizzard.storage.data}/voice";
       whisperPort = 10300;
       ttsPort = 10200;
     in

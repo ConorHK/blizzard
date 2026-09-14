@@ -2,7 +2,6 @@ _:
 let
   serverName = "matrix.goosebox.org";
   adminUser = "@conor:${serverName}";
-  dataDir = "/storage/matrix";
   synapsePort = 8008;
   homeserver = {
     domain = serverName;
@@ -31,6 +30,8 @@ in
       ...
     }:
     let
+      dataDir = config.blizzard.storage.matrix;
+
       dbDump = pkgs.writeShellApplication {
         name = "matrix-db-dump";
         runtimeInputs = [

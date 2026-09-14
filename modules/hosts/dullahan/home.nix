@@ -33,6 +33,7 @@ topLevel: {
         ssh
         syncthing
         xdg
+        zai
         zellij
       ];
     };

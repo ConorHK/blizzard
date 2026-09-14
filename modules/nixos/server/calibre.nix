@@ -1,8 +1,5 @@
 _:
 let
-  calibreDir = "/storage/data/calibre-web-automated";
-  shelfmarkDir = "/storage/data/shelfmark";
-  ingestDir = "${calibreDir}/injest";
   portCalibreWeb = 8183;
   portShelfmark = 8084;
   urlCalibreWeb = "calibre.goosebox.org";
@@ -25,69 +22,77 @@ in
       };
     };
 
-    modules.nixos.calibre = _: {
-      home-manager.users.containers.virtualisation.quadlet = {
-        networks.calibre.networkConfig = { };
+    modules.nixos.calibre =
+      { config, ... }:
+      let
+        calibreDir = "${config.blizzard.storage.data}/calibre-web-automated";
+        shelfmarkDir = "${config.blizzard.storage.data}/shelfmark";
+        ingestDir = "${calibreDir}/injest";
+        booksDir = "${config.blizzard.storage.media}/books";
+      in
+      {
+        home-manager.users.containers.virtualisation.quadlet = {
+          networks.calibre.networkConfig = { };
 
-        containers = {
-          calibre-web.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.io/crocodilestick/calibre-web-automated
-            image = "ghcr.io/crocodilestick/calibre-web-automated:v4.0.6";
-            publishPorts = [ "127.0.0.1:${toString portCalibreWeb}:8083" ];
-            volumes = [
-              "${calibreDir}/config:/config"
-              "${ingestDir}:/cwa-book-ingest"
-              "/storage/media/books:/calibre-library"
-            ];
-            environments = {
-              PUID = "1000";
-              PGID = "1000";
-              TZ = "Europe/Dublin";
+          containers = {
+            calibre-web.containerConfig = {
+              # renovate: datasource=docker depName=ghcr.io/crocodilestick/calibre-web-automated
+              image = "ghcr.io/crocodilestick/calibre-web-automated:v4.0.6";
+              publishPorts = [ "127.0.0.1:${toString portCalibreWeb}:8083" ];
+              volumes = [
+                "${calibreDir}/config:/config"
+                "${ingestDir}:/cwa-book-ingest"
+                "${booksDir}:/calibre-library"
+              ];
+              environments = {
+                PUID = "1000";
+                PGID = "1000";
+                TZ = "Europe/Dublin";
+              };
+              networks = [ "calibre.network" ];
+              noNewPrivileges = true;
             };
-            networks = [ "calibre.network" ];
-            noNewPrivileges = true;
+
+            shelfmark.containerConfig = {
+              # renovate: datasource=docker depName=ghcr.io/calibrain/shelfmark
+              image = "ghcr.io/calibrain/shelfmark:v1.3.15";
+              publishPorts = [ "127.0.0.1:${toString portShelfmark}:${toString portShelfmark}" ];
+              volumes = [
+                "${shelfmarkDir}:/config"
+                "${ingestDir}:/books"
+              ];
+              environments = {
+                PUID = "1000";
+                PGID = "1000";
+                FLASK_PORT = toString portShelfmark;
+                BOOK_LANGUAGE = "en";
+              };
+              networks = [ "calibre.network" ];
+              noNewPrivileges = true;
+            };
           };
+        };
 
-          shelfmark.containerConfig = {
-            # renovate: datasource=docker depName=ghcr.io/calibrain/shelfmark
-            image = "ghcr.io/calibrain/shelfmark:v1.3.15";
-            publishPorts = [ "127.0.0.1:${toString portShelfmark}:${toString portShelfmark}" ];
-            volumes = [
-              "${shelfmarkDir}:/config"
-              "${ingestDir}:/books"
-            ];
-            environments = {
-              PUID = "1000";
-              PGID = "1000";
-              FLASK_PORT = toString portShelfmark;
-              BOOK_LANGUAGE = "en";
+        restic.paths = [ "${calibreDir}/config/processed_books/imported" ];
+
+        services.nginx.virtualHosts = {
+          "${urlCalibreWeb}" = {
+            enableACME = true;
+            forceSSL = true;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString portCalibreWeb}";
+              proxyWebsockets = true;
             };
-            networks = [ "calibre.network" ];
-            noNewPrivileges = true;
+          };
+          "${urlShelfmark}" = {
+            enableACME = true;
+            forceSSL = true;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString portShelfmark}";
+              proxyWebsockets = true;
+            };
           };
         };
       };
-
-      restic.paths = [ "${calibreDir}/config/processed_books/imported" ];
-
-      services.nginx.virtualHosts = {
-        "${urlCalibreWeb}" = {
-          enableACME = true;
-          forceSSL = true;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString portCalibreWeb}";
-            proxyWebsockets = true;
-          };
-        };
-        "${urlShelfmark}" = {
-          enableACME = true;
-          forceSSL = true;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString portShelfmark}";
-            proxyWebsockets = true;
-          };
-        };
-      };
-    };
   };
 }

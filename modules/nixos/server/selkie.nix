@@ -2,7 +2,7 @@ topLevel: {
   flake.modules.nixos.selkie =
     { config, inputs, ... }:
     let
-      dataDir = "/storage/data/selkie";
+      dataDir = "${config.blizzard.storage.data}/selkie";
       hostAddress = "10.111.0.1";
       # Restic reads the home as the host's `containers` user.
       uid = 1001;
@@ -123,6 +123,7 @@ topLevel: {
                   core
                   git-identity
                   ssh
+                  zai
                   zellij
                 ];
                 age.rekey = {

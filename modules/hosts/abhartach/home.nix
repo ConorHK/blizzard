@@ -16,7 +16,6 @@ topLevel: {
           localStorageDir = ../../../.secrets/homes/abhartach;
           hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8okOt7lHfTjmabxdIruqIMxz0SwJuHSiGiC/so5IrM";
         };
-        secrets.zai-api-key.rekeyFile = ./zai-api-key.age;
       };
 
       home.sessionVariables = {
@@ -26,21 +25,6 @@ topLevel: {
 
       programs = {
         claude-code.aperture.enable = true;
-
-        # GLM via Z.ai's OpenAI-compatible chat API.
-        pi.models.providers.zai = {
-          baseUrl = "https://api.z.ai/api/paas/v4";
-          api = "openai-completions";
-          apiKey = "!cat ${config.age.secrets.zai-api-key.path}";
-          # GLM rejects the "developer" role and "store" field.
-          compat = {
-            supportsDeveloperRole = false;
-            supportsStore = false;
-          };
-          models = [
-            { id = "glm-5.2"; }
-          ];
-        };
 
         waybar.settings.main.output = "DP-1";
       };
@@ -55,6 +39,7 @@ topLevel: {
         ssh
         syncthing
         xdg
+        zai
         zellij
       ];
     };

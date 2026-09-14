@@ -1,8 +1,12 @@
 {
   flake.modules.nixos.home-assistant =
-    { lib, ... }:
+    {
+      config,
+      lib,
+      ...
+    }:
     let
-      configPath = "/home/driver/storage/homeassistant/";
+      configPath = toString config.blizzard.storage.home-assistant;
       timezone = "Europe/Dublin";
       usbDevice = "/dev/ttyUSB0";
       # TODO: initial load requires mkdir ~/storage/homeassistant and reboot

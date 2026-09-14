@@ -1,7 +1,8 @@
-_: {
+_topLevel: {
   flake.modules.nixos.satisfactory =
+    { config, ... }:
     let
-      dataDir = "/storage/data/satisfactory-server";
+      dataDir = "${config.blizzard.storage.data}/satisfactory-server";
     in
     {
       networking.firewall = {

@@ -1,6 +1,5 @@
 _:
 let
-  dataDir = "/storage/data/photon";
   url = "photon.lep.goosebox.org";
   probe = "http://127.0.0.1:2322/reverse?lon=-6.2603&lat=53.3498";
 in
@@ -11,8 +10,14 @@ in
   };
 
   flake.modules.nixos.photon =
-    { pkgs, ... }:
+    {
+      config,
+      pkgs,
+      ...
+    }:
     let
+      dataDir = "${config.blizzard.storage.data}/photon";
+
       refresh = pkgs.writeShellApplication {
         name = "photon-refresh";
         runtimeInputs = [

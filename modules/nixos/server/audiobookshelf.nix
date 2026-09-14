@@ -1,7 +1,5 @@
 _:
 let
-  configDir = "/storage/data/audiobookshelf";
-  mediaDir = "/storage/media";
   url = "audiobookshelf.goosebox.org";
   port = "13378";
 in
@@ -21,37 +19,43 @@ in
       }
     ];
   };
-  flake.modules.nixos.audiobookshelf = {
-    home-manager.users.containers.virtualisation.quadlet = {
-      networks.audiobookshelf.networkConfig = { };
+  flake.modules.nixos.audiobookshelf =
+    { config, ... }:
+    let
+      configDir = "${config.blizzard.storage.data}/audiobookshelf";
+      mediaDir = config.blizzard.storage.media;
+    in
+    {
+      home-manager.users.containers.virtualisation.quadlet = {
+        networks.audiobookshelf.networkConfig = { };
 
-      containers.audiobookshelf.containerConfig = {
-        # renovate: datasource=docker depName=ghcr.io/advplyr/audiobookshelf
-        image = "ghcr.io/advplyr/audiobookshelf:2.36.0";
-        publishPorts = [ "127.0.0.1:${port}:80" ];
-        volumes = [
-          "${mediaDir}/audiobooks:/audiobooks"
-          "${mediaDir}/podcasts:/podcasts"
-          "${configDir}/config:/config"
-          "${configDir}/metadata:/metadata"
-        ];
-        environments.TZ = "Europe/Dublin";
-        networks = [ "audiobookshelf.network" ];
-        noNewPrivileges = true;
+        containers.audiobookshelf.containerConfig = {
+          # renovate: datasource=docker depName=ghcr.io/advplyr/audiobookshelf
+          image = "ghcr.io/advplyr/audiobookshelf:2.36.0";
+          publishPorts = [ "127.0.0.1:${port}:80" ];
+          volumes = [
+            "${mediaDir}/audiobooks:/audiobooks"
+            "${mediaDir}/podcasts:/podcasts"
+            "${configDir}/config:/config"
+            "${configDir}/metadata:/metadata"
+          ];
+          environments.TZ = "Europe/Dublin";
+          networks = [ "audiobookshelf.network" ];
+          noNewPrivileges = true;
+        };
+      };
+
+      # Back up ABS's own consistent {sqlite + covers} snapshot, not the live /config
+      restic.paths = [ "${configDir}/metadata/backups" ];
+
+      services.nginx.virtualHosts."${url}" = {
+        enableACME = true;
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${port}";
+          proxyWebsockets = true;
+          extraConfig = "client_max_body_size 0;";
+        };
       };
     };
-
-    # Back up ABS's own consistent {sqlite + covers} snapshot, not the live /config
-    restic.paths = [ "${configDir}/metadata/backups" ];
-
-    services.nginx.virtualHosts."${url}" = {
-      enableACME = true;
-      forceSSL = true;
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${port}";
-        proxyWebsockets = true;
-        extraConfig = "client_max_body_size 0;";
-      };
-    };
-  };
 }

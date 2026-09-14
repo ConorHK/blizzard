@@ -1,6 +1,5 @@
 _:
 let
-  dataDir = "/storage/data/immich";
   url = "photos.lep.goosebox.org";
 in
 {
@@ -11,6 +10,9 @@ in
 
   flake.modules.nixos.immich =
     { config, ... }:
+    let
+      dataDir = "${config.blizzard.storage.data}/immich";
+    in
     {
       age.secrets.immich-secrets = {
         rekeyFile = ./secrets/immich-secrets.age;

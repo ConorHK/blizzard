@@ -1,6 +1,5 @@
 _:
 let
-  dataDir = "/storage/data/dawarich";
   url = "dawarich.lep.goosebox.org";
   port = 3001;
 
@@ -29,6 +28,8 @@ in
   flake.modules.nixos.dawarich =
     { config, pkgs, ... }:
     let
+      dataDir = "${config.blizzard.storage.data}/dawarich";
+
       # Restoring from a restic backup
 
       # # pull the dump out of the repo (as the containers user, which owns the repo creds)

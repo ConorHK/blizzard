@@ -1,8 +1,4 @@
-topLevel:
-let
-  dataDir = "/storage/data/syncthing";
-in
-{
+topLevel: {
   flake.monitoringChecks.syncthing = {
     name = "syncthing";
     url = "tcp://leprechaun:22000";
@@ -11,6 +7,9 @@ in
 
   flake.modules.nixos.syncthing-server =
     { config, lib, ... }:
+    let
+      dataDir = "${config.blizzard.storage.data}/syncthing";
+    in
     {
       age.secrets.syncthing-key = {
         rekeyFile = ./secrets/key.age;
