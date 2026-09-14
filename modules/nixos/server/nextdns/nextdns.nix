@@ -7,7 +7,9 @@
       systemd.services.nextdns = {
         description = "NextDNS proxy for WireGuard clients";
         # Resolves the Private DNS hostname for tunneled phones; binds to wg0.
+        # requires, not just after: the listen address exists only once wg0 is up.
         after = [ "wireguard-wg0.service" ];
+        requires = [ "wireguard-wg0.service" ];
         partOf = [ "wireguard-wg0.service" ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
