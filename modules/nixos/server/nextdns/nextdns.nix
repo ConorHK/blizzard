@@ -14,7 +14,7 @@
           DynamicUser = true;
           AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
           CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
-          LoadCredential = "profile-id:proxy-${config.age.secrets.nextdns-profile-id.path}";
+          LoadCredential = "profile-id:${config.age.secrets.nextdns-profile-id.path}";
           RuntimeDirectory = "nextdns";
           Restart = "on-failure";
           RestartSec = "5s";
