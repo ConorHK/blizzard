@@ -4,6 +4,7 @@ topLevel: {
     let
       dataDir = "${config.blizzard.storage.data}/selkie";
       hostAddress = "10.111.0.1";
+      hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL70IYhLosuJQKeTdA2tYRIUjCgcRGcQXAD3oyq7Wz+p";
       # Restic reads the home as the host's `containers` user.
       uid = 1001;
       gid = 987;
@@ -70,6 +71,8 @@ topLevel: {
 
             blizzard.bitbang.shareMembers = [ "goose" ];
 
+            age.rekey.hostPubkey = hostPubkey;
+
             networking = {
               hostName = "selkie";
               defaultGateway = {
@@ -128,7 +131,7 @@ topLevel: {
                 ];
                 age.rekey = {
                   localStorageDir = ../../../.secrets/homes/selkie;
-                  hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL70IYhLosuJQKeTdA2tYRIUjCgcRGcQXAD3oyq7Wz+p";
+                  inherit hostPubkey;
                 };
               };
             };
