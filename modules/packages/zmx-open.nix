@@ -41,12 +41,23 @@
           else
             sessions=$(zmx ls --short 2>/dev/null || true)
 
-            # zmx swallows escapes, so cwd comes from the session leader.
+            # zmx eats OSC 7 before kitty sees it, but tracks the cwd itself.
             if [ -n "$from" ]; then
-              pid=$(zmx ls 2>/dev/null | awk -F'\t' -v want="$from" '
-                { name = $1; sub(/^[[:space:]]*name=/, "", name)
-                  if (name == want) { p = $2; sub(/^pid=/, "", p); print p; exit } }')
-              if [ -n "$pid" ]; then
+              info=$(zmx ls 2>/dev/null | awk -F'\t' -v want="$from" '
+                { name = $1; sub(/^.*name=/, "", name)
+                  if (name != want) next
+                  p = $2; sub(/^pid=/, "", p)
+                  c = $5; sub(/^cwd=/, "", c); sub(/^[^:]*:\/\/[^/]*\/?/, "/", c)
+                  while (match(c, /%[0-9A-Fa-f][0-9A-Fa-f]/)) {
+                    n = strtonum("0x" substr(c, RSTART + 1, 2))
+                    if (n > 127) break
+                    c = substr(c, 1, RSTART - 1) sprintf("%c", n) substr(c, RSTART + 3)
+                  }
+                  print p "\t" (c ~ /^\// ? c : ""); exit }')
+              pid=''${info%%$'\t'*}
+              cwd=''${info#*$'\t'}
+              # Fallback when the session has no tracked cwd yet.
+              if [ -z "$cwd" ] && [ -n "$pid" ]; then
                 cwd=$(readlink "/proc/$pid/cwd" || true)
               fi
             fi
