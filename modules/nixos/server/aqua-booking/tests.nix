@@ -220,7 +220,7 @@
           authInstance = "http://127.0.0.1:9090/";
           timezone = "UTC";
           releaseHorizonDays = 1;
-          # Tiny budget so the retry loop exercises quickly instead of the 90s default.
+          # Tiny budget so the retry loop exercises quickly instead of the default.
           retry = {
             budgetSeconds = 3;
             baseSeconds = 0.2;
