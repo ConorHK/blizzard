@@ -1,0 +1,20 @@
+target-version = "py314"
+
+[lint]
+extend-select = ["ANN", "D", "PLW", "PTH", "RUF", "S"]
+ignore = ["D203", "D213"]
+
+[lint.per-file-ignores]
+# kittens and aqua-booking predate the strict set
+"modules/home/desktop/kitty/*.py" = ["ANN", "BLE", "D", "PLW", "PTH", "RUF", "S"]
+"modules/nixos/server/aqua-booking/**" = [
+  "ANN",
+  "BLE",
+  "D",
+  "DTZ",
+  "PLW",
+  "PTH",
+  "RUF",
+  "S",
+  "UP",
+]
