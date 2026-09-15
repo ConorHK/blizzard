@@ -157,17 +157,17 @@ _: {
         retry = {
           budgetSeconds = lib.mkOption {
             type = lib.types.numbers.nonnegative;
-            default = 90;
+            default = 600;
             description = "Total wall-clock budget for retrying the 07:00 acquire before giving up and alerting.";
           };
           baseSeconds = lib.mkOption {
             type = lib.types.numbers.nonnegative;
-            default = 1.5;
+            default = 1;
             description = "Decorrelated-jitter floor between attempts.";
           };
           maxBackoffSeconds = lib.mkOption {
             type = lib.types.numbers.nonnegative;
-            default = 15;
+            default = 5;
             description = "Cap on any single backoff sleep.";
           };
           maxRetryAfterSeconds = lib.mkOption {
