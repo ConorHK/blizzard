@@ -36,6 +36,7 @@
     photon
     pi
     podman
+    podman-egress-watchdog
     qbittorrent
     quadlet
     restic
