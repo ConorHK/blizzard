@@ -45,6 +45,7 @@
     selkie
     server-users
     smartd
+    snoop
     syncthing-server
     systemd-boot
     voice

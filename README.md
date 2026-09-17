@@ -71,6 +71,18 @@ Nothing else pages: failed passwords, sudo refusals and system drift are deliber
 
 Evaluated and deliberately not used — it does not work correctly against this deployment's login path. Do not re-add it without revisiting that.
 
+## ai debug access
+
+`snoop` is a read-only ssh account for AI debugging on leprechaun (`modules/nixos/server/snoop.nix`). It keys in via `ssh leprechaun-snoop` (key at `~/.ssh/leprechaun-snoop`, registered in `modules/home/core/cli/ssh.nix`), reads the whole journal through the `systemd-journal` group, and reaches rootless containers through `podman-ro`:
+
+```
+journalctl _SYSTEMD_USER_UNIT=actual-budget.service -n 100   # one container's logs
+journalctl _UID=$(id -u containers) -f                        # all container logs
+doas /run/current-system/sw/bin/podman-ro ps -a               # container status
+```
+
+`podman-ro` allows only `events images info inspect logs port ps stats version`, dropping to the `containers` user via a doas rule — sudo is wheel-only (`execWheelOnly`). snoop has no password, no wheel, and no container lifecycle control. snoop logins alert like any other (accepted).
+
 ## tests
 
 `nix flake check` runs everything below. The VM tests boot a real machine, so they

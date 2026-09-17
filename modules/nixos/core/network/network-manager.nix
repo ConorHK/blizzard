@@ -4,9 +4,7 @@
     let
       inherit (lib)
         attrNames
-        const
         filterAttrs
-        getAttr
         ;
     in
     {
@@ -20,7 +18,9 @@
       networking.dhcpcd.enable = lib.mkForce false;
 
       users.extraGroups.networkmanager.members =
-        config.users.users |> filterAttrs (const <| getAttr "isNormalUser") |> attrNames;
+        config.users.users
+        |> filterAttrs (_: user: user.isNormalUser && builtins.elem "wheel" user.extraGroups)
+        |> attrNames;
 
       environment.shellAliases.wifi = "nmcli dev wifi show-password";
     };
