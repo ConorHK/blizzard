@@ -59,6 +59,10 @@
                 installation_mode = "force_installed";
                 install_url = "https://addons.mozilla.org/firefox/downloads/latest/sidebery/latest.xpi";
               };
+              "{f0bda7ce-0cda-42dc-9ea8-126b20fed280}" = {
+                installation_mode = "force_installed";
+                install_url = "https://addons.mozilla.org/firefox/downloads/latest/hister/latest.xpi";
+              };
             };
           FirefoxHome = {
             SponsoredTopSites = false;
