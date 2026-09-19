@@ -1,6 +1,6 @@
 _:
 let
-  url = "hister.lep.goosebox.org";
+  url = "search.goosebox.org";
 in
 {
   flake.monitoringChecks.hister = {
