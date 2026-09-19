@@ -34,6 +34,7 @@
     nextdns
     nginx
     nvidia
+    ollama
     photon
     pi
     podman

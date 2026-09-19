@@ -20,6 +20,7 @@
 | `duckdns` | duckdns (timer, every 5 min) | — | — |
 | `github-runner` | github-runner | — | — |
 | `glance` | glance | 8092 | glance.lep.goosebox.org |
+| `hister` | hister | 4433 | search.goosebox.org |
 | `immich` | redis, postgres, machine-learning, server | 2283 | photos.lep.goosebox.org |
 | `immich-public-proxy` | immich-public-proxy | 3010 | photos.goosebox.org |
 | `immich-stack` | immich-stack (cron, daily) | — | — |
