@@ -24,6 +24,7 @@
     glance
     github-nix-access
     github-runner
+    hister
     immich
     immich-public-proxy
     immich-stack
