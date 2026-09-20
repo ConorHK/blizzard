@@ -28,7 +28,8 @@ in
         groups.hister = { };
       };
 
-      systemd.tmpfiles.rules = [ "d ${dataDir} 0700 hister hister -" ];
+      # setgid: new files inherit the backup user's group.
+      systemd.tmpfiles.rules = [ "d ${dataDir} 2750 hister containers -" ];
 
       age.secrets.hister-access-token.rekeyFile = ./secrets/hister-access-token.age;
 
@@ -60,6 +61,8 @@ in
         serviceConfig = {
           User = "hister";
           Group = "hister";
+          # Group-readable so the `containers` backup user reads the index.
+          UMask = "0027";
           ExecStart = "${lib.getExe pkgs.hister} listen --address 127.0.0.1:4433";
           EnvironmentFile = config.age.secrets.hister-access-token.path;
           WorkingDirectory = dataDir;
