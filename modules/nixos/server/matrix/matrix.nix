@@ -51,8 +51,9 @@ in
 
           # Live SQLite copies tear; .backup does not.
           snapshot() {
-            [ -f "$1" ] || return 0
-            sqlite3 "$1" ".backup '$2'"
+            test -s "$1"
+            sqlite3 "$1" ".backup '$2.tmp'"
+            mv -f "$2.tmp" "$2"
           }
           snapshot /var/lib/mautrix-whatsapp/mautrix-whatsapp.db "$dir/whatsapp.db"
           snapshot /var/lib/mautrix-discord/mautrix-discord.db "$dir/discord.db"
@@ -81,17 +82,16 @@ in
         # Root-owned parent: tmpfiles refuses unsafe owner transitions.
         tmpfiles.rules = [
           "d ${dataDir} 0755 root root -"
-          # setgid: new media inherits the backup user's group.
           "d ${dataDir}/media_store 2750 matrix-synapse containers -"
           "d ${dataDir}/dumps 0750 root containers -"
         ];
 
         services = {
-          # Group-readable so the `containers` backup user reads media_store.
           matrix-synapse.serviceConfig.UMask = lib.mkForce "0027";
 
           matrix-db-dump = {
             description = "Dump Synapse and bridge databases";
+            unitConfig.OnFailure = "alert-failure@matrix-db-dump.service";
             serviceConfig = {
               Type = "oneshot";
               Group = "containers";
@@ -99,16 +99,6 @@ in
               ExecStart = lib.getExe dbDump;
             };
           };
-        };
-
-        timers.matrix-db-dump = {
-          description = "Nightly Matrix database dump";
-          # Ahead of the 03:00 restic run.
-          timerConfig = {
-            OnCalendar = "02:30";
-            Persistent = true;
-          };
-          wantedBy = [ "timers.target" ];
         };
       };
 
@@ -226,6 +216,7 @@ in
         };
       };
 
+      restic.prepareUnits = [ "matrix-db-dump.service" ];
       restic.paths = [
         "${dataDir}/dumps"
         "${dataDir}/media_store"

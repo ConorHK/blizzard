@@ -5,12 +5,12 @@ _: {
       age.secrets = {
         restic-password = {
           rekeyFile = ./secrets/restic-password.age;
-          owner = "containers";
+          owner = "root";
         };
 
         restic-env = {
           rekeyFile = ./secrets/restic-env.age;
-          owner = "containers";
+          owner = "root";
         };
         restic-ntfy-topic.rekeyFile = ./secrets/restic-ntfy-topic.age;
       };

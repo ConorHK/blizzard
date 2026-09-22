@@ -34,6 +34,9 @@
         };
       };
 
+      restic.paths = [ configPath ];
+      restic.pauseUnits = [ "podman-homeassistant.service" ];
+
       networking.firewall.allowedTCPPorts = [ 8123 ];
     };
 }

@@ -73,7 +73,15 @@ in
           };
         };
 
-        restic.paths = [ "${calibreDir}/config/processed_books/imported" ];
+        restic.paths = [
+          calibreDir
+          shelfmarkDir
+          booksDir
+        ];
+        restic.pauseContainers = [
+          "calibre-web"
+          "shelfmark"
+        ];
 
         services.nginx.virtualHosts = {
           "${urlCalibreWeb}" = {

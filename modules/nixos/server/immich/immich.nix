@@ -73,12 +73,12 @@ in
         };
       };
 
-      # restic.paths = [
-      #   "${dataDir}/backups"
-      #   "${dataDir}/library"
-      #   "${dataDir}/profile"
-      #   "${dataDir}/upload"
-      # ];
+      restic.paths = [ dataDir ];
+      restic.pauseContainers = [
+        "immich-server"
+        "immich-db"
+        "immich-redis"
+      ];
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

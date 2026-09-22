@@ -8,6 +8,8 @@
     grub-boot
     quadlet
     home-assistant
+    restic
+    restic-secrets
     server-users
   ];
 }

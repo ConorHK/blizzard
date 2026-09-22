@@ -30,21 +30,7 @@ in
     let
       dataDir = "${config.blizzard.storage.data}/dawarich";
 
-      # Restoring from a restic backup
-
-      # # pull the dump out of the repo (as the containers user, which owns the repo creds)
-      # asc restic -r <repo> restore latest --include /storage/data/dawarich/dumps --target /tmp/restore
-
-      # asc systemctl --user stop dawarich-app dawarich-sidekiq
-      # gunzip < /tmp/restore/storage/data/dawarich/dumps/dawarich.sql.gz \
-      # | sed "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
-      # | asc podman exec -i dawarich-db psql --username=postgres
-
-      # # re-align the password (dump carries the old one), then start:
-      # APP_PW=$(sudo sed -n 's/^DATABASE_PASSWORD=//p' /run/agenix/dawarich-secrets)
-      # asc podman exec -i dawarich-db psql -U postgres -c "ALTER ROLE postgres PASSWORD '${APP_PW}';"
-      # asc systemctl --user start dawarich-app dawarich-sidekiq
-
+      # Restore steps: docs/audit-deployment.md.
       dbDump = pkgs.writeShellApplication {
         name = "dawarich-db-dump";
         runtimeInputs = [
@@ -153,24 +139,20 @@ in
         };
       };
 
-      home-manager.users.containers.systemd.user = {
-        services.dawarich-db-dump = {
-          Unit.Description = "Dump the Dawarich Postgres database";
-          Service = {
-            Type = "oneshot";
-            ExecStart = "${dbDump}/bin/dawarich-db-dump";
-          };
-        };
-        timers.dawarich-db-dump = {
-          Unit.Description = "Daily Dawarich Postgres dump";
-          # Ahead of the 03:00 restic run so it captures a fresh dump.
-          Timer = {
-            OnCalendar = "02:45";
-            Persistent = true;
-          };
-          Install.WantedBy = [ "timers.target" ];
+      systemd.services.dawarich-db-dump = {
+        description = "Dump Dawarich database";
+        after = [ "home-manager-containers.service" ];
+        requires = [ "home-manager-containers.service" ];
+        unitConfig.OnFailure = "alert-failure@dawarich-db-dump.service";
+        environment.XDG_RUNTIME_DIR = "/run/user/${toString config.users.users.containers.uid}";
+        serviceConfig = {
+          Type = "oneshot";
+          User = "containers";
+          UMask = "0077";
+          ExecStart = "${dbDump}/bin/dawarich-db-dump";
         };
       };
+      restic.prepareUnits = [ "dawarich-db-dump.service" ];
 
       # Back up the logical dump (not the live datadir) plus the app's file
       # volumes. No pauseContainers: the dump is self-consistent, so the stack

@@ -8,15 +8,19 @@ _: {
     }:
     let
       cfg = config.restic;
-      inherit (cfg) pauseContainers;
-
-      mkContainerScript =
-        action:
-        pkgs.writeShellScript "restic-${action}-containers" ''
-          ${lib.concatMapStringsSep "\n" (
-            c: "XDG_RUNTIME_DIR=/run/user/$(id -u) ${pkgs.systemd}/bin/systemctl --user ${action} ${c}.service"
-          ) pauseContainers}
-        '';
+      pauseScript = pkgs.writeShellApplication {
+        name = "restic-pause";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.util-linux
+          pkgs.systemd
+        ];
+        text = builtins.readFile ./pause.sh;
+      };
+      pauseArgs = lib.escapeShellArgs (
+        (map (unit: "user:${unit}.service") cfg.pauseContainers)
+        ++ (map (unit: "system:${unit}") cfg.pauseUnits)
+      );
     in
     {
       options.restic = {
@@ -35,6 +39,18 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ ];
           description = "Container services to stop before backup and restart after.";
+        };
+
+        prepareUnits = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Services that must finish before backup.";
+        };
+
+        pauseUnits = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "System services paused during backup.";
         };
 
         passwordFile = lib.mkOption {
@@ -58,6 +74,8 @@ _: {
         systemd = {
           services = {
             restic-backups-service-data = {
+              requires = cfg.prepareUnits;
+              after = cfg.prepareUnits;
               unitConfig.OnFailure = "restic-backups-notify-failure.service";
               # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
               serviceConfig.Nice = 19;
@@ -76,7 +94,6 @@ _: {
               description = "Alert if the newest restic snapshot is stale";
               # The watchdog itself must not fail silently.
               unitConfig.OnFailure = "alert-failure@restic-backups-freshness.service";
-              # Root, not the `containers` backup user: the ntfy topic is root-owned.
               serviceConfig = {
                 Type = "oneshot";
                 EnvironmentFile = lib.optional (cfg.environmentFile != null) cfg.environmentFile;
@@ -130,7 +147,8 @@ _: {
         };
 
         services.restic.backups.service-data = {
-          user = "containers";
+          # Root reads subordinate-UID container files.
+          user = "root";
           inherit (cfg)
             repository
             paths
@@ -172,10 +190,13 @@ _: {
           # `restic unlock` clears stale locks left by an interrupted run;
           # otherwise every later backup fails silently on the lock.
           backupPrepareCommand = ''
-            ${pkgs.restic}/bin/restic unlock
-            ${lib.optionalString (pauseContainers != [ ]) (mkContainerScript "stop")}
+            set -euo pipefail
+            if ${pkgs.restic}/bin/restic cat config >/dev/null 2>&1; then
+              ${pkgs.restic}/bin/restic unlock
+            fi
+            ${lib.getExe pauseScript} stop ${pauseArgs}
           '';
-          backupCleanupCommand = lib.optionalString (pauseContainers != [ ]) "${mkContainerScript "start"}";
+          backupCleanupCommand = "${lib.getExe pauseScript} start";
         };
       };
     };

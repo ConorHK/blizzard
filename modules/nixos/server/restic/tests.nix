@@ -41,7 +41,17 @@
               };
             };
 
+            systemd.services.prepare-dump = {
+              unitConfig.OnFailure = "restic-backups-notify-failure.service";
+              serviceConfig.Type = "oneshot";
+              script = ''
+                test ! -e /var/fail-dump
+                date +%s%N > /var/data/dump
+              '';
+            };
+
             restic = {
+              prepareUnits = [ "prepare-dump.service" ];
               repository = "/var/restic-repo";
               paths = [ "/var/data" ];
               passwordFile = "/etc/restic-password";
@@ -59,14 +69,10 @@
               return machine.succeed(f"{ENV} restic {args}")
 
 
-          def as_containers(args):
-              return machine.succeed(
-                  f"su containers -s /bin/sh -c '{ENV} restic {args}'"
-              )
-
-
           start_recorder()
+          machine.wait_for_unit("dummy.service", user="containers")
           machine.succeed("mkdir -p /var/data && echo 'irreplaceable' > /var/data/family-photos")
+          machine.succeed("chmod 600 /var/data/family-photos")
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
@@ -78,7 +84,7 @@
 
           with subtest("the first run initializes a fresh repository"):
               machine.succeed("systemctl start restic-backups-service-data.service")
-              snapshots = as_containers("snapshots --json")
+              snapshots = as_root("snapshots --json")
               assert '"paths"' in snapshots, snapshots
 
           with subtest("paused containers are stopped and started again"):
@@ -106,9 +112,21 @@
               assert alert["title"] == "machine: Backup stale", alert
               assert "backup has not run" in alert["message"], alert
 
+          with subtest("failed dumps cannot produce fresh snapshots"):
+              before = as_root("snapshots --json")
+              alerts_before = len(posts())
+              machine.succeed("touch /var/fail-dump")
+              machine.fail("systemctl start restic-backups-service-data.service")
+              wait_for_posts(alerts_before + 1)
+              assert as_root("snapshots --json") == before
+              machine.succeed("rm /var/fail-dump")
+              old_dump = machine.succeed("cat /var/data/dump")
+              machine.succeed("systemctl start restic-backups-service-data.service")
+              assert machine.succeed("cat /var/data/dump") != old_dump
+
           with subtest("a failed backup pages through OnFailure"):
               before = len(posts())
-              machine.succeed("chmod 000 /var/restic-repo")
+              machine.succeed("mv /var/restic-repo /var/restic-repo.saved; touch /var/restic-repo")
               machine.fail("systemctl start restic-backups-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Backup failed", alert
