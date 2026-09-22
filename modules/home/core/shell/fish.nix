@@ -6,7 +6,7 @@
         custom.jj = {
           when = "jj root";
           command = ''
-            jj log -r @ --no-graph --color never -T 'separate(" ", "at", change_id.shortest(4), if(empty, "(empty)"), description.first_line())'
+            jj log -r @ --no-graph --color never -T 'separate(" ", "at", change_id.shortest(4), if(empty, "(empty)"))'
           '';
           format = "[$output]($style) ";
           style = "purple";
