@@ -43,6 +43,9 @@ The Ports column is what each service listens on, not what is reachable. Only `m
 | Module | Services | Ports |
 |--------|----------|-------|
 | `home-assistant` | home-assistant | 8123 |
+| `restic` | backup 03:00, freshness check 10:00 | - |
+
+See [deployment and restore steps](docs/audit-deployment.md) before enabling backups or changing Selkie isolation.
 
 ## bananach services
 
@@ -79,10 +82,10 @@ Evaluated and deliberately not used — it does not work correctly against this 
 ```
 journalctl _SYSTEMD_USER_UNIT=actual-budget.service -n 100   # one container's logs
 journalctl _UID=$(id -u containers) -f                        # all container logs
-doas /run/current-system/sw/bin/podman-ro ps -a               # container status
+doas /run/current-system/sw/bin/podman-ro ps
 ```
 
-`podman-ro` allows only `events images info inspect logs port ps stats version`, dropping to the `containers` user via a doas rule — sudo is wheel-only (`execWheelOnly`). snoop has no password, no wheel, and no container lifecycle control. snoop logins alert like any other (accepted).
+`podman-ro` accepts fixed commands rather than arbitrary Podman options. Use `logs NAME [LINES]`, `inspect NAME`, or `port NAME`; the other supported commands take no arguments. Inspection returns container state, not environment variables. The wrapper drops to `containers` through doas with a clean environment. Snoop has no password or wheel membership. Journal access can still reveal application secrets.
 
 ## tests
 
@@ -94,11 +97,15 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 |-------|---------|---------|
 | `login-alerts` | a real ssh login reported once with its service and origin, tailscale grants, that a tailscale session reaching PAM alerts once, that failures and drift stay quiet, the ten-per-window cap | ~30s |
 | `alerts` | the `alert-failure@` OnFailure template pages | ~20s |
-| `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
+| `restic` | repository init, root-only data restore, pause hooks, dump failure gating, freshness and failure alerts | not remeasured |
+| `security-scripts` | restricted Podman arguments, real Bubblewrap isolation, atomic clipboard writes, HTTP framing, pause failures, firewall cleanup, image update coverage | ~4s |
+| `selkie-isolation` | remapped root, unchanged home ownership, untrusted Nix proxy | not measured |
 | `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
 | `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
 
-Two invariants are enforced as NixOS assertions instead, so they fail the host build:
+Three invariants are enforced as NixOS assertions instead, so they fail the host build:
+
+- **Image pins**: deployed containers must use SHA256 image digests. Renovate manages tag and digest updates.
 
 - **Firewall vs. published ports** — a port opened in the firewall whose container binds `127.0.0.1` only is a stated intent the deployment does not have. Fails the build; there is no opt-out.
 - **Monitoring coverage** — every public nginx vhost needs a `monitoringChecks` entry, or an explicit `blizzard.monitoring.exempt` entry saying why not.
