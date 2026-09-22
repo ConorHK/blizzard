@@ -1,5 +1,9 @@
 target-version = "py314"
 
+[per-file-target-version]
+"modules/nixos/clip-server.py" = "py311"
+"tests/*.py" = "py311"
+
 [lint]
 extend-select = ["ANN", "D", "PLW", "PTH", "RUF", "S"]
 ignore = ["D203", "D213"]

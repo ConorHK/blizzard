@@ -13,102 +13,9 @@ in
     modules.nixos.clip-server =
       { pkgs, ... }:
       let
-        server = pkgs.writers.writePython3Bin "clip-server" { } ''
-          import http.server
-          import os
-          import pathlib
-          import re
-          import sys
-
-          ROOT = pathlib.Path(os.environ["STATE_DIRECTORY"])
-          MAX_BYTES = 1 << 20
-          SLOT = re.compile(r"^[A-Za-z0-9._-]{1,64}\Z")
-
-
-          class Handler(http.server.BaseHTTPRequestHandler):
-              protocol_version = "HTTP/1.1"
-
-              def log_request(self, code="-", size="-"):
-                  who = self.address_string()
-                  print(f"{who} {self.command} {self.path} {code}", flush=True)
-
-              def reply(self, code, body):
-                  self.send_response(code)
-                  self.send_header("Content-Type", "text/plain; charset=utf-8")
-                  self.send_header("Content-Length", str(len(body)))
-                  self.end_headers()
-                  self.wfile.write(body)
-
-              def slot(self):
-                  name = self.path.strip("/") or "default"
-                  if not SLOT.match(name):
-                      self.close_connection = True
-                      self.reply(400, b"bad slot name\n")
-                      return None
-                  return ROOT / name
-
-              def too_large(self):
-                  self.close_connection = True
-                  self.reply(413, b"too large\n")
-
-              # curl -T- streams chunked, so Content-Length is often absent.
-              def read_chunked(self):
-                  parts, total = [], 0
-                  while True:
-                      size = int(self.rfile.readline(64).split(b";")[0], 16)
-                      if size == 0:
-                          self.rfile.readline()
-                          return b"".join(parts)
-                      total += size
-                      if total > MAX_BYTES:
-                          self.too_large()
-                          return None
-                      parts.append(self.rfile.read(size))
-                      self.rfile.read(2)
-
-              def read_body(self):
-                  if "chunked" in self.headers.get("Transfer-Encoding", "").lower():
-                      return self.read_chunked()
-                  length = int(self.headers.get("Content-Length", 0))
-                  if length > MAX_BYTES:
-                      self.too_large()
-                      return None
-                  return self.rfile.read(length)
-
-              def do_GET(self):
-                  path = self.slot()
-                  if path is None:
-                      return
-                  try:
-                      self.reply(200, path.read_bytes())
-                  except FileNotFoundError:
-                      self.reply(404, b"empty\n")
-
-              def do_PUT(self):
-                  path = self.slot()
-                  if path is None:
-                      return
-                  body = self.read_body()
-                  if body is None:
-                      return
-                  tmp = path.with_name(path.name + ".tmp")
-                  tmp.write_bytes(body)
-                  tmp.replace(path)
-                  self.reply(200, b"")
-
-              do_POST = do_PUT
-
-
-          class Server(http.server.ThreadingHTTPServer):
-              # curl drops the keep-alive socket; that is not a fault worth a traceback.
-              def handle_error(self, request, client_address):
-                  dropped = (ConnectionResetError, BrokenPipeError)
-                  if not isinstance(sys.exc_info()[1], dropped):
-                      super().handle_error(request, client_address)
-
-
-          Server(("", ${toString port}), Handler).serve_forever()
-        '';
+        server = pkgs.writers.writePython3Bin "clip-server" { flakeIgnore = [ "E501" ]; } (
+          builtins.readFile ./clip-server.py
+        );
       in
       {
         # Never opened in the firewall: wg0 and tailscale0 are trusted, everything else drops.
@@ -117,7 +24,7 @@ in
           wantedBy = [ "multi-user.target" ];
           after = [ "network.target" ];
           serviceConfig = {
-            ExecStart = "${server}/bin/clip-server";
+            ExecStart = "${server}/bin/clip-server ${toString port}";
             DynamicUser = true;
             StateDirectory = "clip";
             Restart = "always";

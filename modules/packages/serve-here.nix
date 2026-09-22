@@ -18,16 +18,13 @@
             build-system = [ pkgs.python3Packages.setuptools ];
           };
         in
-        pkgs.writeShellScriptBin "serve-here" ''
-          set -e
-
-          PORT=''${1:-8000}
-
-          ${pkgs.iptables}/bin/iptables -I nixos-fw -p tcp --dport "$PORT" -j ACCEPT
-
-          trap '${pkgs.iptables}/bin/iptables -D nixos-fw -p tcp --dport "$PORT" -j ACCEPT 2>/dev/null || true' EXIT INT TERM
-
-          exec ${pkgs.python3.withPackages (_: [ uploadserver ])}/bin/python -m uploadserver "''${@}"
-        '';
+        pkgs.writeShellApplication {
+          name = "serve-here";
+          runtimeInputs = [
+            pkgs.iptables
+            (pkgs.python3.withPackages (_: [ uploadserver ]))
+          ];
+          text = builtins.readFile ./serve-here.sh;
+        };
     };
 }

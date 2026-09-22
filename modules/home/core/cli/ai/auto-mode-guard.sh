@@ -19,15 +19,9 @@
 #     thus no fail-closed branch: detection -> deny, and non-detection defers
 #     (fail open) like the other heuristics below.
 #
-# This is a heuristic, not a real shell parser. Known accepted limitations (all
-# fail SAFE — they deny or defer, never grant a commit/push that should be
-# blocked): surrounding quotes are stripped per segment before tokenizing, so a
-# separator (`;`/`&&`/`|`) inside a quoted `-m` message splits the command (the
-# real segment is still matched); `cd`/`-C` are followed only as literal leading
-# tokens; and indirection the parser can't see (`eval`, `bash -c`, `g=git;$g
-# push`, backslash-escaped names) is not resolved. These edges fail safe for
-# normal interactive usage.
-#
+# Heuristic only; isolation must enforce authorization.
+# Shell indirection can bypass command detection.
+
 # Runs under `set -euo pipefail` (writeShellApplication); jq and git are pinned
 # on PATH via runtimeInputs.
 
@@ -63,7 +57,7 @@ segment_is_git() {
   SEG_GIT_C=""
   SEG_GIT_SUBCMD=""
   local -a toks
-  read -ra toks <<< "$seg"
+  read -ra toks <<<"$seg"
   local n=${#toks[@]}
   local i=0
   [ "$n" -gt 0 ] || return 1
@@ -71,17 +65,17 @@ segment_is_git() {
   # Skip leading env assignments and command wrappers.
   while [ "$i" -lt "$n" ]; do
     case "${toks[i]}" in
-      *=*) i=$((i + 1)) ;;
-      command | exec | builtin | sudo) i=$((i + 1)) ;;
-      *) break ;;
+    *=*) i=$((i + 1)) ;;
+    command | exec | builtin | sudo) i=$((i + 1)) ;;
+    *) break ;;
     esac
   done
   [ "$i" -lt "$n" ] || return 1
 
   # Program must be git (allow an absolute path like /usr/bin/git).
   case "${toks[i]##*/}" in
-    git) ;;
-    *) return 1 ;;
+  git) ;;
+  *) return 1 ;;
   esac
   i=$((i + 1))
 
@@ -89,14 +83,15 @@ segment_is_git() {
   # Capture -C's value so the branch is checked in the repo git will act on.
   while [ "$i" -lt "$n" ]; do
     case "${toks[i]}" in
-      -C)
-        SEG_GIT_C="${toks[i + 1]:-}"
-        i=$((i + 2))
-        ;;
-      -c | --git-dir | --work-tree | --namespace | --exec-path | --super-prefix)
-        i=$((i + 2)) ;;
-      -*) i=$((i + 1)) ;;
-      *) break ;;
+    -C)
+      SEG_GIT_C="${toks[i + 1]:-}"
+      i=$((i + 2))
+      ;;
+    -c | --git-dir | --work-tree | --namespace | --exec-path | --super-prefix)
+      i=$((i + 2))
+      ;;
+    -*) i=$((i + 1)) ;;
+    *) break ;;
     esac
   done
   [ "$i" -lt "$n" ] || return 1
@@ -107,8 +102,8 @@ segment_is_git() {
 # Join a (possibly relative) directory onto the running effective cwd.
 join_dir() {
   case "$1" in
-    /*) printf '%s' "$1" ;;
-    *) printf '%s/%s' "$2" "$1" ;;
+  /*) printf '%s' "$1" ;;
+  *) printf '%s/%s' "$2" "$1" ;;
   esac
 }
 
@@ -125,8 +120,7 @@ join_dir() {
 # working while refusing to *grant* permission off a `cd` the shell would not
 # actually apply to the parent.
 effective_cwd="$cwd"
-commit_dir=""
-is_git_commit=0
+commit_dirs=()
 cd_tainted=0
 
 # A literal newline is a sequential separator like `;`, so fold newlines to `;`
@@ -145,17 +139,35 @@ declare -a SEGS PRESEP
 n_seg=0
 while IFS= read -r rawseg; do
   case "$rawseg" in
-    "@@AND@@ "*) ps=AND; s=${rawseg#@@AND@@ } ;;
-    "@@OR@@ "*) ps=OR; s=${rawseg#@@OR@@ } ;;
-    "@@SEMI@@ "*) ps=SEMI; s=${rawseg#@@SEMI@@ } ;;
-    "@@PIPE@@ "*) ps=PIPE; s=${rawseg#@@PIPE@@ } ;;
-    "@@AMP@@ "*) ps=AMP; s=${rawseg#@@AMP@@ } ;;
-    *) ps=START; s="$rawseg" ;;
+  "@@AND@@ "*)
+    ps=AND
+    s=${rawseg#@@AND@@ }
+    ;;
+  "@@OR@@ "*)
+    ps=OR
+    s=${rawseg#@@OR@@ }
+    ;;
+  "@@SEMI@@ "*)
+    ps=SEMI
+    s=${rawseg#@@SEMI@@ }
+    ;;
+  "@@PIPE@@ "*)
+    ps=PIPE
+    s=${rawseg#@@PIPE@@ }
+    ;;
+  "@@AMP@@ "*)
+    ps=AMP
+    s=${rawseg#@@AMP@@ }
+    ;;
+  *)
+    ps=START
+    s="$rawseg"
+    ;;
   esac
   SEGS[n_seg]="$s"
   PRESEP[n_seg]="$ps"
   n_seg=$((n_seg + 1))
-done <<< "$norm"
+done <<<"$norm"
 
 k=0
 while [ "$k" -lt "$n_seg" ]; do
@@ -167,7 +179,7 @@ while [ "$k" -lt "$n_seg" ]; do
   nextsep="${PRESEP[k + 1]:-END}"
   k=$((k + 1))
   [ -n "$seg" ] || continue
-  read -ra segtoks <<< "$seg"
+  read -ra segtoks <<<"$seg"
   # Detect `cd <dir>`, seeing past a subshell-opening `(` (never honored).
   j=0
   subshell=0
@@ -189,40 +201,42 @@ while [ "$k" -lt "$n_seg" ]; do
   fi
   if segment_is_git "$gitseg"; then
     case "$SEG_GIT_SUBCMD" in
-      # `send-pack` is the plumbing command that performs the same wire push, so
-      # it is denied too; other indirection (eval, bash -c) is not statically
-      # visible and falls under the accepted limitations documented at the top.
-      push | send-pack)
-        deny "Auto mode: git push is not allowed. Stop and let a human push."
-        ;;
-      commit)
-        if [ -n "$SEG_GIT_C" ]; then
-          commit_dir=$(join_dir "$SEG_GIT_C" "$effective_cwd")
-        else
-          commit_dir="$effective_cwd"
-        fi
-        is_git_commit=1
-        break
-        ;;
+    # `send-pack` is the plumbing command that performs the same wire push, so
+    # it is denied too; other indirection (eval, bash -c) is not statically
+    # visible and falls under the accepted limitations documented at the top.
+    push | send-pack)
+      deny "Auto mode: git push is not allowed. Stop and let a human push."
+      ;;
+    commit)
+      if [ -n "$SEG_GIT_C" ]; then
+        commit_dir=$(join_dir "$SEG_GIT_C" "$effective_cwd")
+      else
+        commit_dir="$effective_cwd"
+      fi
+      commit_dirs+=("$commit_dir")
+      ;;
+    checkout | switch | reset | symbolic-ref | update-ref)
+      cd_tainted=1
+      ;;
     esac
   fi
 done
 
-if [ "$is_git_commit" -eq 1 ]; then
+for commit_dir in "${commit_dirs[@]}"; do
   # An unhonored cd before the commit means we cannot trust the dir: fail closed.
   if [ "$cd_tainted" -eq 1 ]; then
-    deny "Auto mode: git commit follows a conditional or subshell 'cd' whose target cannot be verified. Run the commit from an ai-* branch checkout without a conditional/subshell cd."
+    deny "Cannot verify commit context; use a separate command."
   fi
   branch=""
   if [ -n "$commit_dir" ]; then
     branch=$(git -C "$commit_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
   fi
   case "$branch" in
-    ai-*) : ;;
-    *)
-      deny "Auto mode: git commit is only allowed on an ai-* branch, but the current branch is '${branch:-unknown}'. Create/switch to an ai-<feature> branch first."
-      ;;
+  ai-*) : ;;
+  *)
+    deny "Auto mode: git commit is only allowed on an ai-* branch, but the current branch is '${branch:-unknown}'. Create/switch to an ai-<feature> branch first."
+    ;;
   esac
-fi
+done
 
 exit 0
