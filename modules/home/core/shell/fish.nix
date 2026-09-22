@@ -1,6 +1,96 @@
 {
   flake.modules.homeManager.core =
     { pkgs, lib, ... }:
+    let
+      promptSettings = {
+        custom.jj = {
+          when = "jj root";
+          command = ''
+            jj log -r @ --no-graph --color never -T 'separate(" ", "at", change_id.shortest(4), if(empty, "(empty)"), description.first_line())'
+          '';
+          format = "[$output]($style) ";
+          style = "purple";
+        };
+        cmd_duration = {
+          format = " [⏱ $duration]($style) ";
+        };
+        directory = {
+          read_only = " 󰌾";
+        };
+        fill = {
+          symbol = "·";
+          style = "bright-black";
+        };
+        git_branch = {
+          symbol = "on ";
+          format = "[$symbol](white)[$branch(:$remote_branch)]($style) ";
+        };
+        git_status = {
+          format = "(([$conflicted](bright-red) )([$stashed](bright-green) )([$deleted](bright-red) )([$renamed](bright-yellow) )([$modified](bright-yellow) )([$staged](bright-yellow) )([$untracked](bright-blue) )[$ahead_behind](bright-green) )";
+          conflicted = "=$count";
+          ahead = "⇡$count";
+          behind = "⇣$count";
+          diverged = "⇡$ahead_count ⇣$behind_count";
+          untracked = "?$count";
+          stashed = "*$count";
+          modified = "!$count";
+          staged = "+$count";
+          renamed = "»$count";
+          deleted = "✖$count";
+        };
+        hostname = {
+          ssh_symbol = "";
+          format = "[$ssh_symbol$hostname]($style) ";
+          style = "bold yellow";
+        };
+        kubernetes = {
+          disabled = false;
+          format = "[$symbol$context(/$namespace)]($style) ";
+        };
+        nix_shell = {
+          symbol = " ";
+          format = "[$symbol$name \\($state\\)]($style) ";
+        };
+        nodejs = {
+          format = "[$symbol($version )]($style) ";
+          disabled = true;
+        };
+        python = {
+          symbol = " ";
+          format = "[\${symbol}\${pyenv_prefix}(\${version} )(\($virtualenv\) )]($style) ";
+        };
+        status = {
+          disabled = false;
+          symbol = "✘";
+          format = "[$symbol $status]($style) ";
+        };
+        time = {
+          disabled = false;
+          format = "[$time]($style) ";
+          style = "bright-black";
+        };
+        username = {
+          format = "[\${user}]($style) ";
+        };
+      };
+      jjSettings = lib.recursiveUpdate promptSettings {
+        format = lib.concatStrings [
+          "$directory"
+          "$custom" # jj change id
+          "$fill"
+          "$status"
+          "$cmd_duration"
+          "$all"
+          "$line_break"
+          "$character"
+        ];
+        git_branch.disabled = true;
+        git_commit.disabled = true;
+        git_state.disabled = true;
+        git_metrics.disabled = true;
+        git_status.disabled = true;
+      };
+    in
     {
       home = {
         sessionVariables.SHELLS = lib.getExe pkgs.fish;
@@ -11,6 +101,7 @@
           default_shell "fish"
         ''
       ];
+      xdg.configFile."starship-jj.toml".source = (pkgs.formats.toml { }).generate "starship-jj.toml" jjSettings;
 
       programs = {
         zsh.initExtra = "exec fish";
@@ -53,6 +144,16 @@
             set fish_color_host 87afaf           # blue
             set fish_color_host_remote af8787    # magenta
             set fish_color_cancel 8b5f61         # red
+
+            # jj prompt in jj repos, git prompt elsewhere
+            function __starship_pick --on-variable PWD
+                if jj root >/dev/null 2>&1
+                    set -gx STARSHIP_CONFIG $HOME/.config/starship-jj.toml
+                else
+                    set -gx STARSHIP_CONFIG $HOME/.config/starship.toml
+                end
+            end
+            __starship_pick
           '';
           plugins = [
             {
@@ -64,7 +165,7 @@
 
         starship = {
           enable = true;
-          settings = {
+          settings = promptSettings // {
             format = lib.concatStrings [
               "$directory"
               "$git_branch"
@@ -79,67 +180,6 @@
               "$line_break"
               "$character"
             ];
-            cmd_duration = {
-              format = " [⏱ $duration]($style) ";
-            };
-            directory = {
-              read_only = " 󰌾";
-            };
-            fill = {
-              symbol = "·";
-              style = "bright-black";
-            };
-            git_branch = {
-              symbol = "on ";
-              format = "[$symbol](white)[$branch(:$remote_branch)]($style) ";
-            };
-            git_status = {
-              format = "(([$conflicted](bright-red) )([$stashed](bright-green) )([$deleted](bright-red) )([$renamed](bright-yellow) )([$modified](bright-yellow) )([$staged](bright-yellow) )([$untracked](bright-blue) )[$ahead_behind](bright-green) )";
-              conflicted = "=$count";
-              ahead = "⇡$count";
-              behind = "⇣$count";
-              diverged = "⇡$ahead_count ⇣$behind_count";
-              untracked = "?$count";
-              stashed = "*$count";
-              modified = "!$count";
-              staged = "+$count";
-              renamed = "»$count";
-              deleted = "✖$count";
-            };
-            hostname = {
-              ssh_symbol = "";
-              format = "[$ssh_symbol$hostname]($style) ";
-              style = "bold yellow";
-            };
-            kubernetes = {
-              disabled = false;
-              format = "[$symbol$context(/$namespace)]($style) ";
-            };
-            nix_shell = {
-              symbol = " ";
-              format = "[$symbol$name \\($state\\)]($style) ";
-            };
-            nodejs = {
-              format = "[$symbol($version )]($style) ";
-              disabled = true;
-            };
-            python = {
-              symbol = " ";
-              format = "[\${symbol}\${pyenv_prefix}(\${version} )(\($virtualenv\) )]($style) ";
-            };
-            status = {
-              disabled = false;
-              symbol = "✘";
-              format = "[$symbol $status]($style) ";
-            };
-            time = {
-              disabled = false;
-              format = "[$time]($style) ";
-              style = "bright-black";
-            };
-            username = {
-              format = "[\${user}]($style) ";
-            };
           };
         };
       };
