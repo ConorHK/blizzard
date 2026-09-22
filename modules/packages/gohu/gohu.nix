@@ -22,12 +22,16 @@
             f = fontforge.open("gohu.bdf")
             f.familyname = f.fontname = f.fullname = "GohuOTB"
             f.generate("GohuOTB.otb", bitmap_type="otb")
+            b = fontforge.open("gohu-bold.bdf")
+            b.familyname = b.fontname = b.fullname = "GohuOTB Bold"
+            b.generate("GohuOTB-Bold.otb", bitmap_type="otb")
             PY
             fontforge -lang=py -script convert.py
           '';
 
           installPhase = ''
             install -Dm444 GohuOTB.otb $out/share/fonts/GohuOTB.otb
+            install -Dm444 GohuOTB-Bold.otb $out/share/fonts/GohuOTB-Bold.otb
           '';
         };
       };

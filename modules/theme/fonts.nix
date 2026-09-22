@@ -52,6 +52,14 @@
               <edit name="scalable"><bool>true</bool></edit>
               <edit name="outline"><bool>true</bool></edit>
              </match>
+             <match target="scan">
+              <test name="family">
+                <string>GohuOTB Bold</string>
+              </test>
+              <edit name="spacing"><int>100</int></edit>
+              <edit name="scalable"><bool>true</bool></edit>
+              <edit name="outline"><bool>true</bool></edit>
+             </match>
             </fontconfig>
           '';
         };
