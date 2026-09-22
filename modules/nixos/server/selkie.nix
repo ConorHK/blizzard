@@ -1,11 +1,17 @@
 topLevel: {
   flake.modules.nixos.selkie =
-    { config, inputs, ... }:
+    {
+      config,
+      inputs,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       dataDir = "${config.blizzard.storage.data}/selkie";
       hostAddress = "10.111.0.1";
       hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL70IYhLosuJQKeTdA2tYRIUjCgcRGcQXAD3oyq7Wz+p";
-      # Restic reads the home as the host's `containers` user.
+      # Keep existing on-disk home ownership.
       uid = 1001;
       gid = 987;
     in
@@ -13,9 +19,52 @@ topLevel: {
       users = {
         users.containers.uid = uid;
         groups.containers.gid = gid;
+        users.selkie-nix = {
+          isSystemUser = true;
+          group = "selkie-nix";
+        };
+        groups.selkie-nix = { };
       };
 
-      systemd.tmpfiles.rules = [ "d ${dataDir} 0700 containers containers -" ];
+      assertions = [
+        {
+          assertion =
+            lib.intersectLists [ "selkie-nix" "@selkie-nix" "*" ] config.nix.settings.trusted-users == [ ];
+          message = "Selkie's Nix proxy must remain untrusted.";
+        }
+      ];
+
+      systemd = {
+        sockets.selkie-nix = {
+          wantedBy = [ "sockets.target" ];
+          socketConfig = {
+            ListenStream = "/run/selkie-nix/socket";
+            SocketMode = "0666";
+            DirectoryMode = "0755";
+          };
+        };
+        services = {
+          selkie-nix = {
+            requires = [ "nix-daemon.socket" ];
+            after = [ "nix-daemon.socket" ];
+            serviceConfig = {
+              User = "selkie-nix";
+              Group = "selkie-nix";
+              ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd /nix/var/nix/daemon-socket/socket";
+              NoNewPrivileges = true;
+              ProtectSystem = "strict";
+              ProtectHome = true;
+              PrivateTmp = true;
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+            };
+          };
+          "container@selkie" = {
+            requires = [ "selkie-nix.socket" ];
+            after = [ "selkie-nix.socket" ];
+          };
+        };
+        tmpfiles.rules = [ "d ${dataDir} 0700 containers containers -" ];
+      };
 
       networking.nat = {
         enable = true;
@@ -27,6 +76,13 @@ topLevel: {
       containers.selkie = {
         autoStart = true;
         privateNetwork = true;
+        privateUsers = 524288;
+        tmpfs = [ "/nix/var/nix/daemon-socket" ];
+        extraFlags = [
+          "--private-users-ownership=auto"
+          "--bind=${dataDir}:/home/goose:idmap"
+          "--bind-ro=/run/selkie-nix/socket:/nix/var/nix/daemon-socket/socket"
+        ];
         # tailscaled needs /dev/net/tun and NET_ADMIN.
         enableTun = true;
         localAddress = "10.111.0.2";
@@ -43,10 +99,6 @@ topLevel: {
         ];
 
         bindMounts = {
-          "/home/goose" = {
-            hostPath = dataDir;
-            isReadOnly = false;
-          };
           "/dev/fuse" = {
             hostPath = "/dev/fuse";
             isReadOnly = false;
@@ -86,7 +138,7 @@ topLevel: {
               config.allowUnfreePredicate = topLevel.config.flake.lib.allowUnfreePredicate;
             };
 
-            # The host's daemon socket is bind-mounted in read-only.
+            # The proxy connects as an untrusted user.
             systemd = {
               services.nix-daemon.enable = false;
               sockets.nix-daemon.enable = false;

@@ -1,20 +1,25 @@
 _: {
   flake.modules.nixos.snoop =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       containersUid = toString config.users.users.containers.uid;
 
-      # sudo is wheel-only (execWheelOnly), so doas carries the one
-      # privileged hop: root wrapper drops to the containers user.
+      command = pkgs.writeShellApplication {
+        name = "snoop-command";
+        runtimeInputs = [ pkgs.podman ];
+        text = builtins.readFile ./snoop-command.sh;
+      };
       podman-ro = pkgs.writeShellScriptBin "podman-ro" ''
-        case "''${1-}" in
-          events|images|info|inspect|logs|port|ps|stats|version) ;;
-          *) echo "read-only subcommands only" >&2; exit 2 ;;
-        esac
         cd /
         exec ${pkgs.util-linux}/bin/runuser -u containers -- \
-          env XDG_RUNTIME_DIR=/run/user/${containersUid} HOME=/home/containers \
-          ${pkgs.podman}/bin/podman "$@"
+          ${pkgs.coreutils}/bin/env -i \
+          XDG_RUNTIME_DIR=/run/user/${containersUid} HOME=/home/containers \
+          ${lib.getExe command} "$@"
       '';
     in
     {

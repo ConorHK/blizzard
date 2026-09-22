@@ -63,58 +63,15 @@
           pkgs.bubblewrap
           pkgs.coreutils
         ];
-        # Tildes are expanded by expand() below.
         excludeShellChecks = [ "SC2088" ];
         text = ''
-          home=$(readlink -f "$HOME")
-          cwd=$(readlink -f "$PWD")
-          # Binding home rw would defeat the tmpfs.
-          case "$home" in
-            "$cwd" | "$cwd"/*)
-              echo "pi-jail: workspace contains home; refusing" >&2
-              exit 1
-              ;;
-          esac
-          args=(
-            --ro-bind / /
-            --proc /proc
-            --dev /dev
-            --tmpfs /tmp
-            --tmpfs "$home"
-            --unshare-all
-            --die-with-parent
-          )
-          ${lib.optionalString cfg.jail.network "args+=(--share-net)"}
-          ${lib.optionalString cfg.jail.newSession "args+=(--new-session)"}
-          expand() {
-            local p="$1"
-            if [[ "$p" == "~/"* ]]; then p="$HOME/''${p#"~/"}"; fi
-            printf '%s' "$p"
-          }
-          # Resolved source, canonical-parent dest: bwrap
-          # cannot mount through symlinks.
-          bind() {
-            local flag="$1" p="$2" src dest
-            if [ ! -e "$p" ]; then
-              echo "pi-jail: skipping missing $p" >&2
-              return 0
-            fi
-            src=$(readlink -f "$p")
-            dest="$(readlink -f "$(dirname "$p")")/$(basename "$p")"
-            args+=("$flag" "$src" "$dest")
-          }
-          bind --bind "$cwd"
-          bind --bind "$HOME/.pi/agent"
-          # A session cannot rewrite next session's guard.
-          bind --ro-bind "$HOME/.pi/agent/extensions"
-          bind --ro-bind "$HOME/.nix-profile"
+          network=${lib.boolToString cfg.jail.network}
+          new_session=${lib.boolToString cfg.jail.newSession}
           allow=(${lib.escapeShellArgs cfg.jail.allow})
-          for p in "''${allow[@]}"; do bind --bind "$(expand "$p")"; done
           ro=(${lib.escapeShellArgs cfg.jail.readOnly})
-          for p in "''${ro[@]}"; do bind --ro-bind "$(expand "$p")"; done
           extra=(${lib.escapeShellArgs cfg.jail.extraBwrapArgs})
-          if [ "''${#extra[@]}" -gt 0 ]; then args+=("''${extra[@]}"); fi
-          exec bwrap "''${args[@]}" -- ${lib.getExe piPackage} "$@"
+          set -- ${lib.getExe piPackage} "$@"
+          ${builtins.readFile ./jail.sh}
         '';
       };
       settingsFile = settingsFormat.generate "pi-settings.json" cfg.settings;
