@@ -101,7 +101,9 @@
           default_shell "fish"
         ''
       ];
-      xdg.configFile."starship-jj.toml".source = (pkgs.formats.toml { }).generate "starship-jj.toml" jjSettings;
+      xdg.configFile."starship-jj.toml".source =
+        (pkgs.formats.toml { }).generate "starship-jj.toml"
+          jjSettings;
 
       programs = {
         zsh.initExtra = "exec fish";
