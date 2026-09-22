@@ -3,6 +3,9 @@ let
   url = "dawarich.lep.goosebox.org";
   port = 3001;
 
+  # renovate: datasource=docker depName=docker.io/freikin/dawarich
+  dawarichImage = "docker.io/freikin/dawarich:1.14.5@sha256:11826c67e4b1cfc1049033b5b6ad05f5134bcbfb7807045bd39d3376cbc79d89";
+
   appEnv = {
     RAILS_ENV = "development";
     REDIS_URL = "redis://dawarich-redis:6379";
@@ -58,7 +61,8 @@ in
 
         containers = {
           dawarich-redis.containerConfig = {
-            image = "docker.io/redis:7.4-alpine";
+            # renovate: datasource=docker depName=docker.io/redis
+            image = "docker.io/redis:7.4-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499";
             exec = "redis-server";
             volumes = [ "${dataDir}/shared:/data" ];
             networks = [ "dawarich.network" ];
@@ -67,7 +71,7 @@ in
 
           dawarich-db.containerConfig = {
             # renovate: datasource=docker depName=docker.io/postgis/postgis
-            image = "docker.io/postgis/postgis:17-3.5-alpine";
+            image = "docker.io/postgis/postgis:17-3.5-alpine@sha256:894f570c0cf0664ed5576a8fd5d5bfb8fb1b19d592885b686c3a88c8bd90c41f";
             shmSize = "1g";
             volumes = [
               "${dataDir}/db_data_pg_17:/var/lib/postgresql/data"
@@ -84,8 +88,7 @@ in
 
           dawarich-app = {
             containerConfig = {
-              # renovate: datasource=docker depName=docker.io/freikin/dawarich
-              image = "docker.io/freikin/dawarich:1.14.5";
+              image = dawarichImage;
               entrypoint = "web-entrypoint.sh";
               exec = [
                 "bin/rails"
@@ -116,7 +119,7 @@ in
 
           dawarich-sidekiq = {
             containerConfig = {
-              image = "docker.io/freikin/dawarich:1.10.3";
+              image = dawarichImage;
               entrypoint = "sidekiq-entrypoint.sh";
               exec = "sidekiq";
               volumes = [

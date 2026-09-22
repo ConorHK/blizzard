@@ -24,7 +24,7 @@ in
       home-manager.users.containers.virtualisation.quadlet = {
         containers.music-assistant-server.containerConfig = {
           # renovate: datasource=docker depName=ghcr.io/music-assistant/server
-          image = "ghcr.io/music-assistant/server:2.10.4";
+          image = "ghcr.io/music-assistant/server:2.10.4@sha256:37a9a2776e838a754c9f5b38c432567389952304e7cb8f6b44b6cd28043de6de";
           volumes = [ "${dataDir}:/data" ];
           networks = [ "host" ];
           environments = {

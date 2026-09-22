@@ -31,7 +31,7 @@ in
 
         containers.audiobookshelf.containerConfig = {
           # renovate: datasource=docker depName=ghcr.io/advplyr/audiobookshelf
-          image = "ghcr.io/advplyr/audiobookshelf:2.36.1";
+          image = "ghcr.io/advplyr/audiobookshelf:2.36.1@sha256:3528a93b6442ffe54bd46771bbbab7c97084e1101071586d9dc2254f30bb4358";
           publishPorts = [ "127.0.0.1:${port}:80" ];
           volumes = [
             "${mediaDir}/audiobooks:/audiobooks"

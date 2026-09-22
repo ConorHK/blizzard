@@ -33,7 +33,7 @@ in
           containers = {
             qbittorrent.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/hotio/qbittorrent
-              image = "ghcr.io/hotio/qbittorrent:release-5.1.4";
+              image = "ghcr.io/hotio/qbittorrent:release-5.1.4@sha256:a3511925843f3e625ba67a12c36cfaf89762fecc47b6ee064731344d3eef5bdc";
               publishPorts = [ "127.0.0.1:${toString qbittorrentPort}:8080" ];
               volumes = [
                 "${qbittorrentDir}:/config"
@@ -51,7 +51,7 @@ in
 
             qbit-manage.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/stuffanthings/qbit_manage
-              image = "ghcr.io/stuffanthings/qbit_manage:v4.13.0";
+              image = "ghcr.io/stuffanthings/qbit_manage:v4.13.0@sha256:ea04167f627e506b3691304f4c639a52c05584cc9aea4af7ec87d4ed1299e7f5";
               publishPorts = [ "127.0.0.1:${toString qbitManagePort}:8181" ];
               volumes = [
                 "${qbitManageDir}:/config:rw"

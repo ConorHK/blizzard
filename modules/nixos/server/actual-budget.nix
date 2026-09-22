@@ -19,7 +19,7 @@ in
 
         containers.actual-budget.containerConfig = {
           # renovate: datasource=docker depName=docker.io/actualbudget/actual-server
-          image = "docker.io/actualbudget/actual-server:26.9.0";
+          image = "docker.io/actualbudget/actual-server:26.9.0@sha256:552beab3dec8c93d46b8b9245612d63c3f123b8a45063a474f53e229b17621d3";
           publishPorts = [ "127.0.0.1:5006:5006" ];
           volumes = [ "${dataDir}:/data" ];
           networks = [ "actual-budget.network" ];

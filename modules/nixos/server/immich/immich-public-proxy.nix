@@ -62,7 +62,7 @@ in
 
         containers.immich-public-proxy.containerConfig = {
           # renovate: datasource=docker depName=docker.io/alangrainger/immich-public-proxy
-          image = "docker.io/alangrainger/immich-public-proxy:3.3.1";
+          image = "docker.io/alangrainger/immich-public-proxy:3.3.1@sha256:8657d0d1b79e7f008261bbb65c2f177a89e8a0fd325b9a312d16cf7b5cbee209";
           publishPorts = [ "127.0.0.1:${port}:3000" ];
           volumes = [ "${configFile}:/app/config.json:ro" ];
           # Unset PUBLIC_BASE_URL: previews follow request Host.

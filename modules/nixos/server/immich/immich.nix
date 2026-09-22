@@ -24,12 +24,14 @@ in
 
         containers = {
           immich-redis.containerConfig = {
+            # renovate: datasource=docker depName=docker.io/valkey/valkey
             image = "docker.io/valkey/valkey:9@sha256:3b55fbaa0cd93cf0d9d961f405e4dfcc70efe325e2d84da207a0a8e6d8fde4f9";
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
 
           immich-db.containerConfig = {
+            # renovate: datasource=docker depName=ghcr.io/immich-app/postgres
             image = "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23";
             volumes = [ "${dataDir}/pgdata:/var/lib/postgresql/data" ];
             environmentFiles = [ config.age.secrets.immich-secrets.path ];
@@ -44,7 +46,7 @@ in
 
           immich-machine-learning.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-            image = "ghcr.io/immich-app/immich-machine-learning:v3.2.2";
+            image = "ghcr.io/immich-app/immich-machine-learning:v3.2.2@sha256:60dfcf266a9ef3b7376f5678e8c980d4fb61db5fc48c078fe8a326ab1535d60d";
             volumes = [ "${dataDir}/models:/cache" ];
             networks = [ "immich.network" ];
             noNewPrivileges = true;
@@ -53,7 +55,7 @@ in
           immich-server = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-              image = "ghcr.io/immich-app/immich-server:v3.2.2";
+              image = "ghcr.io/immich-app/immich-server:v3.2.2@sha256:79cc1623323d5894922686d8743b4780181428f98eecbfb58ce12c41ef02d1ea";
               publishPorts = [ "127.0.0.1:2283:2283" ];
               volumes = [
                 "${dataDir}:/usr/src/app/upload"

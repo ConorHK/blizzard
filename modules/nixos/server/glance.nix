@@ -109,7 +109,7 @@ _: {
 
           containers.glance.containerConfig = {
             # renovate: datasource=docker depName=docker.io/glanceapp/glance
-            image = "docker.io/glanceapp/glance:v0.8.6";
+            image = "docker.io/glanceapp/glance:v0.8.6@sha256:9dfb09470b207dcb67ac715994bdb1929374ba3f9c0d7df7462c24adf10fd073";
             publishPorts = [ "127.0.0.1:${toString port}:8080" ];
             volumes = [ "${glanceConfig}:/app/config/glance.yml:ro" ];
             environments.TZ = "Europe/Dublin";

@@ -54,7 +54,7 @@ in
 
           containers.photon.containerConfig = {
             # renovate: datasource=docker depName=docker.io/rtuszik/photon-docker
-            image = "docker.io/rtuszik/photon-docker:2.4.0";
+            image = "docker.io/rtuszik/photon-docker:2.4.0@sha256:21549c60f9e6488fff3217e40429a652c4b445f374800333fe32859e47cec293";
             publishPorts = [ "127.0.0.1:2322:2322" ];
             volumes = [ "${dataDir}:/photon/data" ];
             environments = {

@@ -17,7 +17,7 @@ in
 
         containers.immich-stack.containerConfig = {
           # renovate: datasource=docker depName=docker.io/majorfi/immich-stack
-          image = "docker.io/majorfi/immich-stack:0.2.43";
+          image = "docker.io/majorfi/immich-stack:0.2.43@sha256:52f39f24dc28ea18500455355c898c22ece3547ed2deb4590445d7ab784a4580";
           # API_KEY loaded from agenix-managed env file
           environmentFiles = [ config.age.secrets.immich-stack-secrets.path ];
           environments = {
