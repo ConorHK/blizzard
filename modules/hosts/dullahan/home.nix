@@ -28,6 +28,7 @@ topLevel: {
         cnvim
         desktop
         git-identity
+        jujutsu
         laptop
         ntfy
         ssh
