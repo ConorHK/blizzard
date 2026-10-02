@@ -1,11 +1,13 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
+  # The node's systemPackages resolve against the host's pkgs, which on darwin
+  # has no iproute2. Guarding on `system` rather than `pkgs` — see flake/iso.nix.
   perSystem =
-    { pkgs, ... }:
+    { pkgs, system, ... }:
     let
       inherit (config.flake.testSupport) alertRecorder alertHelpers;
     in
-    {
+    lib.optionalAttrs (lib.hasSuffix "-linux" system) {
       checks.podman-egress-watchdog = pkgs.testers.runNixOSTest {
         name = "podman-egress-watchdog";
 

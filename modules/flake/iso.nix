@@ -1,8 +1,15 @@
-{ inputs, config, ... }:
 {
+  inputs,
+  config,
+  lib,
+  ...
+}:
+{
+  # Guarding on `system` rather than `pkgs`: deciding the module's shape from
+  # `pkgs` is infinite recursion, since `pkgs` is itself a perSystem option.
   perSystem =
     { system, ... }:
-    {
+    lib.optionalAttrs (lib.hasSuffix "-linux" system) {
       packages.iso =
         let
           sshKeys = config.flake.lib.conorhkSshKeys;

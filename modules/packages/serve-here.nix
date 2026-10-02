@@ -1,7 +1,10 @@
+{ lib, ... }:
 {
+  # Punches a hole in the NixOS firewall with iptables. Guarding on `system`
+  # rather than `pkgs`, which would recurse — see iso.nix.
   perSystem =
-    { pkgs, ... }:
-    {
+    { pkgs, system, ... }:
+    lib.optionalAttrs (lib.hasSuffix "-linux" system) {
       packages.serve-here =
         let
           uploadserver = pkgs.python3Packages.buildPythonPackage rec {
