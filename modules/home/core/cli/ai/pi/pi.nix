@@ -12,10 +12,10 @@
       # Prebuilt binary; patchelf corrupts bun executables.
       pi-bin = pkgs.stdenvNoCC.mkDerivation rec {
         pname = "pi";
-        version = "0.85.1";
+        version = "1.0.0";
         src = pkgs.fetchurl {
-          url = "https://github.com/badlogic/pi-mono/releases/download/v${version}/pi-linux-x64.tar.gz";
-          hash = "sha256-SU5Jj0fXTSH0CzOG9qXpIaPUlTGhacq1W72soOof4lo=";
+          url = "https://github.com/earendil-works/pi/releases/download/v${version}/pi-linux-x64.tar.gz";
+          hash = "sha256-j9VUOlKoidYK1XzL9slp5zx1xSQKrhisQLUGlHpj3Dg=";
         };
         dontUnpack = true;
         dontFixup = true;
