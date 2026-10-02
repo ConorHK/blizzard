@@ -37,7 +37,6 @@
 
         allowReboot = true;
         rebootWindow = window;
-        operation = "boot";
         randomizedDelaySec = "5min";
       };
     };
