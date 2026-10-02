@@ -10,11 +10,12 @@
         !include ${config.age.secrets.github-nix-token.path}
       '';
 
-      # Only require the agenix service when sysusers is enabled; without it,
-      # agenix uses activation scripts which run before nix-daemon on boot.
-      systemd.services.nix-daemon = lib.mkIf config.systemd.sysusers.enable {
-        after = [ "agenix-install-secrets.service" ];
-        requires = [ "agenix-install-secrets.service" ];
-      };
+      # agenix installs via a unit here.
+      systemd.services.nix-daemon =
+        lib.mkIf (config.systemd.sysusers.enable || config.services.userborn.enable)
+          {
+            after = [ "agenix-install-secrets.service" ];
+            wants = [ "agenix-install-secrets.service" ];
+          };
     };
 }
