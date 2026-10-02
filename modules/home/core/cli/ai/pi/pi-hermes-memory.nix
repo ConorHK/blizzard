@@ -11,10 +11,10 @@
       # the extension falls back to bun:sqlite itself.
       pi-hermes-memory = pkgs.stdenvNoCC.mkDerivation rec {
         pname = "pi-hermes-memory";
-        version = "0.9.8";
+        version = "0.9.9";
         src = pkgs.fetchurl {
           url = "https://registry.npmjs.org/pi-hermes-memory/-/pi-hermes-memory-${version}.tgz";
-          hash = "sha256-Fg8Sd384y6joyVcRdDtINUcyCywfV/btrL29Z9ZWrhk=";
+          hash = "sha256-ahtx36NPQLumNypPcd7FTM52vkrlWSPTuD6/wcWSDCA=";
         };
         stripAnsi = pkgs.fetchurl {
           url = "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz";
