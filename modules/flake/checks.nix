@@ -22,6 +22,7 @@
         };
         yamllint.enable = true;
         ripsecrets.enable = true;
+        ruff.enable = true;
         shellcheck.enable = true;
         statix =
           let
