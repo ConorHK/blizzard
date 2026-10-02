@@ -6,9 +6,6 @@ result-*
 .direnv
 .pre-commit-config.yaml
 
-# Claude Code
-CLAUDE.md
-
 __pycache__/
 .zvec-grep/
 .claude/

@@ -13,9 +13,11 @@
 | Module | Services | Ports | Reverse proxy |
 |--------|----------|-------|---------------|
 | `actual-budget` | actual-server | 5006 | budget.lep.goosebox.org |
+| `aqua-booking` | aqua-booking (timer, 07:00 Europe/London) | - | - |
 | `audiobookshelf` | audiobookshelf | 13378 | audiobookshelf.goosebox.org |
 | `calibre` | calibre-web, shelfmark | 8183, 8084 | calibre.goosebox.org, shelfmark.goosebox.org |
 | `changedetection` | changedetection.io, sockpuppetbrowser | 5000 | changedetection.lep.goosebox.org |
+| `clip-server` | clip | 7391 (tailnet, wg0) | - |
 | `dawarich` | redis, postgis, app, sidekiq | 3001 | dawarich.lep.goosebox.org |
 | `duckdns` | duckdns (timer, every 5 min) | — | — |
 | `github-runner` | github-runner | — | — |
@@ -24,19 +26,23 @@
 | `immich` | redis, postgres, machine-learning, server | 2283 | photos.lep.goosebox.org |
 | `immich-public-proxy` | immich-public-proxy | 3010 | photos.goosebox.org |
 | `immich-stack` | immich-stack (cron, daily) | — | — |
+| `matrix` | synapse, mautrix whatsapp/discord/meta bridges | 8008 | matrix.goosebox.org |
 | `mealie` | mealie | 9925 | mealie.lep.goosebox.org |
 | `music-assistant` | music-assistant | 8095, 8097 | music-assistant.goosebox.org |
 | `nextdns` | nextdns | 53 (wg0 only) | — |
 | `nginx` | nginx, ACME (namecheap DNS-01) | 80, 443 | — |
+| `ollama` | ollama (nomic-embed-text, for hister) | 11434 | - |
 | `photon` | photon | 2322 | photon.lep.goosebox.org |
 | `qbittorrent` | qbittorrent, qbit-manage | 8080, 8181 | qbittorrent.lep, qbit-manage.lep |
 | `restic` | restic (backup 03:00, freshness check 10:00) | — | — |
 | `satisfactory` | satisfactory server | 7777 (TCP/UDP), 8888 | — |
+| `selkie` | nixos container for AI agents, user-namespaced | 10.111.0.2 (tailnet) | - |
 | `smartd` | smartd | — | — |
+| `syncthing-server` | syncthing hub for the `share` folder | 22000 (TCP/UDP), 21027 (UDP) | - |
 | `voice` | wyoming-whisper, kokoro-fastapi, wyoming-openai | 10300, 10200 | — |
 | `wireguard-gateway` | wireguard wg0 | 51820 (UDP) | — |
 
-The Ports column is what each service listens on, not what is reachable. Only `music-assistant` (host network), `satisfactory` and `wireguard-gateway` are opened in the firewall; everything else binds `127.0.0.1` and is reachable through nginx or over the tailnet. `monitor.goosebox.org` proxies to gatus on bananach.
+The Ports column is what each service listens on, not what is reachable. The firewall opens only `nginx`, `music-assistant` (host network), `satisfactory`, `syncthing-server` and `wireguard-gateway`. `voice` and `clip-server` listen on every interface, but the firewall drops them outside the trusted `tailscale0` and `wg0`. Everything else binds `127.0.0.1`, mostly behind nginx. `monitor.goosebox.org` proxies to gatus on bananach.
 
 ## puca services
 
@@ -50,7 +56,7 @@ The Ports column is what each service listens on, not what is reachable. Only `m
 |--------|----------|-------|
 | `gatus` | gatus | 8080 (bound to tailnet address) |
 
-Syncthing is core, so 22000 (TCP/UDP) and 21027 (UDP) are open on every host.
+Syncthing ports (22000 TCP/UDP, 21027 UDP) open only where syncthing runs: abhartach, dullahan and leprechaun.
 
 ## login alerts
 
