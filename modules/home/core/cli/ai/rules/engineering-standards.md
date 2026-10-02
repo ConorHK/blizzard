@@ -6,6 +6,11 @@ Canonical source: `~/repositories/blizzard/modules/home/core/cli/ai/rules/engine
 
 Do not store user preferences in agent memory. Write them in this file.
 
+## Match the Repo's VCS
+
+If the repo has a `.jj` directory, commit with jj (`jj describe`, `jj new`); do
+not shell out to git for local commits. Otherwise use git.
+
 ## Code Comments Must Earn Their Stay
 
 Applies to every edit, in every language:
