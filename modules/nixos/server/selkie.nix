@@ -70,7 +70,6 @@ topLevel: {
             ++ (with topLevel.config.flake.modules.nixos; [
               agenix
               bitbang
-              claude
               clip
               pi
               ssh

@@ -1,5 +1,5 @@
 {
-  # `nix flake check` gate for the Claude auto-mode guard. Builds the guard with
+  # `nix flake check` gate for pi's bash guard. Builds the guard with
   # the SAME writeShellApplication used by the home module (so its build-time
   # shellcheck pass runs here too) and then runs the committed regression suite
   # against that binary. A future edit that reintroduces a slip-through (a
@@ -9,7 +9,7 @@
     { pkgs, ... }:
     let
       guard = pkgs.writeShellApplication {
-        name = "claude-auto-mode-guard";
+        name = "auto-mode-guard";
         runtimeInputs = [
           pkgs.jq
           pkgs.git
@@ -20,8 +20,8 @@
       };
     in
     {
-      checks.claude-auto-mode-guard =
-        pkgs.runCommand "claude-auto-mode-guard-test"
+      checks.auto-mode-guard =
+        pkgs.runCommand "auto-mode-guard-test"
           {
             nativeBuildInputs = [
               pkgs.bash
@@ -33,7 +33,7 @@
             # A clean HOME so git uses no user config, and a deterministic identity.
             export HOME="$TMPDIR/home"
             mkdir -p "$HOME"
-            bash ${../home/core/cli/ai/auto-mode-guard-test.sh} ${guard}/bin/claude-auto-mode-guard
+            bash ${../home/core/cli/ai/auto-mode-guard-test.sh} ${guard}/bin/auto-mode-guard
             touch "$out"
           '';
     };

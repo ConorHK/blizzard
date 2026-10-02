@@ -1,6 +1,6 @@
 # Engineering Standards
 
-Canonical source: `~/repositories/blizzard/modules/home/core/cli/ai/rules/engineering-standards.md`. Copies deployed to each agent (`~/.claude/rules/`, `~/.pi/agent/AGENTS.md`) come from Nix; edit the source only.
+Canonical source: `~/repositories/blizzard/modules/home/core/cli/ai/rules/engineering-standards.md`. The deployed copy (`~/.pi/agent/AGENTS.md`) comes from Nix; edit the source only.
 
 ## Preferences
 

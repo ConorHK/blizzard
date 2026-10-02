@@ -10,13 +10,7 @@ let
 in
 {
   flake.modules.homeManager.ai = {
-    imports = with config.flake.modules.homeManager; [
-      claude
-      pi
-    ];
-    programs = {
-      claude-code.managedRules = rules;
-      pi.rules = rules;
-    };
+    imports = [ config.flake.modules.homeManager.pi ];
+    programs.pi.rules = rules;
   };
 }

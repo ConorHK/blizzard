@@ -41,7 +41,6 @@
             )}
             exec ${lib.getExe cfg.package} "$@"
           '';
-      # Same policy script Claude Code's hook runs.
       defaultGuard = pkgs.writeShellApplication {
         name = "pi-bash-guard";
         runtimeInputs = [
