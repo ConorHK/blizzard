@@ -3,8 +3,6 @@
   inputs = {
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
     agenix-rekey.url = "github:oddlama/agenix-rekey";
-    agenix.inputs.darwin.follows = "";
-    agenix.inputs.home-manager.follows = "home-manager";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
     cnvim.inputs.nixpkgs.follows = "nixpkgs";
