@@ -105,6 +105,7 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 | `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
 | `selkie-isolation` | a container with selkie's isolation settings: init runs as a non-root host uid, the host Nix daemon reports `Trusted: 0` to container root, the idmapped home stays owned by host uid 1001, goose keeps sudo, tun and fuse still work | ~4 min without KVM |
 | `snoop-podman-ro` | `podman-ro` refuses unknown subcommands and any flag outside its allowlist, wherever it appears | instant |
+| `pi-jail` | a trusted user's jailed `nix` call reaches the daemon untrusted, host abstract sockets and loopback services stay out of reach, other hosts stay reachable, `/run` holds only `current-system` and an empty runtime dir | ~3 min without KVM |
 
 Two invariants are enforced as NixOS assertions instead, so they fail the host build:
 
