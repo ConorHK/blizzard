@@ -82,7 +82,7 @@ journalctl _UID=$(id -u containers) -f                        # all container lo
 doas /run/current-system/sw/bin/podman-ro ps -a               # container status
 ```
 
-`podman-ro` allows only `events images info inspect logs port ps stats version`, dropping to the `containers` user via a doas rule — sudo is wheel-only (`execWheelOnly`). snoop has no password, no wheel, and no container lifecycle control. snoop logins alert like any other (accepted).
+`podman-ro` allows only `events images info inspect logs port ps stats version`, each with a fixed flag allowlist, so global flags such as `--runtime` are refused. `inspect` output drops `Config.Env`, which holds the agenix-loaded secrets. It drops to the `containers` user via a doas rule — sudo is wheel-only (`execWheelOnly`). snoop has no password, no wheel, and no container lifecycle control. snoop logins alert like any other (accepted).
 
 ## tests
 
@@ -98,6 +98,7 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 | `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
 | `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
 | `selkie-isolation` | a container with selkie's isolation settings: init runs as a non-root host uid, the host Nix daemon reports `Trusted: 0` to container root, the idmapped home stays owned by host uid 1001, goose keeps sudo, tun and fuse still work | ~4 min without KVM |
+| `snoop-podman-ro` | `podman-ro` refuses unknown subcommands and any flag outside its allowlist, wherever it appears | instant |
 
 Two invariants are enforced as NixOS assertions instead, so they fail the host build:
 
