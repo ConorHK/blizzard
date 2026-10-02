@@ -77,6 +77,8 @@
           esac
           args=(
             --ro-bind / /
+            # Hides D-Bus, agent and systemd sockets.
+            --tmpfs /run
             --proc /proc
             --dev /dev
             --tmpfs /tmp
@@ -84,6 +86,17 @@
             --unshare-all
             --die-with-parent
           )
+          # NixOS PATH and nix-ld live here.
+          if [ -L /run/current-system ]; then
+            args+=(--symlink "$(readlink /run/current-system)" /run/current-system)
+          fi
+          resolv=$(readlink -f /etc/resolv.conf)
+          case "$resolv" in
+            /run/*) args+=(--ro-bind "$resolv" "$resolv") ;;
+          esac
+          if [ -n "''${XDG_RUNTIME_DIR-}" ]; then
+            args+=(--perms 0700 --dir "$XDG_RUNTIME_DIR")
+          fi
           ${lib.optionalString cfg.jail.network "args+=(--share-net)"}
           ${lib.optionalString cfg.jail.newSession "args+=(--new-session)"}
           expand() {
