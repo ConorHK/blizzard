@@ -30,7 +30,8 @@
       system.autoUpgrade = {
         enable = lib.mkDefault true;
 
-        flake = "github:conorhk/blizzard";
+        # CI advances it after all hosts build.
+        flake = "github:conorhk/blizzard/deployed";
         flags = [ "-L" ];
 
         dates = "*-*-* ${window.lower}:00";

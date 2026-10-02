@@ -49,3 +49,16 @@ jobs:
           out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths \
             .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
           nix path-info -r "$out" | cachix push conorhk
+  # Hosts auto-upgrade from this branch.
+  promote:
+    needs: [build-machines]
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, nix, x86_64-linux]
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+      # No force, so old runs cannot rewind.
+      - run: git push origin "$GITHUB_SHA:refs/heads/deployed"
