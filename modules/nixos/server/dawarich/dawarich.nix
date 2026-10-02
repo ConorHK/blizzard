@@ -4,7 +4,7 @@ let
   port = 3001;
 
   # renovate: datasource=docker depName=docker.io/freikin/dawarich
-  image = "docker.io/freikin/dawarich:1.15.2";
+  image = "docker.io/freikin/dawarich:1.15.3";
 
   appEnv = {
     RAILS_ENV = "development";
