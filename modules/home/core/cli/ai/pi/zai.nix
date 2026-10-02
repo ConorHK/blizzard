@@ -4,6 +4,9 @@
     {
       age.secrets.zai-api-key.rekeyFile = ./zai-api-key.age;
 
+      # The jail hides home; bind read-only.
+      programs.pi.jail.readOnly = [ config.age.secrets.zai-api-key.path ];
+
       # Coding plan quota needs the coding-only endpoint.
       programs.pi.models.providers.zai = {
         baseUrl = "https://api.z.ai/api/coding/paas/v4";
