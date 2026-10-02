@@ -18,7 +18,7 @@
 
           ignores = [ ".zvec-grep/" ];
 
-          settings = lib.mkDefault {
+          settings = {
             init.defaultBranch = lib.mkDefault "main";
 
             commit.verbose = true;
