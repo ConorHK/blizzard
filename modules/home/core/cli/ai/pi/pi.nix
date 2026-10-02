@@ -215,6 +215,7 @@
           settings = {
             enableInstallTelemetry = lib.mkDefault false;
             theme = lib.mkDefault "blizzard";
+            tuiMode = lib.mkDefault "regular";
           };
           themes.blizzard = ./themes/blizzard.json;
         };
