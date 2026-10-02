@@ -52,5 +52,15 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-      # No force, so old runs cannot rewind.
-      - run: git push origin "$GITHUB_SHA:refs/heads/deployed"
+        with:
+          # Shallow history breaks the fast-forward check.
+          fetch-depth: 0
+      # Runs finish out of order; skip superseded ones.
+      - run: |
+          git fetch origin deployed
+          if git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD; then
+            echo "deployed already contains $GITHUB_SHA"
+            exit 0
+          fi
+          # No force, so a race cannot rewind.
+          git push origin "$GITHUB_SHA:refs/heads/deployed"
