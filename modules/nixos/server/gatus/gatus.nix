@@ -11,6 +11,9 @@ _: {
         rekeyFile = ./secrets/gatus-ntfy-topic.age;
       };
 
+      # Nothing else watches the watcher.
+      systemd.services.gatus.unitConfig.OnFailure = "alert-failure@gatus.service";
+
       services.gatus = {
         enable = true;
         environmentFile = config.age.secrets.gatus-ntfy-topic.path;

@@ -30,6 +30,8 @@
       blizzard.tailscaleSsh = true;
 
       services.gatus.settings.web.address = "100.96.40.127";
+      # Bind before tailscale assigns the address.
+      boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
       programs.mosh.enable = false;
 
       # Reachable on tailscale0 only; the firewall stays shut on every other interface.
