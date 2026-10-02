@@ -19,7 +19,10 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     import-tree.url = "github:vic/import-tree";
+    lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.url = "github:nix-community/lanzaboote";
+    nix-gaming.inputs.flake-parts.follows = "flake-parts";
+    nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     nix-index-database.url = "github:nix-community/nix-index-database";
