@@ -17,10 +17,6 @@
 
       services = {
         fwupd.enable = true;
-        gnome = {
-          # programs.ssh.startAgent is already providing an SSH agent
-          gcr-ssh-agent.enable = false;
-        };
         udisks2.enable = true;
       };
     };
