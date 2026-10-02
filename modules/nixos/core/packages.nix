@@ -9,7 +9,6 @@
           git
           killall
           lsof
-          nfs-utils
           pciutils
           ripgrep
           tree

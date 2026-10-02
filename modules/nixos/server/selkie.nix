@@ -1,4 +1,34 @@
 topLevel: {
+  # selkie-tests.nix checks this boundary.
+  flake.lib.selkieIsolation = homePath: {
+    # Container root must not be host root.
+    privateUsers = "pick";
+    privateNetwork = true;
+    # tailscaled needs /dev/net/tun and NET_ADMIN.
+    enableTun = true;
+
+    # bitbang's file share mounts bindfs; nspawn omits /dev/fuse.
+    allowedDevices = [
+      {
+        node = "/dev/fuse";
+        modifier = "rwm";
+      }
+    ];
+
+    bindMounts = {
+      "/home/goose" = {
+        hostPath = homePath;
+        # idmap keeps host uid 1001 as goose.
+        mountPoint = "/home/goose:idmap";
+        isReadOnly = false;
+      };
+      "/dev/fuse" = {
+        hostPath = "/dev/fuse";
+        isReadOnly = false;
+      };
+    };
+  };
+
   flake.modules.nixos.selkie =
     { config, inputs, ... }:
     let
@@ -24,34 +54,12 @@ topLevel: {
 
       restic.paths = [ dataDir ];
 
-      containers.selkie = {
+      containers.selkie = topLevel.config.flake.lib.selkieIsolation dataDir // {
         autoStart = true;
-        privateNetwork = true;
-        # tailscaled needs /dev/net/tun and NET_ADMIN.
-        enableTun = true;
         localAddress = "10.111.0.2";
         inherit hostAddress;
 
         specialArgs = { inherit inputs; };
-
-        # bitbang's file share mounts bindfs; nspawn omits /dev/fuse.
-        allowedDevices = [
-          {
-            node = "/dev/fuse";
-            modifier = "rwm";
-          }
-        ];
-
-        bindMounts = {
-          "/home/goose" = {
-            hostPath = dataDir;
-            isReadOnly = false;
-          };
-          "/dev/fuse" = {
-            hostPath = "/dev/fuse";
-            isReadOnly = false;
-          };
-        };
 
         config =
           { pkgs, ... }:
@@ -62,7 +70,6 @@ topLevel: {
             ++ (with topLevel.config.flake.modules.nixos; [
               agenix
               bitbang
-              claude
               clip
               pi
               ssh

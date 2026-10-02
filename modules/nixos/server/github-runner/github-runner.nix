@@ -1,9 +1,4 @@
 {
-  nixpkgs.allowedInsecurePackages = [
-    "nodejs-20.20.2"
-    "nodejs-slim-20.20.2"
-  ];
-
   flake.modules.nixos.github-runner =
     {
       config,

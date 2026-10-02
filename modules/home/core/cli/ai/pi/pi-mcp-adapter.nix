@@ -225,8 +225,12 @@
       };
 
       config = lib.mkIf config.programs.pi.mcpAdapter.enable {
-        # Package entry: loads the manifest extension.
-        programs.pi.settings.packages = [ "${pi-mcp-adapter}" ];
+        programs.pi.settings = {
+          # Package entry: loads the manifest extension.
+          packages = [ "${pi-mcp-adapter}" ];
+          # The adapter replaces built-in MCP.
+          extensions = [ "-builtin:mcp" ];
+        };
       };
     };
 }

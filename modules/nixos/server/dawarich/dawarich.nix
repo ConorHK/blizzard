@@ -3,6 +3,9 @@ let
   url = "dawarich.lep.goosebox.org";
   port = 3001;
 
+  # renovate: datasource=docker depName=docker.io/freikin/dawarich
+  image = "docker.io/freikin/dawarich:1.15.3";
+
   appEnv = {
     RAILS_ENV = "development";
     REDIS_URL = "redis://dawarich-redis:6379";
@@ -72,6 +75,7 @@ in
 
         containers = {
           dawarich-redis.containerConfig = {
+            # renovate: datasource=docker depName=docker.io/redis
             image = "docker.io/redis:7.4-alpine";
             exec = "redis-server";
             volumes = [ "${dataDir}/shared:/data" ];
@@ -98,8 +102,7 @@ in
 
           dawarich-app = {
             containerConfig = {
-              # renovate: datasource=docker depName=docker.io/freikin/dawarich
-              image = "docker.io/freikin/dawarich:1.15.3";
+              inherit image;
               entrypoint = "web-entrypoint.sh";
               exec = [
                 "bin/rails"
@@ -130,7 +133,7 @@ in
 
           dawarich-sidekiq = {
             containerConfig = {
-              image = "docker.io/freikin/dawarich:1.10.3";
+              inherit image;
               entrypoint = "sidekiq-entrypoint.sh";
               exec = "sidekiq";
               volumes = [

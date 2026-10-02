@@ -6,13 +6,6 @@ result-*
 .direnv
 .pre-commit-config.yaml
 
-# devenv runtime artifacts
-.devenv*
-devenv.local.nix
-
-# Claude Code
-CLAUDE.md
-
 __pycache__/
 .zvec-grep/
 .claude/

@@ -4,7 +4,6 @@
     auto-login
     beeper
     bluetooth
-    claude
     keyring
     sound
     users

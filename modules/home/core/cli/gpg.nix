@@ -8,11 +8,12 @@
     }:
     {
       # https://github.com/drduh/yubikey-guide
-      home.activation = {
-        getGPGkey = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          $DRY_RUN_CMD gpg --keyserver keys.openpgp.org --recv-keys C81B20B496AFBC9D192B13CA691FEF783197D4A2 && gpgconf --reload gpg-agent || true
-        '';
-      };
+      home.activation.getGPGkey = lib.mkIf config.programs.gpg.enable (
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          run ${lib.getExe config.programs.gpg.package} --keyserver keys.openpgp.org --recv-keys C81B20B496AFBC9D192B13CA691FEF783197D4A2 \
+            && run ${config.programs.gpg.package}/bin/gpgconf --reload gpg-agent || true
+        ''
+      );
       programs = {
         gpg = {
           enable = lib.mkDefault false;

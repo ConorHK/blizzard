@@ -48,12 +48,6 @@
       # Reduce most of the exposure of a heap attack to a single cache.
       "slab_nomerge"
 
-      # Only allow signed modules.
-      "module.sig_enforce=1"
-
-      # Blocks access to all kernel memory, even preventing administrators from being able to inspect and probe the kernel.
-      "lockdown=confidentiality"
-
       # Enable buddy allocator free poisoning.
       "page_poison=1"
 
@@ -65,12 +59,6 @@
 
       # Ignore access time (atime) updates on files, except when they coincide with updates to the ctime or mtime.
       "rootflags=noatime"
-
-      # Linux security modules.
-      "lsm=landlock,lockdown,yama,integrity,apparmor,bpf,tomoyo,selinux"
-
-      # Prevent the kernel from blanking plymouth out of the fb.
-      "fbcon=nodefer"
     ];
 
     blacklistedKernelModules = [

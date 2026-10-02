@@ -28,7 +28,6 @@
           AllowTcpForwarding = false;
           AllowAgentForwarding = false;
           MaxAuthTries = 3;
-          MaxSessions = 2;
           TCPKeepAlive = false;
 
           KexAlgorithms = [

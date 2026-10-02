@@ -1,4 +1,4 @@
-{
+topLevel: {
   flake.modules.homeManager.pi =
     {
       config,
@@ -41,7 +41,6 @@
             )}
             exec ${lib.getExe cfg.package} "$@"
           '';
-      # Same policy script Claude Code's hook runs.
       defaultGuard = pkgs.writeShellApplication {
         name = "pi-bash-guard";
         runtimeInputs = [
@@ -55,67 +54,16 @@
           builtins.readFile ./guard.ts
         )
       );
-      # Allowlist jail: OS read-only, home hidden.
-      # Workspace and ~/.pi/agent stay writable.
-      jailScript = pkgs.writeShellApplication {
-        name = "pi-jail";
-        runtimeInputs = [
-          pkgs.bubblewrap
-          pkgs.coreutils
-        ];
-        # Tildes are expanded by expand() below.
-        excludeShellChecks = [ "SC2088" ];
-        text = ''
-          home=$(readlink -f "$HOME")
-          cwd=$(readlink -f "$PWD")
-          # Binding home rw would defeat the tmpfs.
-          case "$home" in
-            "$cwd" | "$cwd"/*)
-              echo "pi-jail: workspace contains home; refusing" >&2
-              exit 1
-              ;;
-          esac
-          args=(
-            --ro-bind / /
-            --proc /proc
-            --dev /dev
-            --tmpfs /tmp
-            --tmpfs "$home"
-            --unshare-all
-            --die-with-parent
-          )
-          ${lib.optionalString cfg.jail.network "args+=(--share-net)"}
-          ${lib.optionalString cfg.jail.newSession "args+=(--new-session)"}
-          expand() {
-            local p="$1"
-            if [[ "$p" == "~/"* ]]; then p="$HOME/''${p#"~/"}"; fi
-            printf '%s' "$p"
-          }
-          # Resolved source, canonical-parent dest: bwrap
-          # cannot mount through symlinks.
-          bind() {
-            local flag="$1" p="$2" src dest
-            if [ ! -e "$p" ]; then
-              echo "pi-jail: skipping missing $p" >&2
-              return 0
-            fi
-            src=$(readlink -f "$p")
-            dest="$(readlink -f "$(dirname "$p")")/$(basename "$p")"
-            args+=("$flag" "$src" "$dest")
-          }
-          bind --bind "$cwd"
-          bind --bind "$HOME/.pi/agent"
-          # A session cannot rewrite next session's guard.
-          bind --ro-bind "$HOME/.pi/agent/extensions"
-          bind --ro-bind "$HOME/.nix-profile"
-          allow=(${lib.escapeShellArgs cfg.jail.allow})
-          for p in "''${allow[@]}"; do bind --bind "$(expand "$p")"; done
-          ro=(${lib.escapeShellArgs cfg.jail.readOnly})
-          for p in "''${ro[@]}"; do bind --ro-bind "$(expand "$p")"; done
-          extra=(${lib.escapeShellArgs cfg.jail.extraBwrapArgs})
-          if [ "''${#extra[@]}" -gt 0 ]; then args+=("''${extra[@]}"); fi
-          exec bwrap "''${args[@]}" -- ${lib.getExe piPackage} "$@"
-        '';
+      jailScript = topLevel.config.flake.lib.mkPiJail pkgs {
+        package = piPackage;
+        inherit (cfg.jail)
+          network
+          hostLoopback
+          newSession
+          allow
+          readOnly
+          extraBwrapArgs
+          ;
       };
       settingsFile = settingsFormat.generate "pi-settings.json" cfg.settings;
       modelsFile = settingsFormat.generate "pi-models.json" cfg.models;
@@ -197,6 +145,11 @@
             default = true;
             description = "Whether the jail keeps network access.";
           };
+          hostLoopback = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Let the jail reach services on host loopback.";
+          };
           newSession = lib.mkOption {
             type = lib.types.bool;
             default = true;
@@ -215,6 +168,7 @@
           settings = {
             enableInstallTelemetry = lib.mkDefault false;
             theme = lib.mkDefault "blizzard";
+            tuiMode = lib.mkDefault "regular";
           };
           themes.blizzard = ./themes/blizzard.json;
         };
@@ -255,8 +209,36 @@
       };
     };
 
-  # pi is a prebuilt binary; it needs the nix-ld loader.
-  flake.modules.nixos.pi = {
-    programs.nix-ld.enable = true;
-  };
+  flake.modules.nixos.pi =
+    { config, ... }:
+    {
+      # pi is a prebuilt binary; it needs the nix-ld loader.
+      programs.nix-ld.enable = true;
+
+      # pi-jail's daemon socket: same store, no trust.
+      systemd.sockets.pi-nix-daemon = {
+        description = "Untrusted Nix daemon socket for pi-jail";
+        wantedBy = [ "sockets.target" ];
+        socketConfig = {
+          ListenStream = "/run/pi-nix-daemon/socket";
+          SocketMode = "0666";
+        };
+      };
+
+      systemd.services.pi-nix-daemon = {
+        description = "Proxy pi-jail to the Nix daemon as an untrusted user";
+        requires = [ "pi-nix-daemon.socket" ];
+        after = [ "pi-nix-daemon.socket" ];
+        serviceConfig = {
+          ExecStart = "${config.systemd.package}/lib/systemd/systemd-socket-proxyd /nix/var/nix/daemon-socket/socket";
+          DynamicUser = true;
+          PrivateNetwork = true;
+          RestrictAddressFamilies = [ "AF_UNIX" ];
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          NoNewPrivileges = true;
+        };
+      };
+    };
 }

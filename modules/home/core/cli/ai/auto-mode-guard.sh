@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Claude Code PreToolUse guard for Bash tool calls in AUTO permission mode.
+# PreToolUse-shaped guard for bash calls in AUTO mode; pi's guard.ts feeds it.
 #
 # Deny-only: emits a `deny` permission decision for the hard guardrails below,
 # and otherwise produces NO output (exit 0). A silent exit 0 defers to the

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Regression suite for claude-auto-mode-guard. Feeds crafted PreToolUse payloads
+# Regression suite for auto-mode-guard. Feeds crafted PreToolUse payloads
 # to the guard binary and asserts each is DENIED (non-empty deny-decision JSON)
 # or DEFERRED (no output, exit 0). Wired into `nix flake check` so a future edit
 # that reintroduces a slip-through or a false positive fails the build.
 #
-# Usage: auto-mode-guard-test.sh <path-to-claude-auto-mode-guard>
+# Usage: auto-mode-guard-test.sh <path-to-auto-mode-guard>
 # Requires jq and git on PATH. Self-contained — seeds its own throwaway repos.
 set -uo pipefail
 

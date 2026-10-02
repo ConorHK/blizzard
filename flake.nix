@@ -3,22 +3,13 @@
   inputs = {
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
     agenix-rekey.url = "github:oddlama/agenix-rekey";
-    agenix.inputs.darwin.follows = "";
-    agenix.inputs.home-manager.follows = "home-manager";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
-    backpressured.flake = false;
-    backpressured.url = "github:lucasfcosta/backpressured";
-    claude-code.url = "github:sadjow/claude-code-nix";
     cnvim.inputs.nixpkgs.follows = "nixpkgs";
     cnvim.url = "github:conorhk/vimrc";
     crash.inputs.nixpkgs.follows = "nixpkgs";
     crash.url = "github:RGBCube/crash";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
-    devenv-root.flake = false;
-    devenv-root.url = "file+file:///dev/null";
-    devenv.inputs.nixpkgs.follows = "nixpkgs";
-    devenv.url = "github:cachix/devenv";
     disko.inputs.nixpkgs.follows = "nixpkgs";
     disko.url = "github:nix-community/disko";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -28,15 +19,13 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     import-tree.url = "github:vic/import-tree";
+    lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.url = "github:nix-community/lanzaboote";
-    # Not referenced by this repo, but devenv's flakeModule requires it to
-    # evaluate its `containers` output during `nix flake check`.
-    mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
+    nix-gaming.inputs.flake-parts.follows = "flake-parts";
+    nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     nix-index-database.url = "github:nix-community/nix-index-database";
-    nix2container.inputs.nixpkgs.follows = "nixpkgs";
-    nix2container.url = "github:nlewo/nix2container";
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
