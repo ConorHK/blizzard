@@ -24,7 +24,10 @@
 
         serviceConfig = {
           Type = "oneshot";
-          User = "ollama";
+          # ollama.service uses a dynamic user, so User= "ollama"
+          # only resolves while it is running and fails with 217/USER
+          # whenever the two units race.
+          DynamicUser = true;
           ExecStart = "${lib.getExe config.services.ollama.package} pull nomic-embed-text";
           RemainAfterExit = true;
         };
