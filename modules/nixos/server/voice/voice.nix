@@ -40,7 +40,7 @@
           wyoming-kokoro = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/roryeckel/wyoming_openai
-              image = "ghcr.io/roryeckel/wyoming_openai:latest";
+              image = "ghcr.io/roryeckel/wyoming_openai:0.7.0";
               publishPorts = [ "${toString ttsPort}:${toString ttsPort}" ];
               networks = [ "kokoro.network" ];
               environments = {
