@@ -25,7 +25,7 @@ in
         containers = {
           immich-redis.containerConfig = {
             # renovate: datasource=docker depName=docker.io/valkey/valkey
-            image = "docker.io/valkey/valkey:9@sha256:3b55fbaa0cd93cf0d9d961f405e4dfcc70efe325e2d84da207a0a8e6d8fde4f9";
+            image = "docker.io/valkey/valkey:9@sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd";
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
