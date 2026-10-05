@@ -28,6 +28,10 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # No x86_64-darwin hosts.
+    pi.inputs.nixpkgs-darwin-x64.follows = "nixpkgs";
+    pi.inputs.nixpkgs.follows = "nixpkgs";
+    pi.url = "github:earendil-works/pi/stable";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     stylix.inputs.flake-parts.follows = "flake-parts";
     stylix.inputs.nixpkgs.follows = "nixpkgs";

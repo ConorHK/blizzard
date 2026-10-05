@@ -9,28 +9,6 @@ topLevel: {
     let
       cfg = config.programs.pi;
       settingsFormat = pkgs.formats.json { };
-      # Prebuilt binary; patchelf corrupts bun executables.
-      pi-bin = pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "pi";
-        version = "1.0.0";
-        src = pkgs.fetchurl {
-          url = "https://github.com/earendil-works/pi/releases/download/v${version}/pi-linux-x64.tar.gz";
-          hash = "sha256-j9VUOlKoidYK1XzL9slp5zx1xSQKrhisQLUGlHpj3Dg=";
-        };
-        dontUnpack = true;
-        dontFixup = true;
-        # Full tree: pi loads themes beside the binary.
-        installPhase = ''
-          mkdir -p $out/libexec $out/bin
-          tar xzf $src -C $out/libexec
-          chmod +x $out/libexec/pi/pi
-          ln -s $out/libexec/pi/pi $out/bin/pi
-        '';
-        meta = {
-          mainProgram = "pi";
-          platforms = [ "x86_64-linux" ];
-        };
-      };
       piPackage =
         if cfg.env == { } then
           cfg.package
@@ -74,7 +52,7 @@ topLevel: {
       options.programs.pi = {
         package = lib.mkOption {
           type = lib.types.package;
-          default = pi-bin;
+          default = topLevel.inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.default;
           description = "pi coding agent package.";
         };
         env = lib.mkOption {

@@ -45,18 +45,12 @@
           url = "https://registry.npmjs.org/pi-interactive-shell/-/pi-interactive-shell-${version}.tgz";
           hash = "sha512-GRNitYwNpJMG8Kcg9heaD//4aT6taWyCt1ZOkvhgCFI/zPkpARJ8nefrX2URHG5RytRAvss09ZsTg7rM5NaPDQ==";
         };
-        patches = [ ./pi-interactive-shell-bun-pty.patch ];
-        # File watcher runs execPath -e, but pi is bun.
-        postPatch = ''
-          substituteInPlace index.ts \
-            --replace-fail '${"$"}{shellQuote(process.execPath)} -e' '${lib.getExe' pkgs.nodejs-slim "node"} -e'
-        '';
         dontConfigure = true;
         dontBuild = true;
         installPhase = ''
           runHook preInstall
           mkdir -p $out
-          cp -r . $out
+          tar xzf $src -C $out --strip-components=1
         ''
         + lib.concatStrings (
           lib.mapAttrsToList (name: tgz: ''

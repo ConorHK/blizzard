@@ -16,7 +16,7 @@
         };
         dontConfigure = true;
         dontBuild = true;
-        # pi is bun, so the broker needs node; it strips types natively.
+        # Node 24 strips types; tsx not needed.
         installPhase = ''
           runHook preInstall
           mkdir -p $out

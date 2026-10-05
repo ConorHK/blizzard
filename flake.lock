@@ -935,6 +935,30 @@
         "type": "github"
       }
     },
+    "pi": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixpkgs-darwin-x64": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791188470,
+        "narHash": "sha256-2SfC8zEf6emG1sDG1J7hjjSBt+3hFIz1/TcwBLa/hRU=",
+        "owner": "earendil-works",
+        "repo": "pi",
+        "rev": "d78dc83d633229d12f8b79631384c4c2717c399f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "earendil-works",
+        "ref": "stable",
+        "repo": "pi",
+        "type": "github"
+      }
+    },
     "plugins-99": {
       "flake": false,
       "locked": {
@@ -1044,6 +1068,7 @@
         "nix-index-database": "nix-index-database",
         "nixos-facter-modules": "nixos-facter-modules",
         "nixpkgs": "nixpkgs_5",
+        "pi": "pi",
         "quadlet-nix": "quadlet-nix",
         "stylix": "stylix",
         "textfox": "textfox",
