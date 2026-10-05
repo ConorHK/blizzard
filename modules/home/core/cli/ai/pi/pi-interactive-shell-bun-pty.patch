@@ -1,0 +1,15 @@
+--- a/pty-process.ts
++++ b/pty-process.ts
+@@ -255,6 +255,12 @@
+ 			throw error;
+ 		}
+ 		this.reader.once("close", () => unregisterRawPtyFd(this.master));
++		// Bun ignores onread and emits data.
++		this.reader.on("data", (chunk: Buffer) => {
++			if (!this.closed && !this.outputFinished && chunk.length > 0) {
++				this.emitDecoded(this.decoder.write(chunk));
++			}
++		});
+ 		this.reader.on("end", () => this.finishOutput());
+ 		this.reader.on("error", (error: NodeJS.ErrnoException) => {
+ 			if (error.code === "EIO") {
