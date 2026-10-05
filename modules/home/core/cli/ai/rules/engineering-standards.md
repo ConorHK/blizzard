@@ -11,6 +11,14 @@ Do not store user preferences in agent memory. Write them in this file.
 If the repo has a `.jj` directory, commit with jj (`jj describe`, `jj new`); do
 not shell out to git for local commits. Otherwise use git.
 
+## Design Docs Describe the Desired State
+
+A design doc under review describes the system as it will be, not the code
+as it stands. Working code changes while the doc waits for review, so "not
+built yet" notes, instrumentation gaps, and current names go stale before
+anyone approves. State the target behavior and names; track the work to get
+there elsewhere.
+
 ## Code Comments Must Earn Their Stay
 
 Applies to every edit, in every language:
