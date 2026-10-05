@@ -7,9 +7,14 @@
       ...
     }:
     let
-      # Pure-JS deps only; compiled pi is Bun and
-      # the extension falls back to bun:sqlite itself.
-      pi-hermes-memory = pkgs.stdenvNoCC.mkDerivation rec {
+      # Node pi needs native better-sqlite3.
+      sqlitePrebuild =
+        {
+          x86_64-linux = "linux-x64";
+          aarch64-linux = "linux-arm64";
+        }
+        .${pkgs.stdenv.hostPlatform.system};
+      pi-hermes-memory = pkgs.stdenv.mkDerivation rec {
         pname = "pi-hermes-memory";
         version = "0.9.9";
         src = pkgs.fetchurl {
@@ -24,14 +29,28 @@
           url = "https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.2.2.tgz";
           hash = "sha256-50a7j13YgF3EDDmbkaSiMtt9n5P+LYO3canKzntSMdc=";
         };
+        betterSqlite3 = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/better-sqlite3/-/better-sqlite3-13.0.3.tgz";
+          hash = "sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==";
+        };
+        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+        buildInputs = [ pkgs.stdenv.cc.cc.lib ];
         dontConfigure = true;
         dontBuild = true;
+        dontStrip = true;
         installPhase = ''
           runHook preInstall
-          mkdir -p $out/node_modules/strip-ansi $out/node_modules/ansi-regex
+          mkdir -p $out/node_modules/{strip-ansi,ansi-regex,better-sqlite3}
           tar xzf $src -C $out --strip-components=1
           tar xzf $stripAnsi -C $out/node_modules/strip-ansi --strip-components=1
           tar xzf $ansiRegex -C $out/node_modules/ansi-regex --strip-components=1
+          tar xzf $betterSqlite3 -C $out/node_modules/better-sqlite3 --strip-components=1
+          (
+            cd $out/node_modules/better-sqlite3
+            # N-API prebuild: any node major loads it.
+            rm -rf deps src binding.gyp
+            find prebuilds -type f ! -name '${sqlitePrebuild}.node' -delete
+          )
           rm -rf $out/docs
           runHook postInstall
         '';
