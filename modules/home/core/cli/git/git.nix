@@ -16,7 +16,10 @@
           enable = true;
           lfs.enable = true;
 
-          ignores = [ ".zvec-grep/" ];
+          ignores = [
+            ".pi/messenger/"
+            ".zvec-grep/"
+          ];
 
           settings = {
             init.defaultBranch = lib.mkDefault "main";
