@@ -32,6 +32,8 @@ export interface TtsrSettings {
 	repeatMode: "once" | "after-gap";
 	repeatGap: number;
 	disabledRules: string[];
+	/** Checkout dir /omfg saves global rules to. */
+	rulesSource?: string;
 }
 
 export const DEFAULT_SETTINGS: TtsrSettings = {

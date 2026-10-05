@@ -1,5 +1,6 @@
 // TTSR and /omfg, ported from oh-my-pi (MIT).
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import type {
 	ExtensionAPI,
@@ -30,7 +31,6 @@ const MAX_ATTEMPTS = 3;
 const JUDGE_WAIT_MS = 30_000;
 const MAX_TRANSCRIPT_CHARS = 400_000;
 const PROJECT_OPTION = "This project (.pi/rules)";
-const GLOBAL_OPTION = "Global, all projects (~/.pi/agent/rules)";
 const AMEND_OPTION = "Amend with feedback...";
 
 interface StateEntry {
@@ -77,6 +77,8 @@ export default function (pi: ExtensionAPI) {
 		const dirs: { dir: string; level: RuleLevel }[] = [];
 		// Untrusted repos must not inject rule text.
 		if (ctx.isProjectTrusted()) dirs.push({ dir: path.join(ctx.cwd, ".pi", "rules"), level: "project" });
+		// Unbuilt checkout edits win over deployed copies.
+		if (settings.rulesSource) dirs.push({ dir: settings.rulesSource, level: "user" });
 		dirs.push({ dir: path.join(getAgentDir(), "rules"), level: "user" });
 		return dirs;
 	}
@@ -495,7 +497,9 @@ export default function (pi: ExtensionAPI) {
 				) {
 					return;
 				}
-				const choice = await ctx.ui.select("Save TTSR rule where?", [PROJECT_OPTION, GLOBAL_OPTION, AMEND_OPTION]);
+				const globalDir = settings.rulesSource ?? path.join(getAgentDir(), "rules");
+				const globalOption = `Global, all projects (${globalDir.replace(os.homedir(), "~")})`;
+				const choice = await ctx.ui.select("Save TTSR rule where?", [PROJECT_OPTION, globalOption, AMEND_OPTION]);
 				if (!choice) return;
 				if (choice === AMEND_OPTION) {
 					const amendment = (await ctx.ui.input("Amend TTSR rule", "e.g. only match tool:write(*.rb)"))?.trim();
@@ -504,8 +508,8 @@ export default function (pi: ExtensionAPI) {
 					previousRule = candidate.fileContent;
 					continue;
 				}
-				const level: RuleLevel = choice === GLOBAL_OPTION ? "user" : "project";
-				const dir = level === "user" ? path.join(getAgentDir(), "rules") : path.join(ctx.cwd, ".pi", "rules");
+				const level: RuleLevel = choice === globalOption ? "user" : "project";
+				const dir = level === "user" ? globalDir : path.join(ctx.cwd, ".pi", "rules");
 				const filePath = path.join(dir, `${candidate.rule.name}.md`);
 				if (existsSync(filePath) && !(await ctx.ui.confirm("Overwrite TTSR rule?", `${filePath} exists. Overwrite it?`))) {
 					return;
@@ -515,6 +519,9 @@ export default function (pi: ExtensionAPI) {
 				manager.removeRule(candidate.rule.name);
 				manager.addRule(withPath(candidate.rule, filePath, level));
 				ctx.ui.notify(`Saved TTSR rule ${candidate.rule.name} to ${filePath}`, "info");
+				if (level === "user" && settings.rulesSource) {
+					ctx.ui.notify("Commit the rule, then rebuild to deploy it.", "info");
+				}
 				if (level === "project" && !ctx.isProjectTrusted()) {
 					ctx.ui.notify("Project not trusted: rule loads only once trusted.", "warning");
 				}

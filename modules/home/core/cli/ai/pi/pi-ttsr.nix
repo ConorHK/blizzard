@@ -34,6 +34,16 @@ topLevel: {
     let
       cfg = config.programs.pi.ttsr;
       settingsFormat = pkgs.formats.json { };
+      ruleFiles =
+        dir:
+        lib.mapAttrs' (file: _: lib.nameValuePair (lib.removeSuffix ".md" file) (dir + "/${file}")) (
+          lib.filterAttrs (file: type: type == "regular" && lib.hasSuffix ".md" file) (builtins.readDir dir)
+        );
+      rules =
+        lib.foldl' (acc: dir: acc // ruleFiles dir) { } (lib.filter builtins.pathExists cfg.ruleDirs)
+        // cfg.rules;
+      settings =
+        cfg.settings // lib.optionalAttrs (cfg.rulesSource != null) { inherit (cfg) rulesSource; };
     in
     {
       options.programs.pi.ttsr = {
@@ -47,14 +57,39 @@ topLevel: {
           default = { };
           description = "Contents of ~/.pi/agent/ttsr.json.";
         };
+        ruleDirs = lib.mkOption {
+          type = lib.types.listOf lib.types.path;
+          default = [ ];
+          description = "Directories of global rule files. Later directories win by file name.";
+        };
+        rules = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          description = "Global rule files by name. Wins over ruleDirs.";
+        };
+        rulesSource = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "Checkout directory where /omfg saves global rules.";
+        };
       };
 
       config = lib.mkIf cfg.enable {
-        programs.pi.extensionDirs.ttsr =
-          topLevel.inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.pi-ttsr;
-        home.file.".pi/agent/ttsr.json" = lib.mkIf (cfg.settings != { }) {
-          source = settingsFormat.generate "pi-ttsr.json" cfg.settings;
+        programs.pi = {
+          extensionDirs.ttsr = topLevel.inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.pi-ttsr;
+          ttsr = {
+            # Consumers' dirs land after this one.
+            ruleDirs = lib.mkBefore [ ./ttsr-rules ];
+            rulesSource = lib.mkDefault "${config.home.homeDirectory}/repositories/blizzard/modules/home/core/cli/ai/pi/ttsr-rules";
+          };
         };
+        home.file =
+          lib.mapAttrs' (
+            name: source: lib.nameValuePair ".pi/agent/rules/${name}.md" { inherit source; }
+          ) rules
+          // lib.optionalAttrs (settings != { }) {
+            ".pi/agent/ttsr.json".source = settingsFormat.generate "pi-ttsr.json" settings;
+          };
       };
     };
 }
