@@ -91,6 +91,7 @@
               "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
               "browser.ctrlTab.sortByRecentlyUsed" = true;
               "browser.fullscreen.autohide" = false;
+              "browser.nova.enabled" = false;
               "browser.tabs.closeWindowWithLastTab" = true;
             };
             userChrome = ''
