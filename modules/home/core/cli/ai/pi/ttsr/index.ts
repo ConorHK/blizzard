@@ -9,6 +9,7 @@ import type {
 	SessionBoundaryDraft,
 } from "@earendil-works/pi-coding-agent";
 import { buildSessionContext, getAgentDir, parseFrontmatter } from "@earendil-works/pi-coding-agent";
+import { Box, Text } from "@earendil-works/pi-tui";
 import { astGrepMatcher } from "./ast.ts";
 import { chatJudge, classifierJudge, type Judge, judgeRules } from "./judge.ts";
 import { DEFAULT_SETTINGS, log, TtsrManager, type TtsrSettings } from "./manager.ts";
@@ -26,6 +27,7 @@ import { buildRule, type Rule, type RuleFrontmatter, type RuleLevel } from "./ru
 const AST_GREP = process.env.PI_TTSR_AST_GREP ?? "@astGrep@";
 const STATE_TYPE = "ttsr-state";
 const MESSAGE_TYPE = "ttsr-injection";
+const DRAFT_TYPE = "omfg-draft";
 const MAX_ATTEMPTS = 3;
 // Opus-class judges answer within this.
 const JUDGE_WAIT_MS = 30_000;
@@ -35,6 +37,11 @@ const AMEND_OPTION = "Amend with feedback...";
 
 interface StateEntry {
 	injected?: string[];
+}
+
+interface DraftEntry {
+	status: string;
+	content: string;
 }
 
 type Source = "text" | "thinking" | "tool";
@@ -374,6 +381,14 @@ export default function (pi: ExtensionAPI) {
 		},
 	});
 
+	pi.registerEntryRenderer<DraftEntry>(DRAFT_TYPE, (entry, _options, theme) => {
+		if (!entry.data) return undefined;
+		const box = new Box(1, 1, text => theme.bg("customMessageBg", text));
+		box.addChild(new Text(theme.fg("accent", `[omfg] ${entry.data.status}`), 0, 0));
+		box.addChild(new Text(entry.data.content, 0, 0));
+		return box;
+	});
+
 	function transcript(messages: readonly unknown[]): string {
 		const parts: string[] = [];
 		for (const raw of messages) {
@@ -490,7 +505,12 @@ export default function (pi: ExtensionAPI) {
 					ctx.ui.notify("The model did not return a valid TTSR rule.", "error");
 					return;
 				}
-				show(candidate.validated ? "Validated against this conversation." : "Not confirmed against this conversation.", candidate.fileContent);
+				const status = candidate.validated
+					? "Validated against this conversation."
+					: "Not confirmed against this conversation.";
+				// A displaced dialog would strand the widget.
+				ctx.ui.setWidget("omfg", undefined);
+				pi.appendEntry<DraftEntry>(DRAFT_TYPE, { status, content: candidate.fileContent });
 				if (
 					!candidate.validated &&
 					!(await ctx.ui.confirm("Validation", "Couldn't confirm this rule matches the conversation. Save anyway?"))
