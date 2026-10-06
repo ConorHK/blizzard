@@ -58,6 +58,12 @@ function prompt(name: string): string {
 	return readFileSync(new URL(`./prompts/${name}.md`, import.meta.url), "utf8").trim();
 }
 
+/** Tail of the last request's roles. */
+function requestRoles(payload: unknown): string {
+	const messages = (payload as { messages?: { role?: string }[] } | undefined)?.messages;
+	return Array.isArray(messages) ? messages.slice(-4).map(message => message.role ?? "?").join(",") : "";
+}
+
 interface Pending {
 	key: string;
 	note: string;
@@ -91,6 +97,7 @@ export default function (pi: ExtensionAPI) {
 	let advisorDriven = false;
 	let failures = 0;
 	let settleCollector: Collected[] | undefined;
+	let lastRoles = "";
 	const stats = { reviews: 0, delivered: 0, suppressed: 0 };
 
 	function readSettings(): AdvisorSettings {
@@ -202,16 +209,37 @@ export default function (pi: ExtensionAPI) {
 			customTools: [adviseTool],
 			resourceLoader,
 		});
+		const forward = session.agent.onPayload;
+		session.agent.onPayload = (payload, payloadModel) => {
+			lastRoles = requestRoles(payload);
+			return forward?.(payload, payloadModel);
+		};
 		advisor = { session, label: `${model.provider}/${model.id}${thinkingLevel ? `:${thinkingLevel}` : ""}` };
 		return session;
 	}
 
-	function resetAdvisor(): void {
+	function dropSession(): void {
 		const old = advisor;
 		advisor = undefined;
+		lastRoles = "";
 		if (old) void old.session.abort().finally(() => old.session.dispose());
+	}
+
+	function resetAdvisor(): void {
+		dropSession();
 		guard = new EmissionGuard(settings.maxNotesPerUpdate);
 		deferred = [];
+	}
+
+	// Failed turns must not poison later reviews.
+	async function rollback(session: AgentSession, leaf: string | null): Promise<void> {
+		if (advisor?.session !== session) return;
+		if (leaf === null) return dropSession();
+		try {
+			await session.navigateTree(leaf, { summarize: false });
+		} catch {
+			dropSession();
+		}
 	}
 
 	function terminalAnswer(ctx: ExtensionContext): boolean {
@@ -286,11 +314,15 @@ export default function (pi: ExtensionAPI) {
 		cursor = branch[branch.length - 1].id;
 		const update = renderUpdate(slice, wip, maxChars);
 		if (!update) return;
+		let session: AgentSession | undefined;
+		let leaf: string | null = null;
 		try {
-			const session = await ensureSession(ctx);
+			session = await ensureSession(ctx);
 			if (started !== generation) return;
+			leaf = session.sessionManager.getLeafId();
 			guard.beginUpdate();
 			reviewWip = wip;
+			lastRoles = "";
 			await session.prompt(update, { source: "extension" });
 			const last = session.messages.at(-1) as { role?: string; stopReason?: string; errorMessage?: string } | undefined;
 			if (last?.role === "assistant" && last.stopReason === "error") throw new Error(last.errorMessage ?? "review failed");
@@ -298,7 +330,9 @@ export default function (pi: ExtensionAPI) {
 			stats.reviews++;
 		} catch (error) {
 			failures++;
-			ctx.ui.notify(`Advisor review failed: ${error instanceof Error ? error.message : String(error)}`, "warning");
+			const roles = lastRoles ? ` [sent: ${lastRoles}]` : "";
+			if (session) await rollback(session, leaf);
+			ctx.ui.notify(`Advisor review failed: ${error instanceof Error ? error.message : String(error)}${roles}`, "warning");
 			if (failures >= MAX_FAILURES) {
 				active = false;
 				ctx.ui.notify("Advisor stopped after 3 failed reviews.", "error");

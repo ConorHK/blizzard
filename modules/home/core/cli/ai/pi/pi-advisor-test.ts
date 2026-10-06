@@ -60,7 +60,7 @@ test("update renders turns and skips own notes", () => {
 	assert.ok(text);
 	assert.match(text, /^### Session update/);
 	assert.match(text, /\*\*User:\*\*\nfix it/);
-	assert.match(text, /\*\*Agent thinking:\*\*\nplan/);
+	assert.doesNotMatch(text, /plan/);
 	assert.match(text, /Tool call `read`/);
 	assert.match(text, /\[elided 500 chars\]/);
 	assert.doesNotMatch(text, /old advice/);

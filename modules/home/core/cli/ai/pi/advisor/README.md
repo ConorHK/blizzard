@@ -4,7 +4,7 @@ A second model reviews each turn of the main agent and injects notes. Ported fro
 [oh-my-pi](https://github.com/can1357/oh-my-pi) (MIT); see its `docs/advisor-watchdog.md`.
 
 The advisor is its own pi session with read-only tools (`read`, `grep`, `find`, `ls`) and
-one `advise(note, severity)` tool. Each review gets only the new part of the transcript.
+one `advise(note, severity)` tool. Each review gets only the new part of the transcript, without the agent's thinking.
 It also gets your `AGENTS.md` files and any `WATCHDOG.md`, advisor-only guidance from
 `~/.pi/agent/WATCHDOG.md` (`programs.pi.advisor.watchdog`) and, in trusted projects,
 `WATCHDOG.md` or `.pi/WATCHDOG.md` from the repo root down to cwd.
@@ -18,6 +18,7 @@ It also gets your `AGENTS.md` files and any `WATCHDOG.md`, advisor-only guidance
 A guard drops filler ("lgtm"), repeats, and notes past the per-review budget. After a
 concern interrupts, later concerns become nits for `immuneTurns` turns. After you press
 Esc, notes are shown but never restart the agent. Subagent children run unadvised.
+A failed review is rolled back out of the advisor session; three in a row stop it.
 
 `/advisor` toggles it for the session; `/advisor status` shows reviews and cost;
 `/advisor dump` shows the advisor transcript.

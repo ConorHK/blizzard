@@ -5,7 +5,6 @@ export const WIP_MARKER = "[in progress - more steps follow]";
 
 const MAX_TOOL_RESULT = 2_500;
 const MAX_TOOL_ARGS = 2_000;
-const MAX_THINKING = 6_000;
 const MAX_CONTEXT_MESSAGE = 400;
 // Bounds a replay after reset.
 export const MAX_REPLAY_CHARS = 80_000;
@@ -13,7 +12,6 @@ export const MAX_REPLAY_CHARS = 80_000;
 interface Block {
 	type: string;
 	text?: string;
-	thinking?: string;
 	name?: string;
 	arguments?: unknown;
 }
@@ -62,10 +60,9 @@ function renderEntry(entry: EntryLike): string | undefined {
 		}
 		case "assistant": {
 			const parts: string[] = [];
+			// Replayed reasoning trips Anthropic's extraction classifier.
 			for (const block of blocks(message.content)) {
-				if (block.type === "thinking" && block.thinking?.trim()) {
-					parts.push(`**Agent thinking:**\n${elide(block.thinking, MAX_THINKING)}`);
-				} else if (block.type === "text" && block.text?.trim()) {
+				if (block.type === "text" && block.text?.trim()) {
 					parts.push(`**Agent:**\n${block.text}`);
 				} else if (block.type === "toolCall") {
 					parts.push(`**Tool call \`${block.name}\`:**\n${elide(JSON.stringify(block.arguments ?? {}), MAX_TOOL_ARGS)}`);
