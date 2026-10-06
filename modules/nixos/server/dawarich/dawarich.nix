@@ -76,7 +76,7 @@ in
         containers = {
           dawarich-redis.containerConfig = {
             # renovate: datasource=docker depName=docker.io/redis
-            image = "docker.io/redis:7.4-alpine";
+            image = "docker.io/redis:8.10-alpine";
             exec = "redis-server";
             volumes = [ "${dataDir}/shared:/data" ];
             networks = [ "dawarich.network" ];
