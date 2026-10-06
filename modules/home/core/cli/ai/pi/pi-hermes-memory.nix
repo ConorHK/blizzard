@@ -12,6 +12,8 @@
         {
           x86_64-linux = "linux-x64";
           aarch64-linux = "linux-arm64";
+          aarch64-darwin = "darwin-arm64";
+          x86_64-darwin = "darwin-x64";
         }
         .${pkgs.stdenv.hostPlatform.system};
       pi-hermes-memory = pkgs.stdenv.mkDerivation rec {
@@ -33,8 +35,10 @@
           url = "https://registry.npmjs.org/better-sqlite3/-/better-sqlite3-13.0.3.tgz";
           hash = "sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==";
         };
-        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-        buildInputs = [ pkgs.stdenv.cc.cc.lib ];
+        # Mach-O prebuilds need no interpreter rewriting, and autoPatchelfHook
+        # does not run on darwin.
+        nativeBuildInputs = lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.autoPatchelfHook;
+        buildInputs = lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.stdenv.cc.cc.lib;
         dontConfigure = true;
         dontBuild = true;
         dontStrip = true;
