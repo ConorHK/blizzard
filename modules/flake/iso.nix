@@ -26,7 +26,7 @@
                   pciutils
                   usbutils
                   ;
-                cnvim = inputs.cnvim.packages.${system}.default;
+                cnvim = inputs.self.packages.${system}.cnvim;
               };
 
               services.openssh = {

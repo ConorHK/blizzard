@@ -5,8 +5,6 @@
     agenix-rekey.url = "github:oddlama/agenix-rekey";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix.url = "github:ryantm/agenix";
-    cnvim.inputs.nixpkgs.follows = "nixpkgs";
-    cnvim.url = "github:conorhk/vimrc";
     crash.inputs.nixpkgs.follows = "nixpkgs";
     crash.url = "github:RGBCube/crash";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
@@ -21,6 +19,8 @@
     import-tree.url = "github:vic/import-tree";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
     lanzaboote.url = "github:nix-community/lanzaboote";
+    neovim-nightly-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     nix-gaming.inputs.flake-parts.follows = "flake-parts";
     nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
     nix-gaming.url = "github:fufexan/nix-gaming";
@@ -32,6 +32,10 @@
     pi.inputs.nixpkgs-darwin-x64.follows = "nixpkgs";
     pi.inputs.nixpkgs.follows = "nixpkgs";
     pi.url = "github:earendil-works/pi/stable";
+    plugins-alduin = {
+      url = "github:conorhk/alduin.nvim";
+      flake = false;
+    };
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
     stylix.inputs.flake-parts.follows = "flake-parts";
     stylix.inputs.nixpkgs.follows = "nixpkgs";
