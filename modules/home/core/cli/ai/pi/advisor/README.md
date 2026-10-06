@@ -15,6 +15,9 @@ It also gets your `AGENTS.md` files and any `WATCHDOG.md`, advisor-only guidance
 | `concern` | Steers the running agent, or wakes it if it stopped mid-work; after a final answer it is only shown |
 | `blocker` | Steers or wakes the agent, even after a final answer |
 
+The transcript shows notes as cards in the theme's `accent`, `warning` and `error`
+colors; expand one to see the advisor model. The agent still gets `<advisory>` XML.
+
 A guard drops filler ("lgtm"), repeats, and notes past the per-review budget. After a
 concern interrupts, later concerns become nits for `immuneTurns` turns. After you press
 Esc, notes are shown but never restart the agent. Subagent children run unadvised.

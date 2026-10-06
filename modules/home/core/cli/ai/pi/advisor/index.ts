@@ -16,6 +16,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { contextFiles, watchdogFiles } from "./context.ts";
 import { type DeliveryChannel, deliveryChannel, EmissionGuard, normalizeNote, SEVERITY_RANK, type Severity } from "./guard.ts";
+import { NoteCard, type NoteDetails } from "./render.ts";
 import { ADVISOR_NOTE_TYPE, MAX_REPLAY_CHARS, renderAdvisory, renderUpdate } from "./transcript.ts";
 
 const REWOUND_EVENT = "checkpoint:rewound";
@@ -99,6 +100,10 @@ export default function (pi: ExtensionAPI) {
 	let settleCollector: Collected[] | undefined;
 	let lastRoles = "";
 	const stats = { reviews: 0, delivered: 0, suppressed: 0 };
+
+	pi.registerMessageRenderer<NoteDetails>(ADVISOR_NOTE_TYPE, (message, { expanded, outputPad }, theme) =>
+		message.details?.note ? new NoteCard(message.details, theme, outputPad, expanded) : undefined,
+	);
 
 	function readSettings(): AdvisorSettings {
 		const file = path.join(getAgentDir(), "advisor.json");
