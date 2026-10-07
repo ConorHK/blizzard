@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   flake.modules.homeManager.core =
     {
@@ -6,8 +7,20 @@
       pkgs,
       ...
     }:
+    let
+      herdr-nvim = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.herdr-nvim;
+    in
     {
-      home.packages = [ pkgs.herdr ];
+      home.packages = [
+        pkgs.herdr
+        herdr-nvim
+      ];
+
+      # Herdr rewrites plugins.json, so link it.
+      home.activation.herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
+          || warnEcho "herdr plugin link failed for herdr-nvim"
+      '';
 
       xdg.configFile."herdr/config.toml".source = (pkgs.formats.toml { }).generate "herdr.toml" {
         # Herdr cannot write a store symlink.
@@ -72,6 +85,22 @@
             "prefix+q"
           ];
           settings = "prefix+comma";
+          edit_scrollback = "prefix+shift+e";
+
+          command = [
+            {
+              key = "prefix+e";
+              type = "plugin_action";
+              command = "chmarax.herdr-nvim.toggle";
+              description = "nvim sidebar";
+            }
+            {
+              key = "prefix+f";
+              type = "plugin_action";
+              command = "chmarax.herdr-nvim.pick-file";
+              description = "open file in sidebar";
+            }
+          ];
         };
       };
     };

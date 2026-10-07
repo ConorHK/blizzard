@@ -7,6 +7,7 @@
   lib,
 
   alduin,
+  herdr-nvim,
 
   lua-language-server,
   nixd,
@@ -57,6 +58,7 @@ let
     comment-nvim
     vim-fugitive
     gitsigns-nvim
+    herdr-nvim
     inc-rename-nvim
     indent-blankline-nvim
     luasnip
