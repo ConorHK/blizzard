@@ -1,6 +1,11 @@
 {
   flake.modules.homeManager.core =
-    { pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       home.packages = [ pkgs.herdr ];
 
@@ -8,6 +13,9 @@
         # Herdr cannot write a store symlink.
         onboarding = false;
         theme.name = "one-dark";
+
+        # Devbox PATH lists another fish first.
+        terminal.default_shell = lib.getExe config.programs.fish.package;
 
         keys = {
           prefix = "ctrl+t";
