@@ -12,7 +12,8 @@
       xdg.configFile."herdr/config.toml".source = (pkgs.formats.toml { }).generate "herdr.toml" {
         # Herdr cannot write a store symlink.
         onboarding = false;
-        theme.name = "one-dark";
+        theme.name = "terminal";
+        ui.toast.delivery = "herdr";
 
         # Devbox PATH lists another fish first.
         terminal.default_shell = lib.getExe config.programs.fish.package;
