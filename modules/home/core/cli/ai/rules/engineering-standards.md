@@ -11,6 +11,20 @@ Do not store user preferences in agent memory. Write them in this file.
 If the repo has a `.jj` directory, commit with jj (`jj describe`, `jj new`); do
 not shell out to git for local commits. Otherwise use git.
 
+## Missing Tools: Use nix-shell First
+
+When a command, CLI, or dependency is not on PATH, run it through Nix
+before trying anything else:
+
+```bash
+nix-shell -p <package> --run '<command>'
+```
+
+- When the package name differs from the command, find it with
+  `nix search nixpkgs <name>`.
+- Use other installers (apt, yum, brew, pip, `npm -g`, `cargo install`,
+  `curl | sh`) only after Nix cannot provide the tool, and say why.
+
 ## Design Docs Describe the Desired State
 
 A design doc under review describes the system as it will be, not the code
