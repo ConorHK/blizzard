@@ -52,6 +52,8 @@
           pname = "herdr-web-ui";
           inherit version src;
 
+          patches = [ ./herdr-web-ui/allowed-origin.patch ];
+
           nativeBuildInputs = [
             bun
             nodejs

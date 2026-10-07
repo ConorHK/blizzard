@@ -1,0 +1,14 @@
+diff --git a/server/machine-security.ts b/server/machine-security.ts
+index 6e08c0d..b717306 100644
+--- a/server/machine-security.ts
++++ b/server/machine-security.ts
+@@ -18,6 +18,9 @@ export function sameOrigin(request: Request): boolean {
+   if (site && site !== "same-origin" && site !== "none") return false;
+   const origin = request.headers.get("origin");
+   if (!origin) return true; // CLI clients still need the custom mutation header + token.
++  // Tunnels rewrite Host; trust one exact origin.
++  const allowed = process.env["HERDR_WEB_ALLOWED_ORIGIN"];
++  if (allowed && origin === allowed) return true;
+   try {
+     const expected = new URL(request.url);
+     // Reverse proxies commonly terminate HTTPS; do not trust arbitrary forwarded hosts.
