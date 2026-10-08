@@ -81,11 +81,18 @@ function M.setup()
     -- Execute statusline
     local group = vim.api.nvim_create_augroup("Statusline", { clear = true })
 
+    -- Floats draw it inside their border.
+    local function set(statusline)
+        if vim.api.nvim_win_get_config(0).relative == "" then
+            vim.wo.statusline = statusline
+        end
+    end
+
     vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
         group = group,
         pattern = "*",
         callback = function()
-            vim.wo.statusline = "%!v:lua.Statusline.active()"
+            set("%!v:lua.Statusline.active()")
         end,
     })
 
@@ -93,7 +100,7 @@ function M.setup()
         group = group,
         pattern = "*",
         callback = function()
-            vim.wo.statusline = "%!v:lua.Statusline.inactive()"
+            set("%!v:lua.Statusline.inactive()")
         end,
     })
 
@@ -101,7 +108,7 @@ function M.setup()
         group = group,
         pattern = { "NvimTree", "terminal" },
         callback = function()
-            vim.wo.statusline = "%!v:lua.Statusline.short()"
+            set("%!v:lua.Statusline.short()")
         end,
     })
 
@@ -109,7 +116,7 @@ function M.setup()
         group = group,
         pattern = { "NvimTree", "terminal" },
         callback = function()
-            vim.wo.statusline = "%!v:lua.Statusline.short()"
+            set("%!v:lua.Statusline.short()")
         end,
     })
 end
