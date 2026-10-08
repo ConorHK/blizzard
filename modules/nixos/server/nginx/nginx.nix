@@ -32,6 +32,8 @@ _: {
         certs = lib.mapAttrs (_: _: {
           dnsProvider = "namecheap";
           webroot = null;
+          # MagicDNS hides fresh challenge TXTs.
+          dnsResolver = "1.1.1.1:53";
           credentialFiles = {
             "NAMECHEAP_API_USER_FILE" = config.age.secrets.namecheap-api-user.path;
             "NAMECHEAP_API_KEY_FILE" = config.age.secrets.namecheap-api-key.path;
