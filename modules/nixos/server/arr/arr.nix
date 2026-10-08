@@ -73,6 +73,9 @@ in
                 - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
                   reset_unmatched_scores:
                     enabled: true
+                - trash_id: c4cadd6b35b95f62c3d47a408e53e2f7 # WEB-2160p (Combined)
+                  reset_unmatched_scores:
+                    enabled: true
 
           radarr:
             radarr:
@@ -82,6 +85,9 @@ in
                 type: movie
               quality_profiles:
                 - trash_id: d1d67249d3890e49bc12e275d989a7e9 # HD Bluray + WEB
+                  reset_unmatched_scores:
+                    enabled: true
+                - trash_id: 64fb5f9858489bdac2af690e27c8f42f # UHD Bluray + WEB
                   reset_unmatched_scores:
                     enabled: true
         '';
