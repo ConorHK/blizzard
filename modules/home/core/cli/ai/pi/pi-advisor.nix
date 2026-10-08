@@ -22,7 +22,7 @@ topLevel: {
       options.programs.pi.advisor = {
         enable = lib.mkOption {
           type = lib.types.bool;
-          default = true;
+          default = false;
           description = "Install the advisor, a reviewer model watching each turn.";
         };
         settings = lib.mkOption {
