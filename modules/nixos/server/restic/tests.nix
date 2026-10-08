@@ -67,6 +67,8 @@
 
           start_recorder()
           machine.succeed("mkdir -p /var/data && echo 'irreplaceable' > /var/data/family-photos")
+          # Owner-only, like hister's tree.
+          machine.succeed("mkdir -m 700 /var/data/private && echo 'secret' > /var/data/private/db && chmod 600 /var/data/private/db")
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
@@ -84,6 +86,10 @@
           with subtest("paused containers are stopped and started again"):
               machine.succeed("test -f /tmp/dummy-was-stopped")
               machine.wait_for_unit("dummy.service", user="containers")
+
+          with subtest("owner-only files are backed up"):
+              listing = as_root("ls latest /var/data/private")
+              assert "/var/data/private/db" in listing, listing
 
           with subtest("the backed-up file restores byte-identical"):
               machine.succeed("rm /var/data/family-photos")

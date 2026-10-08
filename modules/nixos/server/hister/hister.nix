@@ -1,22 +1,8 @@
 _:
 let
   url = "search.goosebox.org";
-
-  # ACL grants backup reads; hister keeps ownership.
-  histerDataRules = dataDir: [
-    "d ${dataDir} 2750 hister containers -"
-    # Repair stray ownership, keep modes.
-    "Z ${dataDir} - hister containers -"
-    # Backup user reads via ACL.
-    "A+ ${dataDir} - - - - u:containers:rX"
-    "A+ ${dataDir} - - - - d:u:containers:rX"
-    # Re-grants after chmod squashes the mask.
-    "A+ ${dataDir} - - - - m::rX"
-  ];
 in
 {
-  flake.testSupport.histerDataRules = histerDataRules;
-
   flake.monitoringChecks.hister = {
     name = "hister";
     url = "https://${url}";
@@ -42,8 +28,8 @@ in
         groups.hister = { };
       };
 
-      # setgid: new files inherit backup group.
-      systemd.tmpfiles.rules = histerDataRules dataDir;
+      # setgid: new files inherit the backup user's group.
+      systemd.tmpfiles.rules = [ "d ${dataDir} 2750 hister containers -" ];
 
       age.secrets.hister-access-token.rekeyFile = ./secrets/hister-access-token.age;
 

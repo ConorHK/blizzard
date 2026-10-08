@@ -59,8 +59,12 @@ _: {
           services = {
             restic-backups-service-data = {
               unitConfig.OnFailure = "restic-backups-notify-failure.service";
-              # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
-              serviceConfig.Nice = 19;
+              serviceConfig = {
+                # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
+                Nice = 19;
+                # Read owner-only service data, no writes.
+                AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+              };
             };
 
             restic-backups-notify-failure = {
