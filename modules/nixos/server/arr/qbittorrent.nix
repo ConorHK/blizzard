@@ -1,87 +1,109 @@
 _:
 let
-  url = "qbittorrent.lep.goosebox.org";
-  qbitManageUrl = "qbit-manage.lep.goosebox.org";
-  qbittorrentPort = 8080;
-  qbitManagePort = 8181;
+  url = "qui.lep.goosebox.org";
+  quiPort = 7476;
 in
 {
   flake = {
-    monitoringChecks = {
-      qbittorrent = {
-        name = "qbittorrent";
-        url = "https://${url}";
-      };
-
-      qbit-manage = {
-        name = "qbit-manage";
-        url = "https://${qbitManageUrl}";
-      };
+    monitoringChecks.qui = {
+      name = "qui";
+      url = "https://${url}";
     };
 
     modules.nixos.qbittorrent =
       { config, ... }:
       let
-        qbittorrentDir = "${config.blizzard.storage.data}/qbittorrent";
-        qbitManageDir = "${config.blizzard.storage.data}/qbit-manage";
-        torrentDir = "${config.blizzard.storage.media}/torrents";
+        inherit (config.blizzard.storage) data media;
+        qbittorrentDir = "${data}/qbittorrent";
+        quiDir = "${data}/qui";
       in
       {
+        age.secrets.gluetun = {
+          rekeyFile = ./secrets/gluetun.age;
+          owner = "containers";
+        };
+
+        systemd.tmpfiles.rules = [
+          "d ${qbittorrentDir} 0750 containers containers -"
+          "d ${quiDir} 0750 containers containers -"
+          "d ${media}/torrents 0775 containers containers -"
+        ];
+
         home-manager.users.containers.virtualisation.quadlet = {
-          networks.qbittorrent.networkConfig = { };
+          networks.arr.networkConfig = { };
 
           containers = {
-            qbittorrent.containerConfig = {
-              # renovate: datasource=docker depName=ghcr.io/hotio/qbittorrent
-              image = "ghcr.io/hotio/qbittorrent:release-5.1.4";
-              publishPorts = [ "127.0.0.1:${toString qbittorrentPort}:8080" ];
+            gluetun = {
+              containerConfig = {
+                # renovate: datasource=docker depName=docker.io/qmcgaw/gluetun
+                image = "docker.io/qmcgaw/gluetun:v3.41.3";
+                addCapabilities = [ "NET_ADMIN" ];
+                devices = [ "/dev/net/tun" ];
+                environmentFiles = [ config.age.secrets.gluetun.path ];
+                environments = {
+                  VPN_SERVICE_PROVIDER = "nordvpn";
+                  VPN_TYPE = "wireguard";
+                  SERVER_COUNTRIES = "Ireland";
+                  # qBittorrent WebUI, for qui and the arrs.
+                  FIREWALL_INPUT_PORTS = "8080";
+                  TZ = "Europe/Dublin";
+                };
+                networks = [ "arr.network" ];
+              };
+              # A new gluetun netns strands qbittorrent; restart it.
+              unitConfig.Upholds = "qbittorrent.service";
+            };
+
+            qbittorrent = {
+              containerConfig = {
+                # renovate: datasource=docker depName=ghcr.io/hotio/qbittorrent
+                image = "ghcr.io/hotio/qbittorrent:release-5.1.4";
+                volumes = [
+                  "${qbittorrentDir}:/config"
+                  "${media}:/data"
+                  # Pre-arr torrents keep seeding from here.
+                  "${media}/torrents:/torrents"
+                ];
+                environments = {
+                  # Container root is the host containers user.
+                  PUID = "0";
+                  PGID = "0";
+                  UMASK = "002";
+                  TZ = "Europe/Dublin";
+                };
+                networks = [ "gluetun.container" ];
+                noNewPrivileges = true;
+              };
+              unitConfig = {
+                BindsTo = "gluetun.service";
+                After = "gluetun.service";
+              };
+            };
+
+            qui.containerConfig = {
+              # renovate: datasource=docker depName=ghcr.io/autobrr/qui
+              image = "ghcr.io/autobrr/qui:v1.31.0";
+              publishPorts = [ "127.0.0.1:${toString quiPort}:7476" ];
               volumes = [
-                "${qbittorrentDir}:/config"
-                "${torrentDir}:/torrents"
+                "${quiDir}:/config"
+                "${media}:/data"
               ];
               environments = {
-                PUID = "1001";
-                PGID = "1001";
-                UMASK = "002";
+                QUI__HOST = "0.0.0.0";
                 TZ = "Europe/Dublin";
               };
-              networks = [ "qbittorrent.network" ];
-              noNewPrivileges = true;
-            };
-
-            qbit-manage.containerConfig = {
-              # renovate: datasource=docker depName=ghcr.io/stuffanthings/qbit_manage
-              image = "ghcr.io/stuffanthings/qbit_manage:v4.13.0";
-              publishPorts = [ "127.0.0.1:${toString qbitManagePort}:8181" ];
-              volumes = [
-                "${qbitManageDir}:/config:rw"
-                "${torrentDir}/downloads:/data:rw"
-                "${qbittorrentDir}:/qbittorrent:ro"
-              ];
-              environments = {
-                QBT_WEB_SERVER = "true";
-                QBT_PORT = toString qbitManagePort;
-              };
-              networks = [ "qbittorrent.network" ];
+              user = "0:0";
+              networks = [ "arr.network" ];
               noNewPrivileges = true;
             };
           };
         };
 
-        services.nginx.virtualHosts."${url}" = {
+        services.nginx.virtualHosts.${url} = {
           enableACME = true;
           forceSSL = true;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString qbittorrentPort}";
-            proxyWebsockets = true;
-          };
-        };
-
-        services.nginx.virtualHosts."${qbitManageUrl}" = {
-          enableACME = true;
-          forceSSL = true;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString qbitManagePort}";
+            proxyPass = "http://127.0.0.1:${toString quiPort}";
             proxyWebsockets = true;
           };
         };
