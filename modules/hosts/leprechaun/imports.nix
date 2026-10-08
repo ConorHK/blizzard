@@ -12,6 +12,7 @@
   flake.modules.nixos."nixosConfigurations/leprechaun".imports = with config.flake.modules.nixos; [
     actual-budget
     arr
+    arr-backup
     aqua-booking
     aqua-booking-secret
     audiobookshelf
