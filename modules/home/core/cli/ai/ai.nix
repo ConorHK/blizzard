@@ -11,6 +11,14 @@ in
 {
   flake.modules.homeManager.ai = {
     imports = [ config.flake.modules.homeManager.pi ];
-    programs.pi.rules = rules;
+    programs.pi = {
+      inherit rules;
+      settings = {
+        defaultProvider = "claude-bridge";
+        defaultModel = "claude-opus-5-5";
+        defaultThinkingLevel = "medium";
+      };
+      advisor.settings.model = "claude-bridge/claude-sonnet-5-5";
+    };
   };
 }
