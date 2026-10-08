@@ -61,8 +61,6 @@ in
                 volumes = [
                   "${qbittorrentDir}:/config"
                   "${media}:/data"
-                  # Pre-arr torrents keep seeding from here.
-                  "${media}/torrents:/torrents"
                 ];
                 environments = {
                   # Container root is the host containers user.
