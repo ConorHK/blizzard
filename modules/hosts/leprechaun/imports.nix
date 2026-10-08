@@ -38,6 +38,7 @@
     nginx
     nvidia
     ollama
+    paperless
     photon
     pi
     podman
