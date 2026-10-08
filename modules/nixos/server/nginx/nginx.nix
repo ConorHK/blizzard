@@ -27,6 +27,8 @@ _: {
       security.acme = {
         acceptTerms = true;
         defaults.email = "admin@goosebox.org";
+        # Namecheap writes replace all records; serialize.
+        maxConcurrentRenewals = 1;
         certs = lib.mapAttrs (_: _: {
           dnsProvider = "namecheap";
           webroot = null;
