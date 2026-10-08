@@ -1,9 +1,9 @@
 // Copies code from the last reply, unwrapped.
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { copyToClipboard } from "@earendil-works/pi-coding-agent";
-import { extractSnippets, snippetLabel, snippetPreview } from "./snippets.ts";
+import { extractSnippets, type Snippet, snippetLabel, snippetPreview } from "./snippets.ts";
 
-function latestSnippets(ctx: ExtensionContext): string[] {
+function latestSnippets(ctx: ExtensionContext): Snippet[] {
 	const branch = ctx.sessionManager.getBranch();
 	for (let i = branch.length - 1; i >= 0; i--) {
 		const entry = branch[i];
@@ -17,7 +17,7 @@ function latestSnippets(ctx: ExtensionContext): string[] {
 	return [];
 }
 
-async function pickSnippet(ctx: ExtensionContext, snippets: string[], arg: string) {
+async function pickSnippet(ctx: ExtensionContext, snippets: Snippet[], arg: string) {
 	const wanted = Number.parseInt(arg, 10);
 	if (Number.isInteger(wanted)) {
 		if (wanted >= 1 && wanted <= snippets.length) return snippets[wanted - 1];
@@ -39,8 +39,8 @@ async function copySnippet(ctx: ExtensionContext, arg = "") {
 	const snippet = await pickSnippet(ctx, snippets, arg.trim());
 	if (snippet === undefined) return;
 	try {
-		await copyToClipboard(snippet);
-		ctx.ui.notify(`Copied: ${snippetPreview(snippet)}`, "info");
+		await copyToClipboard(snippet.text);
+		ctx.ui.notify(`Copied: ${snippetPreview(snippet.text)}`, "info");
 	} catch (error) {
 		ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
 	}
