@@ -11,6 +11,18 @@ Do not store user preferences in agent memory. Write them in this file.
 If the repo has a `.jj` directory, commit with jj (`jj describe`, `jj new`); do
 not shell out to git for local commits. Otherwise use git.
 
+## CR Commands Use jj Change IDs
+
+Give `cr` commands with change IDs through the wrapper flags, never
+`--range`, `--parent`, or git hashes:
+
+- `cr --from F --to X`: reviews `F..X`. `--from` is the exclusive base.
+  It defaults to `fork_point(trunk())`; `--to` defaults to `@`, or `@-`
+  when `@` is empty.
+- `cr --to X --onto Y`: cherry-picks X onto Y and reviews only X.
+  Add `--from F` to pick `F..X`. The copy is abandoned afterwards.
+- Auto mode blocks running `cr`, so hand over the command.
+
 ## Missing Tools: Use nix-shell First
 
 When a command, CLI, or dependency is not on PATH, run it through Nix
