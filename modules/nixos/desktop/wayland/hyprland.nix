@@ -39,10 +39,10 @@ topLevel: {
         fi
 
         # Resize and move the (now) floating window
-        grep "fullscreen: 1" $windowinfo && hyprctl dispatch fullscreen
-        grep "floating: 0" $windowinfo && hyprctl dispatch togglefloating
-        hyprctl dispatch moveactive exact $pos_x $pos_y
-        hyprctl dispatch resizeactive exact $size_x $size_y
+        hyprctl dispatch 'hl.dsp.window.fullscreen({ action = "unset" })'
+        hyprctl dispatch 'hl.dsp.window.float({ action = "enable" })'
+        hyprctl dispatch "hl.dsp.window.move({ x = $pos_x, y = $pos_y })"
+        hyprctl dispatch "hl.dsp.window.resize({ x = $size_x, y = $size_y })"
       '';
 
       screenshot = pkgs.writeShellScriptBin "screenshot" ''
