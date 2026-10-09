@@ -30,6 +30,7 @@
     immich
     immich-public-proxy
     immich-stack
+    jellyfin
     matrix
     mealie
     music-assistant
