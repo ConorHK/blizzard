@@ -17,6 +17,7 @@
           inputs'.agenix-rekey.packages.default
           inputs'.home-manager.packages.default
           pkgs.age-plugin-yubikey
+          config.packages.dns-sync
 
           (script "rebuild" ''
             if [ "$#" -ne 1 ]; then
