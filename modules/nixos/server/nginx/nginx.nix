@@ -12,14 +12,8 @@ _: {
         443 # HTTPS
       ];
 
-      age.secrets.namecheap-api-user = {
-        rekeyFile = ./secrets/namecheap-api-user.age;
-        group = "acme";
-        mode = "0440";
-      };
-
-      age.secrets.namecheap-api-key = {
-        rekeyFile = ./secrets/namecheap-api-key.age;
+      age.secrets.desec-acme-token = {
+        rekeyFile = ./secrets/desec-acme-token.age;
         group = "acme";
         mode = "0440";
       };
@@ -27,17 +21,14 @@ _: {
       security.acme = {
         acceptTerms = true;
         defaults.email = "admin@goosebox.org";
-        # Namecheap writes replace all records; serialize.
+        # deSEC rate-limits writes; serialize.
         maxConcurrentRenewals = 1;
         certs = lib.mapAttrs (_: _: {
-          dnsProvider = "namecheap";
+          dnsProvider = "desec";
           webroot = null;
           # MagicDNS hides fresh challenge TXTs.
           dnsResolver = "1.1.1.1:53";
-          credentialFiles = {
-            "NAMECHEAP_API_USER_FILE" = config.age.secrets.namecheap-api-user.path;
-            "NAMECHEAP_API_KEY_FILE" = config.age.secrets.namecheap-api-key.path;
-          };
+          credentialFiles.DESEC_TOKEN_FILE = config.age.secrets.desec-acme-token.path;
         }) acmeVhosts;
       };
 

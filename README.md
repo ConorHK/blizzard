@@ -30,7 +30,7 @@
 | `mealie` | mealie | 9925 | mealie.lep.goosebox.org |
 | `music-assistant` | music-assistant | 8095, 8097 | music-assistant.goosebox.org |
 | `nextdns` | nextdns | 53 (wg0 only) | — |
-| `nginx` | nginx, ACME (namecheap DNS-01) | 80, 443 | — |
+| `nginx` | nginx, ACME (deSEC DNS-01) | 80, 443 | — |
 | `ollama` | ollama (nomic-embed-text, for hister) | 11434 | - |
 | `photon` | photon | 2322 | photon.lep.goosebox.org |
 | `qbittorrent` | qbittorrent, qbit-manage | 8080, 8181 | qbittorrent.lep, qbit-manage.lep |
