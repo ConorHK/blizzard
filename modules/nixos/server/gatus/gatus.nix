@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  inherit (config.flake.modules.nixos) gatus-relay;
+in
+{
   flake.modules.nixos.gatus =
     {
       config,
@@ -7,31 +11,24 @@ _: {
       ...
     }:
     {
+      imports = [ gatus-relay ];
+
       age.secrets.gatus-ntfy-topic = {
         rekeyFile = ./secrets/gatus-ntfy-topic.age;
       };
+      blizzard.gatusRelay.topicFile = config.age.secrets.gatus-ntfy-topic.path;
 
       # Nothing else watches the watcher.
       systemd.services.gatus.unitConfig.OnFailure = "alert-failure@gatus.service";
 
       services.gatus = {
         enable = true;
-        environmentFile = config.age.secrets.gatus-ntfy-topic.path;
         settings = {
           storage = {
             type = "sqlite";
             path = "/var/lib/gatus/data.db";
           };
 
-          alerting.ntfy = {
-            topic = "$NTFY_TOPIC";
-            url = "https://ntfy.sh";
-            default-alert = {
-              enabled = true;
-              failure-threshold = 2;
-              success-threshold = 1;
-            };
-          };
           # The autoUpgrade reboot only — this silences every endpoint, so
           # service-specific blips belong in that check's `maintenanceWindows`.
           maintenance = {
@@ -49,7 +46,7 @@ _: {
                 interval
                 conditions
                 ;
-              alerts = [ { type = "ntfy"; } ];
+              alerts = [ { type = "custom"; } ];
             }
             // lib.optionalAttrs (check.timeout != null) {
               client.timeout = check.timeout;
