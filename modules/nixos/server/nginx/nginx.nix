@@ -28,8 +28,8 @@ _: {
           webroot = null;
           # MagicDNS hides fresh challenge TXTs.
           dnsResolver = "1.1.1.1:53";
-          # deSEC caches NXDOMAIN for an hour.
-          extraLegoFlags = [ "--dns.propagation.disable-rns" ];
+          # deSEC anycast nodes sync slowly; checks race.
+          extraLegoFlags = [ "--dns.propagation.wait=120s" ];
           credentialFiles.DESEC_TOKEN_FILE = config.age.secrets.desec-acme-token.path;
         }) acmeVhosts;
       };
