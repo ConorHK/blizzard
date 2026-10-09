@@ -69,7 +69,7 @@ topLevel: {
             '.[] | select(.address==$a) | "\(.class) \(.floating)"')
           set -- $state
           [ "$1" = "firefox" ] && [ "$2" = "false" ] || continue
-          hyprctl dispatch setfloating "address:0x$addr"
+          hyprctl dispatch "hl.dsp.window.float({ action = \"enable\", window = \"address:0x$addr\" })"
           # center on the monitor's usable area; centerwindow races the float
           geo=$(hyprctl -j clients | ${pkgs.jq}/bin/jq -r --arg a "0x$addr" \
             '.[] | select(.address==$a) | "\(.size[0]) \(.size[1]) \(.monitor)"')
@@ -80,7 +80,7 @@ topLevel: {
           set -- $mgeo
           x=$(( $1 + $5 + ($3 - $5 - $7 - w) / 2 ))
           y=$(( $2 + $6 + ($4 - $6 - $8 - h) / 2 ))
-          hyprctl dispatch movewindowpixel "exact $x $y,address:0x$addr"
+          hyprctl dispatch "hl.dsp.window.move({ x = $x, y = $y, window = \"address:0x$addr\" })"
         done
       '';
 
