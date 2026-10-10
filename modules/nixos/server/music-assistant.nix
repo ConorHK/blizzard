@@ -1,6 +1,6 @@
 _:
 let
-  url = "music-assistant.goosebox.org";
+  url = "music-assistant.lep.goosebox.org";
   port = 8095;
   streamPort = 8097;
 in
