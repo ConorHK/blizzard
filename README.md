@@ -28,7 +28,7 @@
 | `immich-stack` | immich-stack (cron, daily) | — | — |
 | `matrix` | synapse, mautrix whatsapp/discord/meta bridges | 8008 | matrix.goosebox.org |
 | `mealie` | mealie | 9925 | mealie.lep.goosebox.org |
-| `music-assistant` | music-assistant | 8095, 8097 | music-assistant.goosebox.org |
+| `navidrome` | navidrome | 4533 | music.goosebox.org |
 | `nextdns` | nextdns | 53 (wg0 only) | — |
 | `nginx` | nginx, ACME (deSEC DNS-01) | 80, 443 | — |
 | `ollama` | ollama (nomic-embed-text, for hister) | 11434 | - |
@@ -42,7 +42,7 @@
 | `voice` | wyoming-whisper, kokoro-fastapi, wyoming-openai | 10300, 10200 | — |
 | `wireguard-gateway` | wireguard wg0 | 51820 (UDP) | — |
 
-The Ports column is what each service listens on, not what is reachable. The firewall opens only `nginx`, `music-assistant` (host network), `satisfactory`, `syncthing-server` and `wireguard-gateway`. `voice` and `clip-server` listen on every interface, but the firewall drops them outside the trusted `tailscale0` and `wg0`. Everything else binds `127.0.0.1`, mostly behind nginx. `monitor.goosebox.org` proxies to gatus on bananach.
+The Ports column is what each service listens on, not what is reachable. The firewall opens only `nginx`, `satisfactory`, `syncthing-server` and `wireguard-gateway`. `voice` and `clip-server` listen on every interface, but the firewall drops them outside the trusted `tailscale0` and `wg0`. Everything else binds `127.0.0.1`, mostly behind nginx. `monitor.goosebox.org` proxies to gatus on bananach.
 
 ## puca services
 

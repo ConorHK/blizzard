@@ -33,8 +33,8 @@
     jellyfin
     matrix
     mealie
-    music-assistant
     nextdns
+    navidrome
     nginx
     nvidia
     ollama
