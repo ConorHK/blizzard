@@ -18,6 +18,7 @@ in
     {
       systemd.tmpfiles.rules = [
         "d ${dataDir} 0750 containers containers -"
+        "d ${media}/bumpers 0775 containers containers -"
       ];
 
       home-manager.users.containers.virtualisation.quadlet.containers.tunarr.containerConfig = {
@@ -29,6 +30,7 @@ in
           # Same paths as Jellyfin, for direct file access.
           "${media}/movies:/data/movies:ro"
           "${media}/tv:/data/tv:ro"
+          "${media}/bumpers:/data/bumpers:ro"
         ];
         devices = [ "nvidia.com/gpu=all" ];
         environments = {
