@@ -10,10 +10,29 @@ in
   };
 
   flake.modules.nixos.navidrome =
-    { config, ... }:
+    { config, pkgs, ... }:
     let
       inherit (config.blizzard.storage) data media;
       dataDir = "${data}/navidrome";
+
+      settings = (pkgs.formats.toml { }).generate "navidrome.toml" {
+        # Defaults plus ", ", used by MusicBrainz credits.
+        Tags.Artist.Split = [
+          " / "
+          " feat. "
+          " feat "
+          " ft. "
+          " ft "
+          "; "
+          ", "
+        ];
+        Scanner.ArtistSplitExceptions = [
+          "Tyler, The Creator"
+          "Earth, Wind & Fire"
+          "Crosby, Stills, Nash & Young"
+          "Crosby, Stills & Nash"
+        ];
+      };
     in
     {
       systemd.tmpfiles.rules = [
@@ -31,9 +50,11 @@ in
           volumes = [
             "${dataDir}:/data"
             "${media}/music:/music:ro"
+            "${settings}:/etc/navidrome.toml:ro"
           ];
           environments = {
             TZ = "Europe/Dublin";
+            ND_CONFIGFILE = "/etc/navidrome.toml";
             ND_MUSICFOLDER = "/music";
             ND_DATAFOLDER = "/data";
             ND_LISTENBRAINZ_ENABLED = "true";
