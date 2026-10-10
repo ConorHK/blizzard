@@ -20,6 +20,10 @@ _: {
           db = "radarr.db";
           config = "config.xml";
         };
+        lidarr = {
+          db = "lidarr.db";
+          config = "config.xml";
+        };
         prowlarr = {
           db = "prowlarr.db";
           config = "config.xml";

@@ -18,6 +18,23 @@ let
       media = true;
       hotio = true;
     };
+    lidarr = {
+      # Plugins branch, for Tubifarry.
+      # renovate: datasource=docker depName=ghcr.io/hotio/lidarr
+      image = "ghcr.io/hotio/lidarr:pr-plugins-3.1.2.4913";
+      port = 8686;
+      health = "/ping";
+      media = true;
+      hotio = true;
+      # This image refuses root; map 1000 to containers.
+      # s6 still has to start as root.
+      userns = "keep-id:uid=1000,gid=1000";
+      user = "0:0";
+      environments = {
+        PUID = "1000";
+        PGID = "1000";
+      };
+    };
     prowlarr = {
       # renovate: datasource=docker depName=ghcr.io/hotio/prowlarr
       image = "ghcr.io/hotio/prowlarr:release-2.6.5.5623";
@@ -107,7 +124,8 @@ in
           environments = (if app.hotio then hotioEnv else { TZ = tz; }) // app.environments or { };
           # Pins each arr's API key for recyclarr and unpackerr.
           environmentFiles = lib.optional app.hotio apiKeys;
-          user = if app.hotio then null else "0:0";
+          user = app.user or (if app.hotio then null else "0:0");
+          userns = app.userns or null;
           networks = [ "arr.network" ];
           noNewPrivileges = true;
         };

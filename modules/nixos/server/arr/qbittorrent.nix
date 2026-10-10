@@ -2,12 +2,22 @@ _:
 let
   url = "qui.lep.goosebox.org";
   quiPort = 7476;
+  slskdUrl = "slskd.lep.goosebox.org";
+  slskdPort = 5030;
+  # AirVPN forwarded port.
+  slskdListenPort = 14948;
 in
 {
   flake = {
-    monitoringChecks.qui = {
-      name = "qui";
-      url = "https://${url}";
+    monitoringChecks = {
+      qui = {
+        name = "qui";
+        url = "https://${url}";
+      };
+      slskd = {
+        name = "slskd";
+        url = "https://${slskdUrl}/health";
+      };
     };
 
     modules.nixos.qbittorrent =
@@ -16,16 +26,27 @@ in
         inherit (config.blizzard.storage) data media;
         qbittorrentDir = "${data}/qbittorrent";
         quiDir = "${data}/qui";
+        slskdDir = "${data}/slskd";
       in
       {
-        age.secrets.gluetun = {
-          rekeyFile = ./secrets/gluetun.age;
-          owner = "containers";
+        age.secrets = {
+          gluetun = {
+            rekeyFile = ./secrets/gluetun.age;
+            owner = "containers";
+          };
+          slskd = {
+            rekeyFile = ./secrets/slskd.age;
+            owner = "containers";
+          };
         };
 
         systemd.tmpfiles.rules = [
           "d ${qbittorrentDir} 0750 containers containers -"
           "d ${quiDir} 0750 containers containers -"
+          "d ${slskdDir} 0750 containers containers -"
+          "d ${media}/slskd 0775 containers containers -"
+          "d ${media}/slskd/downloads 0775 containers containers -"
+          "d ${media}/slskd/incomplete 0775 containers containers -"
           "d ${media}/torrents 0775 containers containers -"
           "d ${media}/torrents/radarr 0775 containers containers -"
           "d ${media}/torrents/sonarr 0775 containers containers -"
@@ -43,20 +64,22 @@ in
                 addCapabilities = [ "NET_ADMIN" ];
                 devices = [ "/dev/net/tun" ];
                 environmentFiles = [ config.age.secrets.gluetun.path ];
+                # slskd web UI, for nginx and lidarr.
+                publishPorts = [ "127.0.0.1:${toString slskdPort}:${toString slskdPort}" ];
                 environments = {
                   VPN_SERVICE_PROVIDER = "airvpn";
                   VPN_TYPE = "wireguard";
                   SERVER_COUNTRIES = "United Kingdom";
-                  # qBittorrent WebUI, for qui and the arrs.
-                  FIREWALL_INPUT_PORTS = "8080";
-                  # AirVPN forwarded port; qBittorrent listens on it.
-                  FIREWALL_VPN_INPUT_PORTS = "38483";
+                  # qBittorrent and slskd web UIs.
+                  FIREWALL_INPUT_PORTS = "8080,${toString slskdPort}";
+                  # AirVPN forwarded ports for qBittorrent and slskd.
+                  FIREWALL_VPN_INPUT_PORTS = "38483,${toString slskdListenPort}";
                   TZ = "Europe/Dublin";
                 };
                 networks = [ "arr.network" ];
               };
-              # A new gluetun netns strands qbittorrent; restart it.
-              unitConfig.Upholds = "qbittorrent.service";
+              # A new gluetun netns strands its clients; restart them.
+              unitConfig.Upholds = "qbittorrent.service slskd.service";
             };
 
             qbittorrent = {
@@ -74,6 +97,35 @@ in
                   UMASK = "002";
                   TZ = "Europe/Dublin";
                 };
+                networks = [ "gluetun.container" ];
+                noNewPrivileges = true;
+              };
+              unitConfig = {
+                BindsTo = "gluetun.service";
+                After = "gluetun.service";
+              };
+            };
+
+            slskd = {
+              containerConfig = {
+                # renovate: datasource=docker depName=docker.io/slskd/slskd
+                image = "docker.io/slskd/slskd:0.26.0";
+                volumes = [
+                  "${slskdDir}:/app"
+                  "${media}:/data"
+                ];
+                # Soulseek and web UI credentials, API key.
+                environmentFiles = [ config.age.secrets.slskd.path ];
+                environments = {
+                  SLSKD_SLSK_LISTEN_PORT = toString slskdListenPort;
+                  SLSKD_DOWNLOADS_DIR = "/data/slskd/downloads";
+                  SLSKD_INCOMPLETE_DIR = "/data/slskd/incomplete";
+                  SLSKD_SHARED_DIR = "/data/music";
+                  SLSKD_NO_HTTPS = "true";
+                  SLSKD_UMASK = "0002";
+                  TZ = "Europe/Dublin";
+                };
+                user = "0:0";
                 networks = [ "gluetun.container" ];
                 noNewPrivileges = true;
               };
@@ -102,12 +154,22 @@ in
           };
         };
 
-        services.nginx.virtualHosts.${url} = {
-          enableACME = true;
-          forceSSL = true;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString quiPort}";
-            proxyWebsockets = true;
+        services.nginx.virtualHosts = {
+          ${url} = {
+            enableACME = true;
+            forceSSL = true;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString quiPort}";
+              proxyWebsockets = true;
+            };
+          };
+          ${slskdUrl} = {
+            enableACME = true;
+            forceSSL = true;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString slskdPort}";
+              proxyWebsockets = true;
+            };
           };
         };
       };
