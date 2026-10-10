@@ -86,6 +86,12 @@ in
               api_key: !env_var SONARR__AUTH__APIKEY
               quality_definition:
                 type: series
+              media_naming:
+                episodes:
+                  rename: true
+                  standard: default
+                  daily: default
+                  anime: default
               quality_profiles:
                 - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
                   reset_unmatched_scores:
@@ -100,6 +106,10 @@ in
               api_key: !env_var RADARR__AUTH__APIKEY
               quality_definition:
                 type: movie
+              media_naming:
+                movie:
+                  rename: true
+                  standard: standard
               quality_profiles:
                 - trash_id: d1d67249d3890e49bc12e275d989a7e9 # HD Bluray + WEB
                   reset_unmatched_scores:
