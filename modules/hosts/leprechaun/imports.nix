@@ -53,6 +53,7 @@
     snoop
     syncthing-server
     systemd-boot
+    tunarr
     voice
     wireguard-gateway
   ];
