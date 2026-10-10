@@ -35,6 +35,19 @@ _: {
             [ "$count" -gt 10 ]
           }
 
+          # A deploy opens several sessions; alert once.
+          declare -A seen_at seen_from
+          repeat() {
+            local user=$1 host=$2 now last from
+            now=$(date +%s)
+            last=''${seen_at[$user]:-0}
+            from=''${seen_from[$user]:-}
+            seen_at[$user]=$now
+            if [ -n "$host" ]; then seen_from[$user]=$host; fi
+            [ $(( now - last )) -le 600 ] \
+              && { [ -z "$host" ] || [ -z "$from" ] || [ "$host" = "$from" ]; }
+          }
+
           notify() {
             if throttled; then
               echo "rate limit reached, suppressed: $2"
@@ -82,6 +95,11 @@ _: {
                 message="$user logged in"
                 if [ -n "$Service" ]; then message="$message via $Service"; fi
                 if [ -n "$RemoteHost" ]; then message="$message from $RemoteHost"; fi
+
+                if repeat "$user" "$RemoteHost"; then
+                  echo "repeat login, suppressed: $message"
+                  continue
+                fi
 
                 notify "Login" "$message"
               done

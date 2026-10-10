@@ -103,6 +103,14 @@
                 assert len(new) == 1, new
                 assert new[0]["message"] == "carol logged in", new
 
+            with subtest("repeat logins by one user collapse into one alert"):
+                seen = len(posts())
+                session("dave", 905)
+                session("dave", 906)
+                session("erin", 907)
+                new = wait_for_posts(seen + 2)[seen:]
+                assert [a["message"] for a in new] == ["dave logged in", "erin logged in"], new
+
             with subtest("alerts are capped at ten per window"):
                 machine.succeed("for i in $(seq 1 12); do emit-session flood$i 91$i; done")
                 machine.wait_until_succeeds(
