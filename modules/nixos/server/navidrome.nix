@@ -26,6 +26,8 @@ in
           "; "
           ", "
         ];
+        # Lidarr renames leave stale entries.
+        Scanner.PurgeMissing = "full";
         Scanner.ArtistSplitExceptions = [
           "Tyler, The Creator"
           "Earth, Wind & Fire"
