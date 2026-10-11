@@ -69,7 +69,10 @@ in
       };
 
       # Stopped for a consistent SQLite copy.
-      restic.paths = [ dataDir ];
+      restic.paths = [
+        dataDir
+        "${media}/music"
+      ];
       restic.pauseContainers = [ "navidrome" ];
 
       services.nginx.virtualHosts.${url} = {
