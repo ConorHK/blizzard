@@ -1,10 +1,17 @@
 {
   flake.modules.nixos."nixosConfigurations/leprechaun" =
-    { lib, ... }:
+    { config, lib, ... }:
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwlNw/AL4VIXCrnUlllMVpWj/G0e82AuU3YbjcwtKQ1";
 
-      restic.repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
+      restic = {
+        repository = "s3:s3.us-east-005.backblazeb2.com/restic-backup-leprechaun";
+        # Matches disko.nix.
+        zfsDatasets = {
+          "storage/data" = config.blizzard.storage.data;
+          "storage/media" = config.blizzard.storage.media;
+        };
+      };
 
       blizzard.bitbang.shareMembers = [ "driver" ];
 

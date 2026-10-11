@@ -180,7 +180,6 @@ in
       # keeps running during the backup.
       restic.dumpPaths = [ "${dataDir}/dumps" ];
       restic.paths = [
-        "${dataDir}/public"
         "${dataDir}/storage"
         "${dataDir}/watched"
       ];

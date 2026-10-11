@@ -53,6 +53,10 @@ topLevel: {
       };
 
       restic.paths = [ dataDir ];
+      restic.exclude = [
+        "${dataDir}/.cache"
+        "${dataDir}/.bun/install/cache"
+      ];
 
       containers.selkie = topLevel.config.flake.lib.selkieIsolation dataDir // {
         autoStart = true;

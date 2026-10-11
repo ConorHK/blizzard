@@ -142,7 +142,8 @@ in
         paths = [ dataDir ];
         dumpPaths = [ dumpDir ];
         # A live copy can tear; the dump replaces it.
-        exclude = map (db: "${stateDir}/${db}*") dbs;
+        # `hister reindex` rebuilds the index dirs.
+        exclude = map (db: "${stateDir}/${db}*") dbs ++ [ "${stateDir}/index*.db" ];
       };
 
       services.nginx.virtualHosts.${url} = {

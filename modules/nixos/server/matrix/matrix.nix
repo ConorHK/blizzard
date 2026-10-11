@@ -226,7 +226,10 @@ in
         };
       };
 
-      restic.dumpPaths = [ "${dataDir}/dumps" ];
-      restic.paths = [ "${dataDir}/media_store" ];
+      restic = {
+        dumpPaths = [ "${dataDir}/dumps" ];
+        paths = [ "${dataDir}/media_store" ];
+        exclude = [ "${dataDir}/media_store/local_thumbnails" ];
+      };
     };
 }

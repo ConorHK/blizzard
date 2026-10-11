@@ -20,6 +20,17 @@ _: {
 
       allPaths = lib.unique (cfg.paths ++ cfg.dumpPaths);
 
+      useZfs = cfg.zfsDatasets != { };
+      snapRoot = "/run/restic-zfs";
+      zfs = lib.getExe' config.boot.zfs.package "zfs";
+      # Containers run under the backup user's manager.
+      userCtl =
+        action:
+        lib.concatMapStringsSep "\n" (
+          c: "${pkgs.systemd}/bin/systemctl --user -M containers@ ${action} ${c}.service"
+        ) pauseContainers;
+      eachDataset = f: lib.concatStringsSep "\n" (lib.mapAttrsToList f cfg.zfsDatasets);
+
       repoEnv = [
         "RESTIC_REPOSITORY=${cfg.repository}"
         "RESTIC_PASSWORD_FILE=${cfg.passwordFile}"
@@ -43,6 +54,18 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ ];
           description = "Dump directories to back up; every file must stay under 26h old.";
+        };
+
+        zfsDatasets = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+          example = {
+            "storage/data" = "/storage/data";
+          };
+          description = ''
+            ZFS datasets, mapped to mountpoints, to back up from a snapshot.
+            Paused containers then stop only while the snapshot is taken.
+          '';
         };
 
         exclude = lib.mkOption {
@@ -79,12 +102,47 @@ _: {
           services = {
             restic-backups-service-data = {
               unitConfig.OnFailure = "restic-backups-notify-failure.service";
+              requires = lib.optional useZfs "restic-zfs-snapshot.service";
+              after = lib.optional useZfs "restic-zfs-snapshot.service";
               serviceConfig = {
                 # Yield CPU during the run; ZFS ignores ionice, so no I/O class here
                 Nice = 19;
                 # Read owner-only service data, no writes.
                 AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+                # Restic reads the snapshot at live paths.
+                BindReadOnlyPaths = lib.mapAttrsToList (_: mp: "${snapRoot}${mp}:${mp}") cfg.zfsDatasets;
               };
+            };
+
+            restic-zfs-snapshot = lib.mkIf useZfs {
+              description = "Snapshot ZFS datasets for restic";
+              unitConfig.OnFailure = "alert-failure@restic-zfs-snapshot.service";
+              path = [ pkgs.util-linux ];
+              serviceConfig.Type = "oneshot";
+              script = ''
+                set -euo pipefail
+                ${eachDataset (
+                  ds: mp: ''
+                    if mountpoint -q ${snapRoot}${mp}; then umount ${snapRoot}${mp}; fi
+                    if ${zfs} list -H -t snapshot ${ds}@restic >/dev/null 2>&1; then
+                      ${zfs} destroy ${ds}@restic
+                    fi
+                  ''
+                )}
+                ${userCtl "stop"}
+                trap '${userCtl "start"}' EXIT
+                # One command: all datasets, one instant.
+                ${zfs} snapshot ${lib.concatMapStringsSep " " (ds: "${ds}@restic") (lib.attrNames cfg.zfsDatasets)}
+                ${userCtl "start"}
+                trap - EXIT
+                # Explicit mounts; .zfs automounts expire mid-backup.
+                ${eachDataset (
+                  ds: mp: ''
+                    mkdir -p ${snapRoot}${mp}
+                    ${config.boot.zfs.package}/bin/mount.zfs ${ds}@restic ${snapRoot}${mp}
+                  ''
+                )}
+              '';
             };
 
             restic-backups-notify-failure = {
@@ -323,11 +381,14 @@ _: {
           ];
           # `restic unlock` clears stale locks left by an interrupted run;
           # otherwise every later backup fails silently on the lock.
+          # `|| true`: no repo yet before `initialize`.
           backupPrepareCommand = ''
-            ${pkgs.restic}/bin/restic unlock
-            ${lib.optionalString (pauseContainers != [ ]) (mkContainerScript "stop")}
+            ${pkgs.restic}/bin/restic unlock || true
+            ${lib.optionalString (!useZfs && pauseContainers != [ ]) (mkContainerScript "stop")}
           '';
-          backupCleanupCommand = lib.optionalString (pauseContainers != [ ]) "${mkContainerScript "start"}";
+          backupCleanupCommand = lib.optionalString (
+            !useZfs && pauseContainers != [ ]
+          ) "${mkContainerScript "start"}";
         };
       };
     };

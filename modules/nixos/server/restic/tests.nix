@@ -176,5 +176,92 @@
               assert "restic backup service-data failed" in alert["message"], alert
         '';
       };
+
+      checks.restic-zfs = pkgs.testers.runNixOSTest {
+        name = "restic-zfs";
+
+        nodes.machine =
+          { pkgs, ... }:
+          {
+            imports = [
+              alertRecorder
+              config.flake.modules.nixos.restic
+            ];
+
+            boot.supportedFilesystems = [ "zfs" ];
+            networking.hostId = "8425e349";
+            virtualisation.emptyDiskImages = [ 1024 ];
+
+            environment.systemPackages = [ pkgs.restic ];
+            environment.etc = {
+              "restic-password".text = "correct-horse-battery-staple";
+              "restic-topic".text = "NTFY_TOPIC=restic-test";
+            };
+
+            users.users.containers = {
+              isNormalUser = true;
+              group = "containers";
+              linger = true;
+            };
+            users.groups.containers = { };
+
+            # Writes on start, like an app after restart.
+            systemd.user.services.dummy = {
+              description = "Pretend container";
+              wantedBy = [ "default.target" ];
+              serviceConfig = {
+                ExecStart = "${pkgs.coreutils}/bin/sleep infinity";
+                ExecStartPost = "-${pkgs.bash}/bin/sh -c 'echo started > /var/data/app/state'";
+              };
+            };
+
+            restic = {
+              repository = "/var/restic-repo";
+              paths = [ "/var/data" ];
+              zfsDatasets."tank/data" = "/var/data";
+              passwordFile = "/etc/restic-password";
+              ntfyTopicFile = "/etc/restic-topic";
+              pauseContainers = [ "dummy" ];
+            };
+          };
+
+        testScript = ''
+          ENV = "RESTIC_REPOSITORY=/var/restic-repo RESTIC_PASSWORD_FILE=/etc/restic-password"
+
+
+          def dump(path):
+              return machine.succeed(f"{ENV} restic dump latest {path}")
+
+
+          def monotonic(unit, prop, user=False):
+              scope = "--user -M containers@" if user else ""
+              return int(machine.succeed(f"systemctl {scope} show {unit} -p {prop} --value"))
+
+
+          machine.wait_for_unit("multi-user.target")
+          machine.succeed("zpool create -O mountpoint=none tank /dev/vdb")
+          machine.succeed("zfs create -o mountpoint=/var/data tank/data")
+          machine.succeed("install -d -o containers -g containers /var/data/app /var/restic-repo")
+          machine.succeed("echo before > /var/data/app/state && chown containers /var/data/app/state")
+          machine.wait_for_unit("dummy.service", user="containers")
+
+          with subtest("restic reads the snapshot, not the live files"):
+              machine.succeed("systemctl start restic-backups-service-data.service")
+              assert dump("/var/data/app/state") == "before\n"
+              machine.succeed("grep -qx started /var/data/app/state")
+
+          with subtest("containers are back before restic reads"):
+              up = monotonic("dummy.service", "ActiveEnterTimestampMonotonic", user=True)
+              read = monotonic("restic-backups-service-data.service", "ExecMainStartTimestampMonotonic")
+              assert 0 < up < read, (up, read)
+
+          with subtest("a second run replaces the snapshot"):
+              machine.succeed("echo second > /var/data/app/later")
+              machine.succeed("systemctl start restic-backups-service-data.service")
+              assert dump("/var/data/app/later") == "second\n"
+              count = machine.succeed("zfs list -H -t snapshot -o name | grep -c @restic").strip()
+              assert count == "1", count
+        '';
+      };
     };
 }

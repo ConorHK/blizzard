@@ -42,9 +42,12 @@ in
         noNewPrivileges = true;
       };
 
-      # Stopped for a consistent SQLite copy.
-      restic.paths = [ dataDir ];
-      restic.pauseContainers = [ "tunarr" ];
+      restic = {
+        # Stopped for a consistent SQLite copy.
+        paths = [ dataDir ];
+        pauseContainers = [ "tunarr" ];
+        exclude = [ "${dataDir}/logs" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

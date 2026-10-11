@@ -42,9 +42,16 @@ in
         };
       };
 
-      # Stopped for a consistent SQLite copy.
-      restic.paths = [ "${dataDir}/config" ];
-      restic.pauseContainers = [ "jellyfin" ];
+      restic = {
+        # Stopped for a consistent SQLite copy.
+        paths = [ "${dataDir}/config" ];
+        exclude = [
+          "${dataDir}/config/data/imdb-ratings-cache"
+          "${dataDir}/config/log"
+          "${dataDir}/config/metadata"
+        ];
+        pauseContainers = [ "jellyfin" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

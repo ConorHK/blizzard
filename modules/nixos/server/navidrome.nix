@@ -68,12 +68,15 @@ in
         };
       };
 
-      # Stopped for a consistent SQLite copy.
-      restic.paths = [
-        dataDir
-        "${media}/music"
-      ];
-      restic.pauseContainers = [ "navidrome" ];
+      restic = {
+        # Stopped for a consistent SQLite copy.
+        paths = [
+          dataDir
+          "${media}/music"
+        ];
+        pauseContainers = [ "navidrome" ];
+        exclude = [ "${dataDir}/cache" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;
