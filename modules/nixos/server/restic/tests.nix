@@ -17,7 +17,11 @@
               config.flake.modules.nixos.restic
             ];
 
-            environment.systemPackages = [ pkgs.restic ];
+            environment.systemPackages = [
+              pkgs.restic
+              pkgs.sqlite
+              pkgs.gzip
+            ];
             environment.etc = {
               "restic-password".text = "correct-horse-battery-staple";
               "restic-topic".text = "NTFY_TOPIC=restic-test";
@@ -44,6 +48,7 @@
             restic = {
               repository = "/var/restic-repo";
               paths = [ "/var/data" ];
+              dumpPaths = [ "/var/dumps" ];
               passwordFile = "/etc/restic-password";
               ntfyTopicFile = "/etc/restic-topic";
               pauseContainers = [ "dummy" ];
@@ -73,6 +78,8 @@
           machine.succeed("mkdir -p '/var/data/music/Artist [Live]' && echo 'flac' > '/var/data/music/Artist [Live]/01 * Track.flac'")
           # Older than the snapshot, so the drill compares them.
           machine.succeed("find /var/data -exec touch -h -d '2020-01-01' {} +")
+          machine.succeed("mkdir -p /var/dumps && sqlite3 /var/dumps/app.db 'CREATE TABLE t(x); INSERT INTO t VALUES (1);'")
+          machine.succeed("printf 'SELECT 1;\\n-- PostgreSQL database dump complete\\n\\n' | gzip > /var/dumps/pg.sql.gz")
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
@@ -99,7 +106,7 @@
               before = len(posts())
               machine.succeed("systemctl start restic-restore-drill.service")
               journal = machine.succeed("journalctl -u restic-restore-drill.service")
-              assert "restore drill: 3 files match" in journal, journal
+              assert "2 databases intact" in journal, journal
               assert len(posts()) == before, posts()
 
           with subtest("the restore drill alerts when disk and backup differ"):
@@ -109,6 +116,18 @@
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
               assert "1 restored files differ" in alert["message"], alert
+
+          with subtest("the restore drill alerts on corrupt databases"):
+              machine.succeed("head -c 4096 /var/dumps/app.db > /var/dumps/broken.db && head -c 20000 /dev/urandom >> /var/dumps/broken.db")
+              machine.succeed("printf 'SELECT 1;\\n' | gzip > /var/dumps/cut.sql.gz")
+              # Back up the rotted file too, so only databases fail.
+              machine.succeed("systemctl start restic-backups-service-data.service")
+              before = len(posts())
+              machine.succeed("systemctl start restic-restore-drill.service")
+              alert = wait_for_posts(before + 1)[before]
+              assert alert["title"] == "machine: Restore drill failed", alert
+              assert "2 restored databases are corrupt" in alert["message"], alert
+              machine.succeed("rm /var/dumps/broken.db /var/dumps/cut.sql.gz")
 
           with subtest("the backed-up file restores byte-identical"):
               machine.succeed("rm /var/data/family-photos")
@@ -121,6 +140,15 @@
               before = len(posts())
               machine.succeed("systemctl start restic-backups-freshness.service")
               assert len(posts()) == before, posts()
+
+          with subtest("freshness alerts when a dump goes stale"):
+              before = len(posts())
+              machine.succeed("touch -d '3 days ago' /var/dumps/pg.sql.gz")
+              machine.succeed("systemctl start restic-backups-freshness.service")
+              alert = wait_for_posts(before + 1)[before]
+              assert alert["title"] == "machine: Backup stale", alert
+              assert "1 dumps over 26h old in /var/dumps" in alert["message"], alert
+              machine.succeed("touch /var/dumps/pg.sql.gz")
 
           with subtest("freshness alerts when the newest snapshot is too old"):
               before = len(posts())
@@ -137,7 +165,7 @@
               machine.succeed("systemctl start restic-restore-drill.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
-              assert "1 backup paths missing" in alert["message"], alert
+              assert "2 backup paths missing" in alert["message"], alert
 
           with subtest("a failed backup pages through OnFailure"):
               before = len(posts())

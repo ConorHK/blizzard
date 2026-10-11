@@ -178,8 +178,8 @@ in
       # Back up the logical dump (not the live datadir) plus the app's file
       # volumes. No pauseContainers: the dump is self-consistent, so the stack
       # keeps running during the backup.
+      restic.dumpPaths = [ "${dataDir}/dumps" ];
       restic.paths = [
-        "${dataDir}/dumps"
         "${dataDir}/public"
         "${dataDir}/storage"
         "${dataDir}/watched"

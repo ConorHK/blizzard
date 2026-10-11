@@ -88,8 +88,8 @@ _: {
         };
       };
 
+      restic.dumpPaths = [ dumpDir ];
       restic.paths = [
-        dumpDir
         "${data}/qbittorrent/config"
         "${data}/qbittorrent/data/BT_backup"
       ];

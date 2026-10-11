@@ -226,9 +226,7 @@ in
         };
       };
 
-      restic.paths = [
-        "${dataDir}/dumps"
-        "${dataDir}/media_store"
-      ];
+      restic.dumpPaths = [ "${dataDir}/dumps" ];
+      restic.paths = [ "${dataDir}/media_store" ];
     };
 }

@@ -18,6 +18,8 @@ _: {
           ) pauseContainers}
         '';
 
+      allPaths = lib.unique (cfg.paths ++ cfg.dumpPaths);
+
       repoEnv = [
         "RESTIC_REPOSITORY=${cfg.repository}"
         "RESTIC_PASSWORD_FILE=${cfg.passwordFile}"
@@ -35,6 +37,18 @@ _: {
           type = lib.types.listOf lib.types.str;
           default = [ ];
           description = "Paths to include in the backup.";
+        };
+
+        dumpPaths = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Dump directories to back up; every file must stay under 26h old.";
+        };
+
+        exclude = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = "Patterns to leave out of the backup.";
         };
 
         pauseContainers = lib.mkOption {
@@ -101,6 +115,18 @@ _: {
                 alert() {
                   ${lib.getExe config.blizzard.alerts.send} "Backup stale" "$1" 4 warning
                 }
+                # A dead dump job leaves old dumps restic keeps saving.
+                for dir in ${lib.escapeShellArgs cfg.dumpPaths}; do
+                  if [ -z "$(find "$dir" -type f -print -quit 2>/dev/null)" ]; then
+                    alert "No dumps in $dir"
+                    continue
+                  fi
+                  stale=$(find "$dir" -type f -mmin +1560)
+                  if [ -n "$stale" ]; then
+                    echo "$stale"
+                    alert "$(wc -l <<<"$stale") dumps over 26h old in $dir"
+                  fi
+                done
                 # `|| true`: the generated job script runs with -e, so an
                 # unreachable or uninitialized repo would abort before alerting.
                 # restic's stderr goes to the journal, not /dev/null, so the
@@ -129,6 +155,8 @@ _: {
                 pkgs.coreutils
                 pkgs.diffutils
                 pkgs.gawk
+                pkgs.gzip
+                pkgs.sqlite
               ];
               serviceConfig = {
                 Type = "oneshot";
@@ -161,7 +189,7 @@ _: {
                 checked=0
                 missing=()
                 bad=()
-                for root in ${lib.escapeShellArgs cfg.paths}; do
+                for root in ${lib.escapeShellArgs allPaths}; do
                   if ! jq -e --arg p "$root" 'any(.paths[]; . == $p)' <<<"$snap" >/dev/null; then
                     missing+=("$root")
                     continue
@@ -178,6 +206,38 @@ _: {
                   done < <(awk -v p="$root/" 'index($0, p) == 1' "$listing" | shuf -n 3)
                 done
 
+                # Matching bytes can still be a torn database.
+                work=$(mktemp -d -p /var/tmp)
+                dbs=0
+                corrupt=()
+                while IFS= read -r f; do
+                  case "$f" in
+                    *.sql.gz)
+                      # pg_dump writes this footer last.
+                      if restic dump "$id" "$f" | gzip -dc | tail -n 5 | grep -q 'dump complete'; then
+                        dbs=$((dbs + 1))
+                      else
+                        corrupt+=("$f")
+                      fi
+                      ;;
+                    *)
+                      rm -f "$work"/check.db*
+                      if ! restic dump "$id" "$f" >"$work/check.db"; then
+                        corrupt+=("$f")
+                        continue
+                      fi
+                      # Some apps use .db for other formats.
+                      [ "$(head -c 15 "$work/check.db")" = "SQLite format 3" ] || continue
+                      if [ "$(sqlite3 "$work/check.db" 'PRAGMA integrity_check' 2>&1)" = ok ]; then
+                        dbs=$((dbs + 1))
+                      else
+                        corrupt+=("$f")
+                      fi
+                      ;;
+                  esac
+                done < <(grep -E '\.(db|sqlite3?|sql\.gz)$' "$listing")
+                rm -rf "$work"
+
                 if [ "''${#missing[@]}" -gt 0 ]; then
                   printf 'missing from snapshot: %s\n' "''${missing[@]}"
                   alert "''${#missing[@]} backup paths missing from snapshot"
@@ -186,10 +246,14 @@ _: {
                   printf 'differs from disk: %s\n' "''${bad[@]}"
                   alert "''${#bad[@]} restored files differ from disk"
                 fi
+                if [ "''${#corrupt[@]}" -gt 0 ]; then
+                  printf 'corrupt database: %s\n' "''${corrupt[@]}"
+                  alert "''${#corrupt[@]} restored databases are corrupt"
+                fi
                 if [ "$checked" -eq 0 ] && [ "''${#bad[@]}" -eq 0 ] && [ "''${#missing[@]}" -eq 0 ]; then
                   alert "Restore drill compared no files"
                 fi
-                echo "restore drill: $checked files match"
+                echo "restore drill: $checked files match, $dbs databases intact"
               '';
             };
           };
@@ -218,9 +282,10 @@ _: {
 
         services.restic.backups.service-data = {
           user = "containers";
+          paths = allPaths;
           inherit (cfg)
             repository
-            paths
+            exclude
             passwordFile
             environmentFile
             ;
