@@ -80,6 +80,8 @@
           machine.succeed("find /var/data -exec touch -h -d '2020-01-01' {} +")
           machine.succeed("mkdir -p /var/dumps && sqlite3 /var/dumps/app.db 'CREATE TABLE t(x); INSERT INTO t VALUES (1);'")
           machine.succeed("printf 'SELECT 1;\\n-- PostgreSQL database dump complete\\n\\n' | gzip > /var/dumps/pg.sql.gz")
+          # A .db that is not SQLite, with null bytes.
+          machine.succeed("head -c 64 /dev/zero > /var/dumps/other.db")
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
@@ -107,7 +109,18 @@
               machine.succeed("systemctl start restic-restore-drill.service")
               journal = machine.succeed("journalctl -u restic-restore-drill.service")
               assert "2 databases intact" in journal, journal
+              assert "null byte" not in journal, journal
               assert len(posts()) == before, posts()
+
+          with subtest("the restore drill skips files written just before the snapshot"):
+              # Containers restart after the ZFS snapshot, before restic stamps its time.
+              taken = json.loads(as_root("snapshots --json --latest 1"))[0]["time"]
+              machine.succeed("echo restarted > /var/data/family-photos")
+              machine.succeed(f"touch -d @$(( $(date -d '{taken}' +%s) - 60 )) /var/data/family-photos")
+              before = len(posts())
+              machine.succeed("systemctl start restic-restore-drill.service")
+              assert len(posts()) == before, posts()
+              machine.succeed("echo irreplaceable > /var/data/family-photos && touch -d '2020-01-01' /var/data/family-photos")
 
           with subtest("the restore drill alerts when disk and backup differ"):
               before = len(posts())

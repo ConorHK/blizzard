@@ -253,9 +253,10 @@ _: {
                     continue
                   fi
                   while IFS= read -r f; do
-                    # Skip files changed or gone since.
+                    # Skip files changed or gone since. The hour
+                    # covers writes between ZFS snapshot and restic.
                     mtime=$(stat -c %Y -- "$f" 2>/dev/null) || continue
-                    [ "$mtime" -lt "$taken" ] || continue
+                    [ "$mtime" -lt $((taken - 3600)) ] || continue
                     if restic dump "$id" "$f" | cmp -s - "$f"; then
                       checked=$((checked + 1))
                     else
@@ -285,7 +286,7 @@ _: {
                         continue
                       fi
                       # Some apps use .db for other formats.
-                      [ "$(head -c 15 "$work/check.db")" = "SQLite format 3" ] || continue
+                      printf 'SQLite format 3\0' | cmp -s -n 16 - "$work/check.db" || continue
                       if [ "$(sqlite3 "$work/check.db" 'PRAGMA integrity_check' 2>&1)" = ok ]; then
                         dbs=$((dbs + 1))
                       else
