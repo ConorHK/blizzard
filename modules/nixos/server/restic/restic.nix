@@ -17,6 +17,12 @@ _: {
             c: "XDG_RUNTIME_DIR=/run/user/$(id -u) ${pkgs.systemd}/bin/systemctl --user ${action} ${c}.service"
           ) pauseContainers}
         '';
+
+      repoEnv = [
+        "RESTIC_REPOSITORY=${cfg.repository}"
+        "RESTIC_PASSWORD_FILE=${cfg.passwordFile}"
+        "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}"
+      ];
     in
     {
       options.restic = {
@@ -88,12 +94,7 @@ _: {
                 # location — without this it fails before it can ever report.
                 CacheDirectory = "restic-freshness";
                 CacheDirectoryMode = "0700";
-                Environment = [
-                  "RESTIC_REPOSITORY=${cfg.repository}"
-                  "RESTIC_PASSWORD_FILE=${cfg.passwordFile}"
-                  "RESTIC_CACHE_DIR=%C/restic-freshness"
-                  "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}"
-                ];
+                Environment = repoEnv ++ [ "RESTIC_CACHE_DIR=%C/restic-freshness" ];
               };
               script = ''
                 set -uo pipefail
@@ -117,6 +118,80 @@ _: {
                 fi
               '';
             };
+
+            # Weekly proof the real repo restores.
+            restic-restore-drill = {
+              description = "Restore sample files and compare to disk";
+              unitConfig.OnFailure = "alert-failure@restic-restore-drill.service";
+              path = [
+                pkgs.restic
+                pkgs.jq
+                pkgs.coreutils
+                pkgs.diffutils
+                pkgs.gawk
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                Nice = 19;
+                PrivateTmp = true;
+                EnvironmentFile = lib.optional (cfg.environmentFile != null) cfg.environmentFile;
+                CacheDirectory = "restic-restore-drill";
+                CacheDirectoryMode = "0700";
+                Environment = repoEnv ++ [ "RESTIC_CACHE_DIR=%C/restic-restore-drill" ];
+              };
+              script = ''
+                set -uo pipefail
+                alert() {
+                  ${lib.getExe config.blizzard.alerts.send} "Restore drill failed" "$1" 4 warning
+                }
+                snap=$(restic snapshots --json --latest 1 | jq -c 'max_by(.time) // empty' || true)
+                if [ -z "$snap" ]; then
+                  alert "No snapshot to restore from"
+                  exit 0
+                fi
+                id=$(jq -r .id <<<"$snap")
+                taken=$(date -d "$(jq -r .time <<<"$snap")" +%s)
+
+                listing=$(mktemp)
+                if ! restic ls --json "$id" | jq -r 'select(.type == "file") | .path' >"$listing"; then
+                  alert "Could not list latest snapshot"
+                  exit 0
+                fi
+
+                checked=0
+                missing=()
+                bad=()
+                for root in ${lib.escapeShellArgs cfg.paths}; do
+                  if ! jq -e --arg p "$root" 'any(.paths[]; . == $p)' <<<"$snap" >/dev/null; then
+                    missing+=("$root")
+                    continue
+                  fi
+                  while IFS= read -r f; do
+                    # Skip files changed or gone since.
+                    mtime=$(stat -c %Y -- "$f" 2>/dev/null) || continue
+                    [ "$mtime" -lt "$taken" ] || continue
+                    if restic dump "$id" "$f" | cmp -s - "$f"; then
+                      checked=$((checked + 1))
+                    else
+                      bad+=("$f")
+                    fi
+                  done < <(awk -v p="$root/" 'index($0, p) == 1' "$listing" | shuf -n 3)
+                done
+
+                if [ "''${#missing[@]}" -gt 0 ]; then
+                  printf 'missing from snapshot: %s\n' "''${missing[@]}"
+                  alert "''${#missing[@]} backup paths missing from snapshot"
+                fi
+                if [ "''${#bad[@]}" -gt 0 ]; then
+                  printf 'differs from disk: %s\n' "''${bad[@]}"
+                  alert "''${#bad[@]} restored files differ from disk"
+                fi
+                if [ "$checked" -eq 0 ] && [ "''${#bad[@]}" -eq 0 ] && [ "''${#missing[@]}" -eq 0 ]; then
+                  alert "Restore drill compared no files"
+                fi
+                echo "restore drill: $checked files match"
+              '';
+            };
           };
 
           # Dead-man's switch: OnFailure only fires when a run *fails*. A timer that
@@ -128,6 +203,14 @@ _: {
             wantedBy = [ "timers.target" ];
             timerConfig = {
               OnCalendar = "10:00";
+              Persistent = true;
+            };
+          };
+
+          timers.restic-restore-drill = {
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnCalendar = "Sun 12:00";
               Persistent = true;
             };
           };

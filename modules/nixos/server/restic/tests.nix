@@ -69,6 +69,10 @@
           machine.succeed("mkdir -p /var/data && echo 'irreplaceable' > /var/data/family-photos")
           # Owner-only, like hister's tree.
           machine.succeed("mkdir -m 700 /var/data/private && echo 'secret' > /var/data/private/db && chmod 600 /var/data/private/db")
+          # Glob characters, as in real album names.
+          machine.succeed("mkdir -p '/var/data/music/Artist [Live]' && echo 'flac' > '/var/data/music/Artist [Live]/01 * Track.flac'")
+          # Older than the snapshot, so the drill compares them.
+          machine.succeed("find /var/data -exec touch -h -d '2020-01-01' {} +")
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
@@ -91,6 +95,21 @@
               listing = as_root("ls latest /var/data/private")
               assert "/var/data/private/db" in listing, listing
 
+          with subtest("the restore drill passes when files match"):
+              before = len(posts())
+              machine.succeed("systemctl start restic-restore-drill.service")
+              journal = machine.succeed("journalctl -u restic-restore-drill.service")
+              assert "restore drill: 3 files match" in journal, journal
+              assert len(posts()) == before, posts()
+
+          with subtest("the restore drill alerts when disk and backup differ"):
+              before = len(posts())
+              machine.succeed("echo 'rotted' > /var/data/private/db && touch -d '2020-01-01' /var/data/private/db")
+              machine.succeed("systemctl start restic-restore-drill.service")
+              alert = wait_for_posts(before + 1)[before]
+              assert alert["title"] == "machine: Restore drill failed", alert
+              assert "1 restored files differ" in alert["message"], alert
+
           with subtest("the backed-up file restores byte-identical"):
               machine.succeed("rm /var/data/family-photos")
               as_root("restore latest --target /var/restored")
@@ -104,13 +123,21 @@
               assert len(posts()) == before, posts()
 
           with subtest("freshness alerts when the newest snapshot is too old"):
+              before = len(posts())
               machine.succeed("rm -rf /var/restic-repo && mkdir -p /var/restic-repo")
               as_root("init")
               as_root("backup --time '2020-01-01 00:00:00' /var/restored")
               machine.succeed("systemctl start restic-backups-freshness.service")
-              alert = wait_for_posts(2)[1]
+              alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Backup stale", alert
               assert "backup has not run" in alert["message"], alert
+
+          with subtest("the restore drill alerts when a path is missing"):
+              before = len(posts())
+              machine.succeed("systemctl start restic-restore-drill.service")
+              alert = wait_for_posts(before + 1)[before]
+              assert alert["title"] == "machine: Restore drill failed", alert
+              assert "1 backup paths missing" in alert["message"], alert
 
           with subtest("a failed backup pages through OnFailure"):
               before = len(posts())
