@@ -26,9 +26,6 @@
   ghostscript,
   mermaid-cli,
   tectonic,
-
-  vscode-java-debug,
-  vscode-java-test,
 }:
 let
   packageName = "cnvim";
@@ -63,8 +60,6 @@ let
     indent-blankline-nvim
     luasnip
     no-neck-pain-nvim
-    nvim-dap
-    nvim-dap-ui
     nvim-lspconfig
     nvim-jdtls
     nvim-treesitter.withAllGrammars
@@ -121,9 +116,7 @@ symlinkJoin {
       --add-flags '--cmd' \
       --add-flags "'set packpath^=${packpath} | set runtimepath^=${packpath}'" \
       --set-default NVIM_APPNAME ${packageName} \
-      --prefix PATH : ${lib.makeBinPath runtimeDeps} \
-      --set JAVA_DEBUG_PATH ${vscode-java-debug}/share/vscode/extensions/vscjava.vscode-java-debug/server \
-      --set JAVA_TEST_PATH ${vscode-java-test}/share/vscode/extensions/vscjava.vscode-java-test/server
+      --prefix PATH : ${lib.makeBinPath runtimeDeps}
   '';
 
   passthru = {

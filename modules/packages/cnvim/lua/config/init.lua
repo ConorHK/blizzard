@@ -12,7 +12,6 @@ local plugin_modules = {
 
     "autocomplete",
     "colorscheme",
-    "dap",
     "diagnostics",
     "display",
     "filesystem",
