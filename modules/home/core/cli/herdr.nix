@@ -8,7 +8,7 @@
       ...
     }:
     let
-      herdr-nvim = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.herdr-nvim;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) herdr-nvim herdr-pluck;
     in
     {
       home.packages = [
@@ -20,6 +20,10 @@
       home.activation.herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
           || warnEcho "herdr plugin link failed for herdr-nvim"
+      '';
+      home.activation.herdrPluck = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-pluck}/share/herdr-pluck \
+          || warnEcho "herdr plugin link failed for herdr-pluck"
       '';
 
       xdg.configFile."herdr/config.toml".source = (pkgs.formats.toml { }).generate "herdr.toml" {
@@ -99,6 +103,12 @@
               type = "plugin_action";
               command = "chmarax.herdr-nvim.pick-file";
               description = "open file in sidebar";
+            }
+            {
+              key = "prefix+y";
+              type = "plugin_action";
+              command = "rmarganti.herdr-pluck.pluck";
+              description = "copy visible token";
             }
           ];
         };
