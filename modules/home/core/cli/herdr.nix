@@ -11,20 +11,22 @@
       inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) herdr-nvim herdr-flash;
     in
     {
-      home.packages = [
-        pkgs.herdr
-        herdr-nvim
-      ];
+      home = {
+        packages = [
+          pkgs.herdr
+          herdr-nvim
+        ];
 
-      # Herdr rewrites plugins.json, so link it.
-      home.activation.herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
-          || warnEcho "herdr plugin link failed for herdr-nvim"
-      '';
-      home.activation.herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
-          || warnEcho "herdr plugin link failed for herdr-flash"
-      '';
+        # Herdr rewrites plugins.json, so link it.
+        activation.herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
+            || warnEcho "herdr plugin link failed for herdr-nvim"
+        '';
+        activation.herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
+            || warnEcho "herdr plugin link failed for herdr-flash"
+        '';
+      };
 
       xdg.configFile."herdr/config.toml".source = (pkgs.formats.toml { }).generate "herdr.toml" {
         # Herdr cannot write a store symlink.
