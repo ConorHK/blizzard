@@ -8,7 +8,7 @@
       ...
     }:
     let
-      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) herdr-nvim herdr-pluck;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) herdr-nvim herdr-flash;
     in
     {
       home.packages = [
@@ -21,9 +21,9 @@
         run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
           || warnEcho "herdr plugin link failed for herdr-nvim"
       '';
-      home.activation.herdrPluck = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-pluck}/share/herdr-pluck \
-          || warnEcho "herdr plugin link failed for herdr-pluck"
+      home.activation.herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
+          || warnEcho "herdr plugin link failed for herdr-flash"
       '';
 
       xdg.configFile."herdr/config.toml".source = (pkgs.formats.toml { }).generate "herdr.toml" {
@@ -107,8 +107,8 @@
             {
               key = "prefix+y";
               type = "plugin_action";
-              command = "rmarganti.herdr-pluck.pluck";
-              description = "copy visible token";
+              command = "youguanxinqing.herdr-flash.flash";
+              description = "search, select, and yank";
             }
           ];
         };
