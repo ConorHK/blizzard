@@ -15,7 +15,7 @@
 
         cargoHash = "sha256-ZeOPupBcEM8+NvG7/i5qIT+++vU5CnUxv5TkOVc20Jg=";
 
-        patches = [ ./herdr-flash/join-wrapped-links.patch ];
+        patches = [ ./herdr-flash/join-wrapped-rows.patch ];
 
         # Lock tests probe owners with ps.
         nativeCheckInputs = [ pkgs.procps ];

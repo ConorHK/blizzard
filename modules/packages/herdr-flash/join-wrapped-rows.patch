@@ -1,0 +1,455 @@
+diff --git a/README.md b/README.md
+index 94d02ef..057fb2f 100644
+--- a/README.md
++++ b/README.md
+@@ -46,11 +46,14 @@ Escape or Ctrl-C exits from any phase.
+ | cursor / select | `v` / `V` | start (or drop) a charwise / linewise selection |
+ | select | `o` | swap the cursor and the anchor |
+ | select | `y` or Enter | yank the selection (inert while no selection is active) |
++| select | `Y` | yank the selection as one line, dropping `\` continuations |
+ | cursor / select | Backspace | back to search, query intact |
+ | anywhere | Esc / Ctrl-C | exit without copying |
+ 
+ A `t`/`f`/`T`/`F` with one hit jumps straight there. Several hits get one-key labels — the label picks one, any other key cancels — and when the hits outnumber the label alphabet, `Space` pages the labels onto the hits still uncovered, wrapping around.
+ 
++A yank rejoins rows the pane wrapped: a word wrap gets its space back, and a URL, path, or long token joins with none. A row keeps its newline when the next row's first word would have fit on it.
++
+ A keystroke that happens to be a live label jumps instead of extending the query; one Backspace returns to the search with the query still there.
+ 
+ ## Configuration
+diff --git a/src/patterns.rs b/src/patterns.rs
+index 70bc626..fddf922 100644
+--- a/src/patterns.rs
++++ b/src/patterns.rs
+@@ -99,6 +99,26 @@ pub fn find_openable_urls(lines: &[String]) -> Vec<MatchSpan> {
+         .collect()
+ }
+ 
++/// Joins wrapped rows that form one URL or path.
++pub fn join_wrapped_link(text: &str) -> Option<String> {
++    if !text.contains('\n') {
++        return None;
++    }
++    let joined: String = text.lines().map(str::trim).collect();
++    // Paths often carry a `:line:col` suffix.
++    let link = joined.trim_end_matches(|ch: char| ch == ':' || ch.is_ascii_digit());
++    built_in_patterns()
++        .iter()
++        .filter(|pattern| matches!(pattern.name.as_str(), "url" | "path"))
++        .any(|pattern| {
++            pattern
++                .regex
++                .find(link)
++                .is_some_and(|found| found.range() == (0..link.len()))
++        })
++        .then_some(joined)
++}
++
+ fn built_in_patterns() -> &'static [PatternDefinition] {
+     BUILT_IN_PATTERNS.get_or_init(|| {
+         vec![
+@@ -255,6 +275,29 @@ mod tests {
+         patterns.iter().collect()
+     }
+ 
++    #[test]
++    fn joins_a_wrapped_url_without_indentation() {
++        assert_eq!(
++            join_wrapped_link("https://code.test/src/h\n    andlers/Handler.java#L42"),
++            Some("https://code.test/src/handlers/Handler.java#L42".to_string())
++        );
++    }
++
++    #[test]
++    fn joins_a_wrapped_path_with_a_line_suffix() {
++        assert_eq!(
++            join_wrapped_link("src/main/java/com/\n  amazon/Handler.java:42:7"),
++            Some("src/main/java/com/amazon/Handler.java:42:7".to_string())
++        );
++    }
++
++    #[test]
++    fn leaves_prose_and_single_rows_alone() {
++        assert_eq!(join_wrapped_link("see the\n  docs/here"), None);
++        assert_eq!(join_wrapped_link("cd /tmp"), None);
++        assert_eq!(join_wrapped_link("https://a.test/x"), None);
++    }
++
+     #[test]
+     fn finds_url_schemes() {
+         let matches = find_matches_with_defaults_only(&lines([
+diff --git a/src/picker/flash.rs b/src/picker/flash.rs
+index 962db47..4a0f24b 100644
+--- a/src/picker/flash.rs
++++ b/src/picker/flash.rs
+@@ -94,9 +94,14 @@ where
+                     selection = None;
+                     pending_char = None;
+                 }
+-                SelectStep::Yank => {
++                SelectStep::Yank { one_line } => {
++                    let text = if one_line {
++                        active.one_line_text(&grid, width as usize)
++                    } else {
++                        active.yank_text(&grid, width as usize)
++                    };
+                     // `y` before a selection exists is inert, the way it is in vim's normal mode.
+-                    if let Some(text) = active.text(&grid) {
++                    if let Some(text) = text {
+                         match copy_selected_text(clipboard, &text) {
+                             // A failed copy must never close the picker: Herdr tears this pane
+                             // down with it, so a propagated error paints onto a screen that is
+@@ -191,7 +196,7 @@ enum SelectStep {
+     Continue,
+     Cancel,
+     BackToSearch,
+-    Yank,
++    Yank { one_line: bool },
+ }
+ 
+ /// A `t`/`f`/`T`/`F` waiting for its target character.
+@@ -309,12 +314,13 @@ fn select_step(
+         // Escape means the same thing in every mode: leave. Unwinding one level at a time read
+         // as an undo, which is not what the key is for.
+         PickerInputEvent::Escape | PickerInputEvent::CtrlC => return SelectStep::Cancel,
+-        PickerInputEvent::Enter => return SelectStep::Yank,
++        PickerInputEvent::Enter => return SelectStep::Yank { one_line: false },
+         // Backspace is the un-type key: a keystroke eaten as a label jump lands here one key
+         // later, and this hands back the search with the query intact.
+         PickerInputEvent::Backspace => return SelectStep::BackToSearch,
+         PickerInputEvent::Other => return SelectStep::Continue,
+-        PickerInputEvent::Char('y') => return SelectStep::Yank,
++        PickerInputEvent::Char('y') => return SelectStep::Yank { one_line: false },
++        PickerInputEvent::Char('Y') => return SelectStep::Yank { one_line: true },
+         PickerInputEvent::Char('v') => {
+             selection.begin(false);
+             return SelectStep::Continue;
+@@ -468,7 +474,7 @@ fn legend_line(
+         }
+         None if selection.active() => {
+             let mode = if selection.linewise { "line" } else { "char" };
+-            format!("  select {mode} · hjkl/wbe/0$ · o · t/f/T/F · y yank · bksp search · esc exit")
++            format!("  select {mode} · hjkl/wbe/0$ · o · t/f/T/F · y yank · Y one line · bksp search · esc exit")
+         }
+         None => {
+             "  cursor · hjkl/wbe/0$ · v/V select · t/f/T/F · bksp search · esc exit".to_string()
+@@ -1144,6 +1150,29 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn shift_y_yanks_the_selection_as_one_line() {
++        let (outcome, copied) = run(
++            vec![
++                PickerInputEvent::Char('c'),
++                PickerInputEvent::Char('a'),
++                PickerInputEvent::Enter,
++                PickerInputEvent::Char('V'),
++                PickerInputEvent::Char('j'),
++                PickerInputEvent::Char('Y'),
++            ],
++            vec!["run cargo build \\", "  --release"],
++        );
++
++        assert_eq!(
++            outcome,
++            PickerOutcome::Copied {
++                text: "run cargo build --release".to_string()
++            }
++        );
++        assert_eq!(copied, vec!["run cargo build --release".to_string()]);
++    }
++
+     #[test]
+     fn linewise_yanks_the_whole_row() {
+         let (outcome, _) = run(
+diff --git a/src/select.rs b/src/select.rs
+index 1f8a1db..2ad8814 100644
+--- a/src/select.rs
++++ b/src/select.rs
+@@ -8,8 +8,25 @@
+ //! cells out. Working in columns rather than byte offsets is what keeps wide CJK cells aligned.
+ 
+ use crate::hints::HINT_ALPHABET;
++use crate::patterns::join_wrapped_link;
+ use unicode_width::UnicodeWidthChar;
+ 
++/// Right padding, as pi draws it.
++const WRAP_MARGIN: usize = 1;
++
++/// How a selected row continues onto the next.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++enum RowBreak {
++    /// A real line end.
++    Line,
++    /// A word wrap that dropped one space.
++    Word,
++    /// A long token broken mid-token.
++    Token,
++    /// A terminal wrap at the last column.
++    Soft,
++}
++
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+ pub struct Pos {
+     pub row: usize,
+@@ -61,6 +78,45 @@ impl Grid {
+         self.rows.get(row).map_or(&[], Vec::as_slice)
+     }
+ 
++    /// Column just past the row's last visible character.
++    fn content_end(&self, row: usize) -> usize {
++        self.chars(row)
++            .iter()
++            .rev()
++            .find(|grid_char| !grid_char.ch.is_whitespace())
++            .map_or(0, |last| last.col + cell_width(last.ch))
++    }
++
++    fn first_word_width(&self, row: usize) -> usize {
++        self.chars(row)
++            .iter()
++            .skip_while(|grid_char| grid_char.ch.is_whitespace())
++            .take_while(|grid_char| !grid_char.ch.is_whitespace())
++            .map(|grid_char| cell_width(grid_char.ch))
++            .sum()
++    }
++
++    /// Wrappers move a word down only when it overflows.
++    fn row_break(&self, row: usize, width: usize) -> RowBreak {
++        let chars = self.chars(row);
++        if chars
++            .last()
++            .is_some_and(|last| last.col + cell_width(last.ch) >= width)
++        {
++            return RowBreak::Soft;
++        }
++        let next_word = self.first_word_width(row + 1);
++        if next_word == 0 || self.content_end(row) + 1 + next_word + WRAP_MARGIN <= width {
++            return RowBreak::Line;
++        }
++        let text: String = chars.iter().map(|grid_char| grid_char.ch).collect();
++        if text.trim().contains(char::is_whitespace) {
++            RowBreak::Word
++        } else {
++            RowBreak::Token
++        }
++    }
++
+     /// The cell just before `pos` on its row; a row-leading `pos` stays put, since there is no
+     /// earlier cell for a `t` landing to occupy.
+     fn cell_before(&self, pos: Pos) -> Pos {
+@@ -279,26 +335,108 @@ impl Selection {
+         self.cursor = grid.clamp(moved(self.cursor, motion, grid));
+     }
+ 
+-    /// Selected text, one line per grid row with trailing padding removed, or `None` if nothing
+-    /// is selected yet.
+-    pub fn text(&self, grid: &Grid) -> Option<String> {
++    /// Each selected row's cells, untrimmed.
++    fn pieces(&self, grid: &Grid) -> Option<Vec<(usize, String)>> {
+         let (start, end) = self.range()?;
+         Some(
+             (start.row..=end.row)
+                 .filter(|row| *row < grid.row_count())
+                 .map(|row| {
+-                    let chars = grid.chars(row);
+-                    let piece: String = chars
++                    let piece = grid
++                        .chars(row)
+                         .iter()
+                         .filter(|grid_char| self.contains(row, grid_char.col))
+                         .map(|grid_char| grid_char.ch)
+                         .collect();
+-                    piece.trim_end().to_string()
++                    (row, piece)
+                 })
++                .collect(),
++        )
++    }
++
++    /// Selected text, one line per grid row with trailing padding removed, or `None` if nothing
++    /// is selected yet.
++    pub fn text(&self, grid: &Grid) -> Option<String> {
++        let pieces = self.pieces(grid)?;
++        Some(
++            pieces
++                .iter()
++                .map(|(_, piece)| piece.trim_end())
+                 .collect::<Vec<_>>()
+                 .join("\n"),
+         )
+     }
++
++    /// Selected text with wrapped rows rejoined.
++    pub fn yank_text(&self, grid: &Grid, width: usize) -> Option<String> {
++        let pieces = self.pieces(grid)?;
++        let mut lines = Vec::new();
++        let mut group = Vec::new();
++        for (index, (row, piece)) in pieces.iter().enumerate() {
++            let row_break = if index + 1 < pieces.len() {
++                grid.row_break(*row, width)
++            } else {
++                RowBreak::Line
++            };
++            group.push((piece.as_str(), row_break));
++            if row_break == RowBreak::Line {
++                lines.push(join_rows(&group));
++                group.clear();
++            }
++        }
++        Some(lines.join("\n"))
++    }
++
++    /// Selected text flattened onto one line.
++    pub fn one_line_text(&self, grid: &Grid, width: usize) -> Option<String> {
++        let text = self.yank_text(grid, width)?;
++        Some(
++            text.lines()
++                .map(|line| {
++                    let line = line.trim();
++                    line.strip_suffix('\\').unwrap_or(line).trim_end()
++                })
++                .filter(|line| !line.is_empty())
++                .collect::<Vec<_>>()
++                .join(" "),
++        )
++    }
++}
++
++/// Joins one wrapped line's rows.
++fn join_rows(rows: &[(&str, RowBreak)]) -> String {
++    if rows.len() > 1 {
++        let text = rows
++            .iter()
++            .map(|(piece, _)| *piece)
++            .collect::<Vec<_>>()
++            .join("\n");
++        if let Some(link) = join_wrapped_link(&text) {
++            return link;
++        }
++    }
++    let mut line = String::new();
++    let mut previous = RowBreak::Line;
++    for (piece, row_break) in rows {
++        let piece = match previous {
++            RowBreak::Word | RowBreak::Token => piece.trim_start(),
++            RowBreak::Line | RowBreak::Soft => piece,
++        };
++        let piece = match row_break {
++            RowBreak::Soft => piece,
++            _ => piece.trim_end(),
++        };
++        line.push_str(piece);
++        if *row_break == RowBreak::Word {
++            line.push(' ');
++        }
++        previous = *row_break;
++    }
++    line
++}
++
++fn cell_width(ch: char) -> usize {
++    ch.width().unwrap_or(1)
+ }
+ 
+ fn moved(pos: Pos, motion: Motion, grid: &Grid) -> Pos {
+@@ -490,6 +628,98 @@ mod tests {
+         selection
+     }
+ 
++    #[test]
++    fn yank_rejoins_a_url_wrapped_at_the_edge() {
++        let grid = grid(&["see https://a.test/h", "    andlers/x.java#L42"]);
++        let mut selection = Selection::new(at(0, 4));
++        selection.begin(false);
++        selection.apply(Motion::Down, &grid);
++        selection.apply(Motion::LineEnd, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 21).as_deref(),
++            Some("https://a.test/handlers/x.java#L42")
++        );
++    }
++
++    #[test]
++    fn yank_restores_the_space_at_a_word_wrap() {
++        let grid = grid(&["cargo test; cargo", "    clippy --all"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 20).as_deref(),
++            Some("cargo test; cargo clippy --all")
++        );
++    }
++
++    #[test]
++    fn yank_keeps_a_newline_when_the_word_fits() {
++        let grid = grid(&["cd /tmp", "ls"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 20).as_deref(),
++            Some("cd /tmp\nls")
++        );
++    }
++
++    #[test]
++    fn yank_joins_a_terminal_wrap_exactly() {
++        let grid = grid(&["cargo te", "st --all"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 8).as_deref(),
++            Some("cargo test --all")
++        );
++    }
++
++    #[test]
++    fn yank_joins_a_broken_token_tightly() {
++        let grid = grid(&["0123456789abcdef", "  ghij rest"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 17).as_deref(),
++            Some("0123456789abcdefghij rest")
++        );
++    }
++
++    #[test]
++    fn one_line_drops_backslash_continuations() {
++        let grid = grid(&["nix build \\", "  --print-out-paths"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.one_line_text(&grid, 80).as_deref(),
++            Some("nix build --print-out-paths")
++        );
++    }
++
++    #[test]
++    fn yank_keeps_short_rows_on_separate_lines() {
++        let grid = grid(&["src/a.rs", "src/b.rs"]);
++        let mut selection = Selection::new(at(0, 0));
++        selection.begin(true);
++        selection.apply(Motion::Down, &grid);
++
++        assert_eq!(
++            selection.yank_text(&grid, 80).as_deref(),
++            Some("src/a.rs\nsrc/b.rs")
++        );
++    }
++
+     #[test]
+     fn a_fresh_cursor_selects_nothing() {
+         let grid = grid(&["run cargo test"]);
