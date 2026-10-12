@@ -3,7 +3,10 @@
   flake.modules.nixos.core =
     { pkgs, ... }:
     {
-      nixpkgs.overlays = [ inputs.crash.overlays.default ];
+      nixpkgs.overlays = [
+        inputs.crash.overlays.default
+        inputs.self.overlays.nix-output-monitor
+      ];
       users.defaultUserShell = pkgs.crash;
 
       # Fish reports no cwd of its own, so kitty cannot follow ssh.

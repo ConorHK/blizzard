@@ -76,6 +76,7 @@ let
                 pkgs = import nixpkgs' {
                   inherit (options) system;
                   config.allowUnfree = options.allowUnfree;
+                  overlays = lib.attrValues (config.flake.overlays or { });
                 };
                 extraSpecialArgs.inputs = inputs;
                 modules = [
