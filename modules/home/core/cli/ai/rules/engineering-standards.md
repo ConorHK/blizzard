@@ -56,6 +56,11 @@ Applies to every edit, in every language:
 
 When in doubt, delete the comment and let the code speak.
 
+## Imports Go at the Top of the File
+
+Never put imports inside functions or methods. Put every import at module
+level, at the top of the file. This applies in every language.
+
 ## Remote Hosts Require Confirmation
 
 Never ssh into a host, or run any remote or write operation against one, without
