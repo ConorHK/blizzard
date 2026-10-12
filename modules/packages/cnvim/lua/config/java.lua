@@ -20,9 +20,6 @@ function M.setup()
             local project_name = vim.fn.fnamemodify(root_dir, ":p:h:t")
             local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/" .. project_name
 
-            -- Bemol workspace folders — added on_attach after jdtls initializes
-            local bemol_dir = vim.fs.find({ ".bemol" }, { path = root_dir, upward = true, type = "directory" })[1]
-
             local config = {
                 cmd = { "jdtls", "-data", workspace_dir },
                 root_dir = root_dir,
@@ -35,6 +32,9 @@ function M.setup()
                     },
                 },
                 on_attach = function(_, bufnr)
+                    -- Find late: bemol may finish later.
+                    local bemol_dir =
+                        vim.fs.find({ ".bemol" }, { path = root_dir, upward = true, type = "directory" })[1]
                     if bemol_dir then
                         local file = io.open(bemol_dir .. "/ws_root_folders", "r")
                         if file then
