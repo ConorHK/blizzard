@@ -28,19 +28,21 @@
           herdr-nvim
         ];
 
-        # Herdr rewrites plugins.json, so link it.
-        activation.herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
-            || warnEcho "herdr plugin link failed for herdr-nvim"
-        '';
-        activation.herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
-            || warnEcho "herdr plugin link failed for herdr-flash"
-        '';
-        activation.herdrRadar = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-radar}/share/herdr-radar \
-            || warnEcho "herdr plugin link failed for herdr-radar"
-        '';
+        activation = {
+          # Herdr rewrites plugins.json, so link it.
+          herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
+              || warnEcho "herdr plugin link failed for herdr-nvim"
+          '';
+          herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
+              || warnEcho "herdr plugin link failed for herdr-flash"
+          '';
+          herdrRadar = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-radar}/share/herdr-radar \
+              || warnEcho "herdr plugin link failed for herdr-radar"
+          '';
+        };
       };
 
       xdg.configFile."herdr/plugins/config/${radarId}/config.toml".source = radarSettings;
