@@ -16,8 +16,9 @@
       toml = pkgs.formats.toml { };
       radarId = "hhdebb.herdr-radar";
       radarSettings = toml.generate "herdr-radar.toml" {
-        variant = "text";
+        variant = "none";
         follow_appearance = false;
+        render_hook = "${./herdr-radar-hook.js}";
       };
     in
     {
