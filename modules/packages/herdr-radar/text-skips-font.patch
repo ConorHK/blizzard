@@ -1,0 +1,23 @@
+diff --git a/lib/setup.js b/lib/setup.js
+index 3c342f8..3779076 100644
+--- a/lib/setup.js
++++ b/lib/setup.js
+@@ -15,6 +15,7 @@ const path = require('node:path');
+ 
+ const { stateRoot, ensureDir } = require('./paths');
+ const identity = require('./identity');
++const config = require('./config');
+ 
+ function stamp() {
+   return path.join(ensureDir(stateRoot), 'setup.done');
+@@ -43,7 +44,9 @@ function ensure({ force = false } = {}) {
+   } catch {
+     // First run.
+   }
+-  const fontMissing = !font.isInstalled();
++  // Text glyphs need no font.
++  const wantsFont = config.variant !== 'text' && config.variant !== 'none';
++  const fontMissing = wantsFont && !font.isInstalled();
+   if (!force && done && !fontMissing) return notes;
+ 
+   const report = managed.inspect();
