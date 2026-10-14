@@ -14,7 +14,7 @@ Blizzard is a NixOS and Home Manager flake for five hosts:
 | leprechaun | Home server: containers, nginx, backups, CI runner |
 | puca | Home Assistant |
 
-It uses flake-parts with import-tree: every `.nix` file under `modules/` is imported automatically. There is no import list.
+It uses flake-parts with import-tree: every `.nix` file under `modules/` and `tests/` is imported automatically. There is no import list.
 
 ## Commands
 
@@ -40,6 +40,7 @@ Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecre
 - `modules/lib/`: helpers exposed as `flake.lib` (`mkUser`, `mkDisko`, ssh keys, syncthing devices).
 - `modules/packages/`: per-system packages, consumed as `inputs.self.packages.<system>.<name>`.
 - `modules/theme/`: Stylix, opt-in targets only.
+- `tests/`: checks and VM tests, mirroring `modules/`. Shared fixtures sit in `test-support.nix` files (`flake.testSupport`).
 
 `nixosHosts.<host>` has one option, `system`. `mkHost` in `modules/flake/nixos.nix` combines `core` with `flake.modules.nixos."nixosConfigurations/<host>"`.
 
@@ -56,5 +57,5 @@ puca, leprechaun and bananach auto-upgrade daily from the `deployed` branch, sta
 - `pipe-operators` is enabled; statix cannot parse it, so affected files sit in its ignore list in `modules/flake/checks.nix`.
 - Container images carry a `# renovate: datasource=docker depName=...` comment on the line above `image =`, or Renovate never updates them.
 - Every public nginx vhost needs a `flake.monitoringChecks` entry or a `blizzard.monitoring.exempt` entry; the build fails otherwise.
-- VM tests live in `*-tests.nix` beside the module they cover.
+- Tests for `modules/<path>/<name>` live in `tests/<path>/<name>-tests.nix`, with their helper files beside them. The `tests-mirror` check fails on a test with no matching module. Package source keeps its language-native tests (aqua-booking's pytest suite).
 - Never ssh to a host without the owner's approval.

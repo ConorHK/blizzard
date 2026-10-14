@@ -248,7 +248,7 @@
             nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.tzdata ])) ];
           }
           ''
-            cp -r ${./src} src
+            cp -r ${../../../../modules/nixos/server/aqua-booking/src} src
             chmod -R +w src
             cd src
             python -m unittest discover -s tests -t . -v 2>&1 | tee "$out"

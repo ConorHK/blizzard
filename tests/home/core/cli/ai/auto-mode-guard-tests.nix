@@ -16,7 +16,7 @@
         ];
         # Path literal, not "${dir}/file": a whole-dir
         # store copy breaks --no-build and busts caching.
-        text = builtins.readFile ../home/core/cli/ai/auto-mode-guard.sh;
+        text = builtins.readFile ../../../../../modules/home/core/cli/ai/auto-mode-guard.sh;
       };
     in
     {
@@ -33,7 +33,7 @@
             # A clean HOME so git uses no user config, and a deterministic identity.
             export HOME="$TMPDIR/home"
             mkdir -p "$HOME"
-            bash ${../home/core/cli/ai/auto-mode-guard-test.sh} ${guard}/bin/auto-mode-guard
+            bash ${./auto-mode-guard-test.sh} ${guard}/bin/auto-mode-guard
             touch "$out"
           '';
     };
