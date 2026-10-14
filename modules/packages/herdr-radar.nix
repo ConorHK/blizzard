@@ -65,12 +65,26 @@
               mkdir -p $XDG_CONFIG_HOME/herdr $known $HERDR_PLUGIN_CONFIG_DIR
               cp ${settings} $HERDR_PLUGIN_CONFIG_DIR/config.toml
 
+              # The daemon rewrites blocks if variants differ.
+              variant=$(node -p "require('$root/lib/config').variant")
+              case $variant in
+                text | font | none) ;;
+                *)
+                  echo "herdr-radar: set variant to text, font or none, not $variant"
+                  exit 1
+                  ;;
+              esac
+
               # Unknown rows_by_agent ids break the config.
               for agent in $(node -p "Object.keys(require('$root/lib/palette').brand).join(' ')"); do
                 printf '[ui.sidebar.agents.rows_by_agent]\n%s = [["$gap"]]\n' "$agent" \
                   > $XDG_CONFIG_HOME/herdr/config.toml
                 if herdr config check >/dev/null; then touch $known/$agent.toml; fi
               done
+              if [ -z "$(ls -A $known)" ]; then
+                echo "herdr-radar: herdr accepted no rows_by_agent ids"
+                exit 1
+              fi
 
               node ${./herdr-radar/splice-blocks.js} $root ${base} ${appearance} > $out
               cp $out $XDG_CONFIG_HOME/herdr/config.toml

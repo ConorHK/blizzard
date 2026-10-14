@@ -1,7 +1,7 @@
 'use strict';
 
-// Pi titles read `π - [session - ]folder`.
-const PI_PREFIX = 'π - ';
+// Pi titles read `<pi> - [session - ]folder`.
+const PI_PREFIX = '\u03c0 - ';
 const SEPARATOR = ' - ';
 
 function title(text) {
