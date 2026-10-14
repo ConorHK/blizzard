@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.lib) mkPiExtension;
+in
 {
   nixpkgs.allowedUnfreePackages = [ "claude-code" ];
 
@@ -11,33 +15,18 @@
     let
       cfg = config.programs.pi.claudeBridge;
       settingsFormat = pkgs.formats.json { };
-      pi-claude-bridge = pkgs.buildNpmPackage {
-        pname = "pi-claude-bridge";
-        version = "0.9.2";
-        src = pkgs.fetchFromGitHub {
-          owner = "elidickinson";
-          repo = "pi-claude-bridge";
-          rev = "b2e7255ece0b8bfd3a6429fd5c147fd59984c785";
-          hash = "sha256-ri1KD0H5Nbt8lAMHbMLVf7dwaoHNbTJfhEuF4Y8lFF8=";
-        };
-        # Dev deps lack lockfile integrity; pi supplies peers.
-        postPatch = ''
-          ${lib.getExe pkgs.jq} 'del(.devDependencies)' package.json > p.json && mv p.json package.json
-          ${lib.getExe pkgs.jq} '.packages |= with_entries(select(.value.dev != true)) | del(.packages[""].devDependencies)' \
-            package-lock.json > l.json && mv l.json package-lock.json
-        '';
-        npmDepsHash = "sha256-+SsnGYxkQ1Z1E5HNYTwr7tmXDqdj9rP6BbTDPafLKo8=";
-        dontNpmBuild = true;
-        npmFlags = [
-          "--ignore-scripts"
-          "--legacy-peer-deps"
+      pi-claude-bridge = mkPiExtension pkgs "pi-claude-bridge" {
+        # pkgs.claude-code replaces the bundled binary.
+        prune = map (platform: "@anthropic-ai/claude-agent-sdk-${platform}") [
+          "darwin-arm64"
+          "darwin-x64"
+          "linux-arm64"
+          "linux-arm64-musl"
+          "linux-x64"
+          "linux-x64-musl"
+          "win32-arm64"
+          "win32-x64"
         ];
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out
-          cp -r package.json src node_modules $out/
-          runHook postInstall
-        '';
       };
       settingsFile = settingsFormat.generate "claude-bridge.json" cfg.settings;
     in

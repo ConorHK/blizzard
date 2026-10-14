@@ -6,11 +6,13 @@
     "pi-ask-user": "0.16.0",
     "pi-autoresearch": "1.8.1",
     "pi-btw": "0.7.1",
+    "pi-claude-bridge": "0.9.2",
     "pi-hermes-memory": "0.9.9",
     "pi-intercom": "0.16.1",
     "pi-mcp-adapter": "5.0.0",
     "pi-messenger": "0.15.2",
     "pi-subagents": "0.75.0",
-    "pi-tool-display": "0.5.0"
+    "pi-tool-display": "0.5.0",
+    "picomatch": "4.0.7"
   }
 }

@@ -6,17 +6,14 @@ topLevel: {
         pname = "pi-ttsr";
         version = "0.1.0";
         src = ./ttsr;
-        picomatch = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz";
-          hash = "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==";
-        };
+        picomatch = topLevel.config.flake.lib.mkPiExtension pkgs "picomatch" { };
         dontConfigure = true;
         dontBuild = true;
         installPhase = ''
           runHook preInstall
-          mkdir -p $out/node_modules/picomatch
+          mkdir -p $out/node_modules
           cp -r . $out
-          tar xzf $picomatch -C $out/node_modules/picomatch --strip-components=1
+          cp -r --no-preserve=mode $picomatch $out/node_modules/picomatch
           substituteInPlace $out/index.ts \
             --replace-fail '@astGrep@' '${pkgs.lib.getExe pkgs.ast-grep}'
           runHook postInstall
