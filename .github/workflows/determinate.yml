@@ -1,0 +1,31 @@
+name: determinate
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+# Dependabot skips FlakeHub inputs, and Nix ships in this one.
+jobs:
+  update:
+    runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+      - id: update
+        uses: DeterminateSystems/update-flake-lock@v29
+        with:
+          inputs: determinate
+          branch: update/determinate
+          commit-msg: "determinate: update"
+          pr-title: "determinate: update"
+      # Its GITHUB_TOKEN pushes start no workflows.
+      - name: Build the update branch
+        if: contains(fromJSON('["created", "updated"]'), steps.update.outputs.pull-request-operation)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref update/determinate
