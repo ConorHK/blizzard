@@ -65,8 +65,9 @@ in
         serviceOverrides = {
           Restart = lib.mkForce "always";
           RestartSec = "30s";
-          MemoryHigh = "5G";
-          MemoryMax = "7G";
+          # flake check eval peaks near 8.3G.
+          MemoryHigh = "10G";
+          MemoryMax = "12G";
         };
       };
 
