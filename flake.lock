@@ -856,11 +856,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791188470,
-        "narHash": "sha256-2SfC8zEf6emG1sDG1J7hjjSBt+3hFIz1/TcwBLa/hRU=",
+        "lastModified": 1791408813,
+        "narHash": "sha256-lwjspkMGrW+8Fl/yBEDEFsHZJA57OKOhmVQmi6zfej4=",
         "owner": "earendil-works",
         "repo": "pi",
-        "rev": "d78dc83d633229d12f8b79631384c4c2717c399f",
+        "rev": "abe508e1b89912adde45528136c3221eb69acdd7",
         "type": "github"
       },
       "original": {
