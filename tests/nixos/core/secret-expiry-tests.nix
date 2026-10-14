@@ -124,7 +124,7 @@
           def run():
               seen = len(posts())
               machine.succeed("systemctl start secret-expiry.service")
-              machine.succeed("alert-drain")
+              machine.succeed("systemctl start alert-drain.service")
               return {a["title"].removeprefix("machine: "): a for a in posts()[seen:]}
 
 
