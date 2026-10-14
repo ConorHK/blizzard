@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.modules.nixos) cachix-token-check;
+in
 {
   flake.modules.nixos.github-runner =
     {
@@ -7,6 +11,8 @@
       ...
     }:
     {
+      imports = [ cachix-token-check ];
+
       users.users.github-runner-blizzard = {
         isSystemUser = true;
         group = "github-runner-blizzard";
@@ -22,6 +28,12 @@
           rekeyFile = ../cachix/secrets/cachix.age;
           owner = "github-runner-blizzard";
         };
+      };
+
+      # Expired tokens stall every CI push.
+      blizzard.cachixTokenCheck = {
+        tokenFile = config.age.secrets.github-runner-cachix.path;
+        cache = "conorhk";
       };
 
       services.github-runners.blizzard = {
