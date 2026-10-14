@@ -1191,11 +1191,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790237354,
+        "lastModified": 1791312500,
         "narHash": "sha256-Wr358xHHD0XHNzl2V6bzHJRvnrwLpa1/o+AjdYKDs1g=",
         "owner": "Lassulus",
         "repo": "wrappers",
-        "rev": "20f303754a767fde3a2cc445df6c2a33db28aca7",
+        "rev": "d814b84aa832bb01630439c6b3566652da83a786",
         "type": "github"
       },
       "original": {
