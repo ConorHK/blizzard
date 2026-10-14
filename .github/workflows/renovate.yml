@@ -8,6 +8,7 @@ jobs:
     runs-on: [self-hosted, nix, x86_64-linux]
     environment: production
     permissions:
+      actions: write
       contents: write
       pull-requests: write
       issues: write
@@ -18,3 +19,17 @@ jobs:
         env:
           RENOVATE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LOG_LEVEL: debug
+      # Its GITHUB_TOKEN pushes start no workflows.
+      - name: Build renovate branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/branches" \
+            --jq '.[] | select(.name | startswith("renovate/")) | "\(.name) \(.commit.sha)"' |
+            while read -r branch sha; do
+              runs=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml \
+                --commit "$sha" --json databaseId --jq length)
+              if [ "$runs" = 0 ]; then
+                gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
+              fi
+            done
