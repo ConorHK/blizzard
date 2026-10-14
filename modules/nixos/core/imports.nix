@@ -17,6 +17,7 @@
     substituters
     syncthing
     update
+    zfs-alerts
     zmx
   ];
 }
