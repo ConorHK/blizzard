@@ -23,6 +23,7 @@
     clip-server
     dawarich
     duckdns
+    gatus-watch
     glance
     github-nix-access
     github-runner

@@ -18,7 +18,7 @@ in
       };
       blizzard.gatusRelay.topicFile = config.age.secrets.gatus-ntfy-topic.path;
 
-      # Nothing else watches the watcher.
+      # A crash pages before gatus-watch notices.
       systemd.services.gatus.unitConfig.OnFailure = "alert-failure@gatus.service";
 
       services.gatus = {

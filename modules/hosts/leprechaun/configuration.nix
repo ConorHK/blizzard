@@ -13,10 +13,15 @@
         };
       };
 
-      blizzard.bitbang.shareMembers = [ "driver" ];
+      blizzard = {
+        bitbang.shareMembers = [ "driver" ];
 
-      # gatus cannot usefully page about its own UI being down.
-      blizzard.monitoring.exempt = [ "monitor.goosebox.org" ];
+        # gatus cannot usefully page about its own UI being down.
+        monitoring.exempt = [ "monitor.goosebox.org" ];
+
+        # bananach cannot page while it is down.
+        gatusWatch.url = "http://100.96.40.127:8080/health";
+      };
 
       services.nginx.virtualHosts."monitor.goosebox.org" = {
         enableACME = true;

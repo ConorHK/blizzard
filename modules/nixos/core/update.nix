@@ -4,8 +4,9 @@
     let
       # Stagger auto-upgrades an hour apart so a bad commit can't reboot every
       # host into a broken generation at the same moment — one stays up to alert.
-      # Order: puca (unmonitored, canary) → leprechaun (gatus-watched, kept at
-      # 06:00 inside gatus's maintenance window) → bananach (runs gatus, last).
+      # Order: puca (canary, own gatus window) -> leprechaun (gatus-watched,
+      # kept at 06:00 inside gatus's maintenance window) -> bananach (runs
+      # gatus, last; leprechaun's gatus-watch rides out its reboot).
       windows = {
         puca = {
           lower = "05:00";
