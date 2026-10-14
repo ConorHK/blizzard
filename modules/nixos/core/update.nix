@@ -40,5 +40,9 @@
         rebootWindow = window;
         randomizedDelaySec = "5min";
       };
+
+      systemd.services.nixos-upgrade = lib.mkIf config.system.autoUpgrade.enable {
+        unitConfig.OnFailure = "alert-failure@nixos-upgrade.service";
+      };
     };
 }

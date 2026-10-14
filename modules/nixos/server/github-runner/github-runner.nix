@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.flake.modules.nixos) cachix-token-check;
+  inherit (config.flake.modules.nixos) cachix-token-check deployed-lag;
 in
 {
   flake.modules.nixos.github-runner =
@@ -11,7 +11,10 @@ in
       ...
     }:
     {
-      imports = [ cachix-token-check ];
+      imports = [
+        cachix-token-check
+        deployed-lag
+      ];
 
       users.users.github-runner-blizzard = {
         isSystemUser = true;
@@ -35,6 +38,8 @@ in
         tokenFile = config.age.secrets.github-runner-cachix.path;
         cache = "conorhk";
       };
+
+      blizzard.deployedLag.remote = "https://github.com/ConorHK/blizzard";
 
       services.github-runners.blizzard = {
         enable = true;
