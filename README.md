@@ -20,7 +20,8 @@
 | `clip-server` | clip | 7391 (tailnet, wg0) | - |
 | `dawarich` | redis, postgis, app, sidekiq | 3001 | dawarich.lep.goosebox.org |
 | `duckdns` | duckdns (timer, every 5 min) | — | — |
-| `github-runner` | github-runner | — | — |
+| `gatus-watch` | gatus-watch (probes bananach's gatus every 5 min) | - | - |
+| `github-runner` | github-runner, deployed-lag (hourly) | - | - |
 | `glance` | glance | 8092 | glance.lep.goosebox.org |
 | `hister` | hister | 4433 | search.goosebox.org |
 | `immich` | redis, postgres, machine-learning, server | 2283 | photos.lep.goosebox.org |
@@ -58,15 +59,18 @@ The Ports column is what each service listens on, not what is reachable. The fir
 
 Syncthing ports (22000 TCP/UDP, 21027 UDP) open only where syncthing runs: abhartach, dullahan and leprechaun.
 
-## login alerts
+## alerts
 
-All five hosts alert when someone logs in, imported via `modules/nixos/core/imports.nix`. Alerts push to ntfy using the `alert-ntfy-topic` agenix secret.
+All five hosts import these via `modules/nixos/core/imports.nix`, so every host alerts when someone logs in. Alerts push to ntfy using the `alert-ntfy-topic` agenix secret.
 
 | Module | Does | When |
 |--------|------|------|
 | `alerts` | provides `alert-send` and the `alert-failure@` OnFailure template | — |
 | `alerts-secret` | points `alerts` at the `alert-ntfy-topic` agenix secret | — |
 | `login-alerts` | alerts on every login | live, journal follow |
+| `update` | alerts when an auto-upgrade fails | its upgrade window |
+| `secret-expiry` | alerts before a registered credential expires or stops working | daily, where secrets are registered (leprechaun) |
+| `zfs-alerts` | alerts on ZFS scrub problems, faulted devices and data errors | ZFS hosts, via ZED |
 
 Logins are read from `systemd-logind`, which opens a session for every path that goes through PAM — sshd, console and greetd alike — so a single source covers all of them without per-service pattern matching. The alert names the user, and adds the PAM service and origin when the session is still open to be queried.
 
@@ -98,14 +102,31 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 
 | Check | Asserts | Runtime |
 |-------|---------|---------|
-| `login-alerts` | a real ssh login reported once with its service and origin, tailscale grants, that a tailscale session reaching PAM alerts once, that failures and drift stay quiet, the ten-per-window cap | ~30s |
-| `alerts` | the `alert-failure@` OnFailure template pages | ~20s |
-| `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
-| `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
+| `alerts` | the `alert-failure@` OnFailure template pages, alerts raised while ntfy is down are held and drain once it is back, a hardened caller can queue and deliver, a payload ntfy rejects is dropped | ~20s |
+| `aqua-booking` | dry runs book nothing, a free seat books and notifies, a full class joins the waitlist, a cancelled booking is never rebooked, a lost response is never double-booked | VM |
+| `aqua-booking-unit` | the package's Python unittest suite | instant |
+| `auto-mode-guard` | crafted tool calls are denied or deferred as the regression suite expects | instant |
+| `bitbang` | serve runs as the service account, the view is read-only without `-upload`, uploads land only in `/upload`, the session ends with serve | VM |
+| `clip` | slots round-trip between phone and mailbox, utf-8 survives byte for byte, a slot name cannot escape the state directory | VM |
+| `deployed-lag` | a main commit CI has not promoted pages once past the threshold, promotion reports recovery, a rewritten main re-arms instead of wedging, fetch failures page once on the third miss | VM |
+| `gatus-relay` | an outage sends one batched message, recovery is reported once, pending alerts survive a relay restart | VM |
+| `gatus-watch` | short gatus outages ride through, the third missed probe pages once, recovery is reported | VM |
+| `hyprland-<host>` | each Hyprland host's config passes `hyprland --verify-config` | instant |
 | `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
+| `login-alerts` | a real ssh login reported once with its service and origin, tailscale grants, that a tailscale session reaching PAM alerts once, that failures and drift stay quiet, the ten-per-window cap | ~30s |
+| `pi-advisor`, `pi-ttsr` | the pi extensions' node test suites | instant |
+| `pi-jail` | a trusted user's jailed `nix` call reaches the daemon untrusted, host abstract sockets and loopback services stay out of reach, other hosts stay reachable, `/run` holds only `current-system` and an empty runtime dir | ~3 min without KVM |
+| `podman-egress-watchdog` | a routeless container netns pages once, repeats stay quiet, recovery clears state | VM |
+| `pre-commit`, `treefmt` | the pre-commit hooks and formatting | instant |
+| `quadlet-switch` | a changed container definition actually restarts the rootless unit across a switch | ~45s |
+| `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
+| `restic-zfs` | restic reads the ZFS snapshot rather than live files, containers are back before restic reads | VM |
+| `secret-expiry` | probe-reported expiry warns inside the window, rejected credentials page with the reason, a secret with no known expiry asks for one | VM |
 | `selkie-isolation` | a container with selkie's isolation settings: init runs as a non-root host uid, the host Nix daemon reports `Trusted: 0` to container root, the idmapped home stays owned by host uid 1001, goose keeps sudo, tun and fuse still work | ~4 min without KVM |
 | `snoop-podman-ro` | `podman-ro` refuses unknown subcommands and any flag outside its allowlist, wherever it appears | instant |
-| `pi-jail` | a trusted user's jailed `nix` call reaches the daemon untrusted, host abstract sockets and loopback services stay out of reach, other hosts stay reachable, `/run` holds only `current-system` and an empty runtime dir | ~3 min without KVM |
+| `tests-mirror` | every file under `tests/` has a matching `modules/` path | instant |
+| `waybar-<check>-<host>` | waybar commands resolve, every dispatch it can emit is valid Hyprland Lua | instant |
+| `zfs-alerts` | a healthy scrub stays quiet, a faulted vdev pages through `alert-send` | VM |
 
 Two invariants are enforced as NixOS assertions instead, so they fail the host build:
 
