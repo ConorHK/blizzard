@@ -115,6 +115,7 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 | `lib` | `mkUser` and `mkDisko` outputs, including the `fido2` branch and the ESP `umask` | instant |
 | `login-alerts` | a real ssh login reported once with its service and origin, tailscale grants, that a tailscale session reaching PAM alerts once, that failures and drift stay quiet, the ten-per-window cap | ~30s |
 | `pi-advisor`, `pi-ttsr` | the pi extensions' node test suites | instant |
+| `pi-extensions-<home>` | every pi package manifest entry exists, every extension loads in headless pi with no handler errors, and pi-subagents finds the pi modules its background runs need | instant |
 | `pi-jail` | a trusted user's jailed `nix` call reaches the daemon untrusted, host abstract sockets and loopback services stay out of reach, other hosts stay reachable, `/run` holds only `current-system` and an empty runtime dir | ~3 min without KVM |
 | `podman-egress-watchdog` | a routeless container netns pages once, repeats stay quiet, recovery clears state | VM |
 | `pre-commit`, `treefmt` | the pre-commit hooks and formatting | instant |
