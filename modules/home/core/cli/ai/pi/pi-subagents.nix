@@ -35,10 +35,10 @@
       ) deps;
       pi-subagents = pkgs.stdenvNoCC.mkDerivation rec {
         pname = "pi-subagents";
-        version = "0.74.0";
+        version = "0.75.0";
         src = pkgs.fetchurl {
           url = "https://registry.npmjs.org/pi-subagents/-/pi-subagents-${version}.tgz";
-          hash = "sha512-7+67TCpQuYoW2kMu4Kmt4j90hiR8uX8ozg3F/eakApUU6PxK7NteO58ylOWPql7fh/uTIEfS00FT2LKVDTSicw==";
+          hash = "sha512-RO4DiTJM6pnK8y9PnD7Y6TLeiX2c8Kh6QhmkecFo+ou5qtnz5qiM+vUKru48UmJG1nB9eJ6rALd1M04uBOR4XQ==";
         };
         dontConfigure = true;
         dontBuild = true;
