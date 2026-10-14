@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.flake.modules.nixos) deployed-lag;
+  inherit (config.flake.modules.nixos) container-smoke deployed-lag;
 in
 {
   flake.modules.nixos.github-runner =
@@ -11,7 +11,10 @@ in
       ...
     }:
     {
-      imports = [ deployed-lag ];
+      imports = [
+        container-smoke
+        deployed-lag
+      ];
 
       users.users.github-runner-blizzard = {
         isSystemUser = true;
@@ -43,6 +46,7 @@ in
       };
 
       blizzard.deployedLag.remote = "https://github.com/ConorHK/blizzard";
+      blizzard.containerSmoke.requester = "github-runner-blizzard";
 
       services.github-runners.blizzard = {
         enable = true;
@@ -61,6 +65,7 @@ in
           # Renovate updates npm lockfiles.
           nodejs
           renovate
+          systemd
         ];
         serviceOverrides = {
           Restart = lib.mkForce "always";
@@ -71,9 +76,12 @@ in
         };
       };
 
-      systemd.services.github-runner-blizzard.unitConfig = {
-        StartLimitIntervalSec = 300;
-        StartLimitBurst = 5;
+      systemd.services.github-runner-blizzard = {
+        unitConfig = {
+          StartLimitIntervalSec = 300;
+          StartLimitBurst = 5;
+        };
+        serviceConfig.ReadWritePaths = [ "-/var/lib/container-smoke/requests" ];
       };
     };
 }

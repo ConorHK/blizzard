@@ -68,6 +68,13 @@ in
         };
       };
 
+      # Smoke tests skip the documents.
+      blizzard.containerSmoke.emptyPaths.paperless = [
+        "/usr/src/paperless/consume"
+        "/usr/src/paperless/export"
+        "/usr/src/paperless/media"
+      ];
+
       restic.paths = [ dataDir ];
       # SQLite: stop to avoid a torn copy.
       restic.pauseContainers = [ "paperless" ];

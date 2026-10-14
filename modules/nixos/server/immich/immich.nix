@@ -75,6 +75,16 @@ in
         };
       };
 
+      # Smoke tests skip the photo library.
+      blizzard.containerSmoke.emptyPaths.immich-server = map (dir: "/usr/src/app/upload/${dir}") [
+        "backups"
+        "encoded-video"
+        "library"
+        "profile"
+        "thumbs"
+        "upload"
+      ];
+
       # restic.paths = [
       #   "${dataDir}/backups"
       #   "${dataDir}/library"
