@@ -2,9 +2,15 @@ name: build
 on:
   push:
   workflow_dispatch:
+# One runner: newer pushes supersede queued runs.
+# Main finishes its run so deployed advances.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   check:
     runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 90
     environment: production
     steps:
       - name: Sync repository
@@ -12,6 +18,7 @@ jobs:
       - run: nix --extra-experimental-features pipe-operators flake check
   discover:
     runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 15
     environment: production
     outputs:
       machines: ${{ steps.list.outputs.machines }}
@@ -32,6 +39,7 @@ jobs:
       matrix:
         machine: ${{ fromJSON(needs.discover.outputs.machines) }}
     runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 180
     environment: production
     steps:
       - name: Sync repository
@@ -46,6 +54,7 @@ jobs:
     needs: [build-machines]
     if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 15
     environment: production
     permissions:
       contents: write
