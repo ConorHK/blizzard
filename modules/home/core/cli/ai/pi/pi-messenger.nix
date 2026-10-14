@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.lib) mkPiExtension;
+in
 {
   flake.modules.homeManager.pi =
     {
@@ -7,22 +11,7 @@
       ...
     }:
     let
-      pi-messenger = pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "pi-messenger";
-        version = "0.15.2";
-        src = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/pi-messenger/-/pi-messenger-${version}.tgz";
-          hash = "sha512-GcoI/FaI98dl+ZQq54W8VnCZ0kuR0VaJMu4myOh3awddOD6A/0hRU+ALzy//Jdixsol0ANQWpvyFphS4It9kiQ==";
-        };
-        dontConfigure = true;
-        dontBuild = true;
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out
-          tar xzf $src -C $out --strip-components=1
-          runHook postInstall
-        '';
-      };
+      pi-messenger = mkPiExtension pkgs "pi-messenger" { };
     in
     {
       options.programs.pi.messenger.enable = lib.mkOption {

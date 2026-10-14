@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.lib) mkPiExtension;
+in
 {
   flake.modules.homeManager.pi =
     {
@@ -7,22 +11,7 @@
       ...
     }:
     let
-      pi-btw = pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "pi-btw";
-        version = "0.7.1";
-        src = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/pi-btw/-/pi-btw-${version}.tgz";
-          hash = "sha512-XVHTwc6QNYHEXvdobqbUrlkvoEo/pq3pWgq4OPT/BMiyjZpjlhUW/aBO+NjFdyu1app9QL8kyGP+tsB18S1GqA==";
-        };
-        dontConfigure = true;
-        dontBuild = true;
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out
-          tar xzf $src -C $out --strip-components=1
-          runHook postInstall
-        '';
-      };
+      pi-btw = mkPiExtension pkgs "pi-btw" { };
     in
     {
       options.programs.pi.btw.enable = lib.mkOption {

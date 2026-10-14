@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.lib) mkPiExtension;
+in
 {
   flake.modules.homeManager.pi =
     {
@@ -7,24 +11,13 @@
       ...
     }:
     let
-      pi-intercom = pkgs.stdenvNoCC.mkDerivation rec {
-        pname = "pi-intercom";
-        version = "0.16.1";
-        src = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/pi-intercom/-/pi-intercom-${version}.tgz";
-          hash = "sha512-LhNm2JgittzbvxLSjT+fB9RIEWgJpeBSrnL5O8rfPd60SgAph5VcJWrfd5GrI0GHtSELKnw0yjjyZfcPWTaD9w==";
-        };
-        dontConfigure = true;
-        dontBuild = true;
-        # Node 24 strips types; tsx not needed.
-        installPhase = ''
-          runHook preInstall
-          mkdir -p $out
-          tar xzf $src -C $out --strip-components=1
+      pi-intercom = mkPiExtension pkgs "pi-intercom" {
+        # Node strips types; broker needs no tsx.
+        prune = [ "tsx" ];
+        postInstall = ''
           substituteInPlace $out/config.ts \
             --replace-fail 'brokerCommand: "npx",' 'brokerCommand: "${lib.getExe' pkgs.nodejs-slim "node"}",' \
             --replace-fail 'brokerArgs: ["--no-install", "tsx"],' 'brokerArgs: [],'
-          runHook postInstall
         '';
       };
     in

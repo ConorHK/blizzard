@@ -4,6 +4,7 @@
   "prHourlyLimit": 0,
   "enabledManagers": [
     "github-actions",
+    "npm",
     "custom.regex"
   ],
   "customManagers": [
@@ -27,6 +28,16 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "pi extensions: pinned, one PR each; CI loads them in headless pi.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "modules/home/core/cli/ai/pi/npm/package.json"
+      ],
+      "rangeStrategy": "pin"
     }
   ]
 }

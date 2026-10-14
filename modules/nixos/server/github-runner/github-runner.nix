@@ -58,6 +58,8 @@ in
           git
           gh
           jq
+          # Renovate updates npm lockfiles.
+          nodejs
           renovate
         ];
         serviceOverrides = {
