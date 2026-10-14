@@ -34,19 +34,21 @@ in
       };
 
       # Expired tokens stall every CI push.
-      blizzard.secretExpiry.secrets = {
-        cachix = {
-          file = config.age.secrets.github-runner-cachix.path;
-          probe = config.blizzard.secretExpiry.probes.cachix "conorhk";
+      blizzard = {
+        secretExpiry.secrets = {
+          cachix = {
+            file = config.age.secrets.github-runner-cachix.path;
+            probe = config.blizzard.secretExpiry.probes.cachix "conorhk";
+          };
+          github-runner = {
+            file = config.age.secrets.github-runner-token.path;
+            probe = config.blizzard.secretExpiry.probes.github;
+          };
         };
-        github-runner = {
-          file = config.age.secrets.github-runner-token.path;
-          probe = config.blizzard.secretExpiry.probes.github;
-        };
-      };
 
-      blizzard.deployedLag.remote = "https://github.com/ConorHK/blizzard";
-      blizzard.containerSmoke.requester = "github-runner-blizzard";
+        deployedLag.remote = "https://github.com/ConorHK/blizzard";
+        containerSmoke.requester = "github-runner-blizzard";
+      };
 
       services.github-runners.blizzard = {
         enable = true;
