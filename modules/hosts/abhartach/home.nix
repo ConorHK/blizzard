@@ -24,6 +24,7 @@ topLevel: {
       };
 
       programs.waybar.settings.main.output = "DP-1";
+      programs.hyprlock.settings.input-field.monitor = "DP-1";
 
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
