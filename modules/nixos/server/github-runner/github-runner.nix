@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  inherit (config.flake.modules.nixos) cachix-token-check deployed-lag;
+  inherit (config.flake.modules.nixos) deployed-lag;
 in
 {
   flake.modules.nixos.github-runner =
@@ -11,10 +11,7 @@ in
       ...
     }:
     {
-      imports = [
-        cachix-token-check
-        deployed-lag
-      ];
+      imports = [ deployed-lag ];
 
       users.users.github-runner-blizzard = {
         isSystemUser = true;
@@ -34,9 +31,15 @@ in
       };
 
       # Expired tokens stall every CI push.
-      blizzard.cachixTokenCheck = {
-        tokenFile = config.age.secrets.github-runner-cachix.path;
-        cache = "conorhk";
+      blizzard.secretExpiry.secrets = {
+        cachix = {
+          file = config.age.secrets.github-runner-cachix.path;
+          probe = config.blizzard.secretExpiry.probes.cachix "conorhk";
+        };
+        github-runner = {
+          file = config.age.secrets.github-runner-token.path;
+          probe = config.blizzard.secretExpiry.probes.github;
+        };
       };
 
       blizzard.deployedLag.remote = "https://github.com/ConorHK/blizzard";

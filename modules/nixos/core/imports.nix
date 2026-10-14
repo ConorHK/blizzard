@@ -12,6 +12,7 @@
     network
     nix
     root
+    secret-expiry
     security
     storage
     substituters

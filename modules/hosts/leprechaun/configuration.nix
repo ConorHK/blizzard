@@ -19,6 +19,12 @@
         # gatus cannot usefully page about its own UI being down.
         monitoring.exempt = [ "monitor.goosebox.org" ];
 
+        # Every host shares this token; check once.
+        secretExpiry.secrets.github-nix = {
+          file = config.age.secrets.github-nix-token.path;
+          probe = config.blizzard.secretExpiry.probes.github;
+        };
+
         # bananach cannot page while it is down.
         gatusWatch.url = "http://100.96.40.127:8080/health";
       };
