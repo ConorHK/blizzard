@@ -17,7 +17,11 @@
         xdg.configFile."herdr-nvim/config.toml".source =
           (pkgs.formats.toml { }).generate "herdr-nvim.toml"
             {
-              sidebar.nvim_bin = lib.getExe' cnvim "nvim";
+              sidebar = {
+                nvim_bin = lib.getExe' cnvim "nvim";
+                # cnvim enables ui2 for the sidebar.
+                nvim_env = [ "HERDR_NVIM_SIDEBAR=1" ];
+              };
             };
       };
     };

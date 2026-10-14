@@ -15,6 +15,19 @@ function M.setup()
     opt.cmdheight = 1
     opt.showmode = false
 
+    -- Hit-enter would block the sidebar server.
+    if vim.env.HERDR_NVIM_SIDEBAR then
+        vim.api.nvim_create_autocmd("UIEnter", {
+            once = true,
+            callback = function()
+                local ok, ui2 = pcall(require, "vim._core.ui2")
+                if ok then
+                    ui2.enable({})
+                end
+            end,
+        })
+    end
+
     -- spellcheck
     opt.spelllang = "en_gb"
 
