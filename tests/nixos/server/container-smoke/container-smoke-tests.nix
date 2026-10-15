@@ -77,13 +77,10 @@
               requester = "ci";
               emptyPaths.web = [ "/www/secret" ];
               window = {
-                start = "01:00";
-                lastStart = "23:00";
+                start = "00:00";
+                lastStart = "23:59";
               };
             };
-
-            # The test sets the clock itself.
-            services.timesyncd.enable = false;
 
             home-manager.users.containers.virtualisation.quadlet.containers = {
               db = container [
@@ -151,12 +148,16 @@
             )
 
             with subtest("a run outside the window is deferred"):
-                machine.succeed("date -s 00:30")
+                # Every HH:MM sorts before 24:00.
+                machine.succeed(
+                    "rm /etc/container-smoke/window",
+                    "echo '24:00 24:00' > /etc/container-smoke/window",
+                )
                 assert smoke("early", ["web"]) != 0
                 assert result("early")["window"]["status"] == "deferred", result("early")
                 datasets = machine.succeed("zfs list -H -o name -t all")
                 assert "smoke" not in datasets, datasets
-                machine.succeed("date -s 12:00")
+                machine.succeed("echo '00:00 23:59' > /etc/container-smoke/window")
 
             with subtest("a healthy target passes on cloned data"):
                 assert smoke("good", ["web"]) == 0

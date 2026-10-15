@@ -2,6 +2,7 @@
 # Exits 0 when a smoke run may start now.
 set -euo pipefail
 
+read -r START LAST </etc/container-smoke/window
 now=$(date +%H:%M)
 if [[ $now < $START || $now > $LAST ]]; then
   echo "outside the $START-$LAST maintenance window"

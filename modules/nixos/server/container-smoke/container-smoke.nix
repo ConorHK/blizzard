@@ -95,11 +95,7 @@ in
             pkgs.coreutils
             pkgs.systemd
           ];
-          runtimeEnv = {
-            START = cfg.window.start;
-            LAST = cfg.window.lastStart;
-            UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
-          };
+          runtimeEnv.UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
           text = builtins.readFile ./window.sh;
         };
 
@@ -167,6 +163,8 @@ in
 
         config = {
           environment.systemPackages = [ window ];
+          # A file, so tests can close it.
+          environment.etc."container-smoke/window".text = "${cfg.window.start} ${cfg.window.lastStart}\n";
 
           systemd.tmpfiles.rules = [
             "d ${stateDir} 0711 root root -"
