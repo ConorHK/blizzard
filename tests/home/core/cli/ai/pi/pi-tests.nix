@@ -11,7 +11,7 @@
       # Missing manifest entries load silently.
       driver = pkgs.writeText "pi-load.mjs" ''
         import { spawn } from "node:child_process";
-        import { existsSync, globSync, readFileSync } from "node:fs";
+        import { existsSync, globSync, readFileSync, readdirSync } from "node:fs";
         import { join } from "node:path";
 
         const [, , piBin, ...packages] = process.argv;
@@ -35,6 +35,35 @@
           }
         }
 
+        const started = Date.now();
+        const elapsed = () => `''${((Date.now() - started) / 1000).toFixed(1)}s`;
+        const seen = [];
+
+        // CPU time tells a hang from slowness.
+        const processes = () => {
+          const all = readdirSync("/proc").filter((pid) => /^\d+$/.test(pid)).flatMap((pid) => {
+            try {
+              const stat = readFileSync(`/proc/''${pid}/stat`, "utf8");
+              const fields = stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+              const cmd = readFileSync(`/proc/''${pid}/cmdline`, "utf8").replaceAll("\0", " ").slice(0, 160);
+              return [{ pid: Number(pid), state: fields[0], ppid: Number(fields[1]), cpu: (Number(fields[11]) + Number(fields[12])) / 100, cmd }];
+            } catch {
+              return [];
+            }
+          });
+          const tree = new Set([pi.pid]);
+          for (let grew = true; grew; ) {
+            grew = false;
+            for (const proc of all) {
+              if (tree.has(proc.ppid) && !tree.has(proc.pid)) {
+                tree.add(proc.pid);
+                grew = true;
+              }
+            }
+          }
+          return all.filter((proc) => tree.has(proc.pid)).map((proc) => `  ''${proc.pid} ''${proc.state} cpu=''${proc.cpu}s ''${proc.cmd}`);
+        };
+
         const pi = spawn(piBin, ["--mode", "rpc", "--no-session", "--offline"], {
           stdio: ["pipe", "pipe", "inherit"],
         });
@@ -42,7 +71,11 @@
           pi.kill("SIGKILL");
           fail(message);
         };
-        const timer = setTimeout(() => stop("pi did not answer within 120s"), 120000);
+        const timer = setTimeout(() => {
+          console.error(`pi did not answer within 300s; stdout: ''${JSON.stringify(seen)}`);
+          console.error(processes().join("\n"));
+          stop("pi hung");
+        }, 300000);
         pi.on("exit", (code) => stop(`pi exited with ''${code} before answering`));
 
         let buffer = "";
@@ -58,9 +91,11 @@
             } catch {
               continue;
             }
+            seen.push(`''${elapsed()} ''${message.type}`);
             if (message.type === "extension_error") stop(`extension error: ''${line}`);
             if (message.type !== "response" || message.id !== "load") continue;
             clearTimeout(timer);
+            console.log(`pi answered after ''${elapsed()}`);
             if (!message.success) stop(line);
             const sources = {};
             for (const command of message.data.commands) sources[command.source] = (sources[command.source] ?? 0) + 1;
@@ -118,6 +153,7 @@
         in
         pkgs.runCommand "pi-extensions-${name}" { nativeBuildInputs = [ pkgs.nodejs-slim ]; } ''
           export HOME=$TMPDIR/home PI_CODING_AGENT_DIR=$TMPDIR/agent
+          export PI_OFFLINE=1 PI_SKIP_VERSION_CHECK=1 PI_TELEMETRY=0
           mkdir -p $HOME
           cp -rL ${agentDir} $PI_CODING_AGENT_DIR
           chmod -R u+w $PI_CODING_AGENT_DIR
