@@ -30,6 +30,24 @@
       "enabled": false
     },
     {
+      "description": "Images move per service: one PR per module file.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "groupName": "{{replace '^.*/|\\.nix$' '' packageFile}}"
+    },
+    {
+      "description": "The arr and torrent apps upgrade independently.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "modules/nixos/server/arr/arr.nix",
+        "modules/nixos/server/arr/qbittorrent.nix"
+      ],
+      "groupName": null
+    },
+    {
       "description": "pi extensions: pinned, one grouped PR; CI loads them in headless pi.",
       "matchManagers": [
         "npm"
