@@ -16,6 +16,17 @@ jobs:
       - name: Sync repository
         uses: actions/checkout@v6
       - run: nix --extra-experimental-features pipe-operators flake check
+      # Unchanged checks substitute after leprechaun's daily GC.
+      - name: Cache check results
+        if: ${{ !cancelled() }}
+        run: |
+          CACHIX_AUTH_TOKEN=$(cat /run/agenix/github-runner-cachix)
+          export CACHIX_AUTH_TOKEN
+          nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
+            --apply 'checks: map (check: check.outPath) (builtins.attrValues checks)' |
+            jq -r '.[]' | while read -r path; do [ ! -e "$path" ] || echo "$path"; done |
+            cachix push conorhk ||
+            echo "::warning::cachix push of check results failed"
   discover:
     runs-on: [self-hosted, nix, x86_64-linux]
     timeout-minutes: 15
