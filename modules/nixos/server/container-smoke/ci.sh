@@ -37,7 +37,11 @@ jq -n --arg spec "$spec" --argjson targets "$targets" '{$spec, $targets}' >"$sta
 status=0
 systemctl start "container-smoke@$id.service" || status=$?
 
-jq -r 'to_entries[] | "\(.key): \(.value.status) \(.value.reason)"' "$state/results/$id.json"
+result=$state/results/$id.json
+jq -r 'to_entries[] | "\(.key): \(.value.status) \(.value.reason)"' "$result"
+if jq -e 'any(.[]; .status == "deferred")' "$result" >/dev/null; then
+  exit 75
+fi
 if ((status != 0)); then
   echo "Container logs stay on $host: $state/logs/$id"
 fi

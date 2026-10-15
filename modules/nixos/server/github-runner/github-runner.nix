@@ -59,16 +59,19 @@ in
           "self-hosted"
           "x86_64-linux"
         ];
-        extraPackages = with pkgs; [
-          cachix
-          git
-          gh
-          jq
-          # Renovate updates npm lockfiles.
-          nodejs
-          renovate
-          systemd
-        ];
+        extraPackages =
+          with pkgs;
+          [
+            cachix
+            git
+            gh
+            jq
+            # Renovate updates npm lockfiles.
+            nodejs
+            renovate
+            systemd
+          ]
+          ++ [ config.blizzard.containerSmoke.windowCheck ];
         serviceOverrides = {
           Restart = lib.mkForce "always";
           RestartSec = "30s";

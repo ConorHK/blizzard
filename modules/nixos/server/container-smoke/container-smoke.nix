@@ -88,9 +88,25 @@ in
         cfg = config.blizzard.containerSmoke;
         stateDir = "/var/lib/container-smoke";
 
+        # Duplicate containers starve production; gatus is silent then.
+        window = pkgs.writeShellApplication {
+          name = "container-smoke-window";
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.systemd
+          ];
+          runtimeEnv = {
+            START = cfg.window.start;
+            LAST = cfg.window.lastStart;
+            UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
+          };
+          text = builtins.readFile ./window.sh;
+        };
+
         run = pkgs.writeShellApplication {
           name = "container-smoke";
           runtimeInputs = [
+            window
             config.boot.zfs.package
             config.virtualisation.podman.package
             pkgs.coreutils
@@ -122,6 +138,26 @@ in
             description = "User allowed to start smoke tests.";
           };
 
+          windowCheck = lib.mkOption {
+            type = lib.types.package;
+            readOnly = true;
+            default = window;
+            description = "Exits 0 when a smoke run may start.";
+          };
+
+          window = {
+            start = lib.mkOption {
+              type = lib.types.strMatching "[0-2][0-9]:[0-5][0-9]";
+              default = "06:00";
+              description = "Local time smoke runs may start from; the upgrade window.";
+            };
+            lastStart = lib.mkOption {
+              type = lib.types.strMatching "[0-2][0-9]:[0-5][0-9]";
+              default = "06:40";
+              description = "Latest start; a 30m run ends before gatus alerts at 07:10.";
+            };
+          };
+
           emptyPaths = lib.mkOption {
             type = lib.types.attrsOf (lib.types.listOf lib.types.str);
             default = { };
@@ -130,6 +166,8 @@ in
         };
 
         config = {
+          environment.systemPackages = [ window ];
+
           systemd.tmpfiles.rules = [
             "d ${stateDir} 0711 root root -"
             "d ${stateDir}/requests 0700 ${cfg.requester} ${cfg.requester} 7d"

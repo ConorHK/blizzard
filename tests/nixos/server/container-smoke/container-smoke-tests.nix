@@ -76,7 +76,14 @@
             blizzard.containerSmoke = {
               requester = "ci";
               emptyPaths.web = [ "/www/secret" ];
+              window = {
+                start = "01:00";
+                lastStart = "23:00";
+              };
             };
+
+            # The test sets the clock itself.
+            services.timesyncd.enable = false;
 
             home-manager.users.containers.virtualisation.quadlet.containers = {
               db = container [
@@ -142,6 +149,14 @@
                 "su containers -s /bin/sh -c "
                 "'XDG_RUNTIME_DIR=/run/user/1000 podman load -i /etc/smoke-image.tar'",
             )
+
+            with subtest("a run outside the window is deferred"):
+                machine.succeed("date -s 00:30")
+                assert smoke("early", ["web"]) != 0
+                assert result("early")["window"]["status"] == "deferred", result("early")
+                datasets = machine.succeed("zfs list -H -o name -t all")
+                assert "smoke" not in datasets, datasets
+                machine.succeed("date -s 12:00")
 
             with subtest("a healthy target passes on cloned data"):
                 assert smoke("good", ["web"]) == 0

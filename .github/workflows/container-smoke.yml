@@ -1,0 +1,27 @@
+name: container-smoke
+on:
+  schedule:
+    # 06:00-06:40 Dublin, in summer and winter.
+    - cron: "*/10 5-6 * * *"
+  workflow_dispatch:
+concurrency:
+  group: container-smoke
+  cancel-in-progress: false
+jobs:
+  # Starts changed images on cloned data, offline.
+  smoke:
+    runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 60
+    environment: production
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Smoke renovate branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: modules/nixos/server/container-smoke/nightly.sh leprechaun
