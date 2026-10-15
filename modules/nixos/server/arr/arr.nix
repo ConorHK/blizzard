@@ -159,7 +159,7 @@ in
           containers = lib.mapAttrs (name: app: { containerConfig = appContainer name app; }) apps // {
             recyclarr.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/recyclarr/recyclarr
-              image = "ghcr.io/recyclarr/recyclarr:8.7.3";
+              image = "ghcr.io/recyclarr/recyclarr:8.8.0";
               volumes = [
                 "${data}/recyclarr:/config"
                 "${recyclarrConfig}:/config/recyclarr.yml:ro"
