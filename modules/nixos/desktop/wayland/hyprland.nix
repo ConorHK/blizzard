@@ -2,7 +2,6 @@ topLevel: {
   flake.modules.nixos.desktop =
     {
       config,
-      inputs,
       lib,
       pkgs,
       ...
@@ -102,11 +101,28 @@ topLevel: {
         )
         + "\n";
 
-      hyprland =
-        (inputs.wrappers.wrapperModules.hyprland.apply {
-          "hypr.conf".path = pkgs.writeText "hyprland.lua" configText;
-          inherit pkgs;
-        }).wrapper;
+      # security.wrappers requires an ELF target.
+      # Overridable so programs.hyprland can set enableXWayland.
+      hyprland = lib.makeOverridable (
+        {
+          enableXWayland ? true,
+        }:
+        let
+          base = pkgs.hyprland.override { inherit enableXWayland; };
+        in
+        pkgs.symlinkJoin {
+          name = "hyprland-${base.version}";
+          inherit (base) version passthru;
+          # symlinkJoin builds only out.
+          meta = removeAttrs base.meta [ "outputsToInstall" ];
+          paths = [ base ];
+          nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+          postBuild = ''
+            wrapProgram $out/bin/Hyprland \
+              --add-flags "--config ${pkgs.writeText "hyprland.lua" configText}"
+          '';
+        }
+      ) { };
     in
     {
       programs.hyprland = {

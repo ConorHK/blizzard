@@ -44,8 +44,6 @@
     textfox.url = "github:adriankarlen/textfox";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    wrappers.inputs.nixpkgs.follows = "nixpkgs";
-    wrappers.url = "github:Lassulus/wrappers";
   };
 
   outputs =
