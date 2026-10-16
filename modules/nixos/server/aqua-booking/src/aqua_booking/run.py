@@ -64,7 +64,6 @@ def _record_and_notify(store, target, match, position, recovered=False) -> None:
     if position is None:
         store.mark(match.sfid, match.title, match.from_date, "booked")
         log.info("result: booked %s (%s) — confirmed seat%s", match.sfid, target.label, suffix)
-        notify(f"{name} booked", f"{target.label} — confirmed seat{suffix}", priority=4, tags="swimmer")
     else:
         store.mark(match.sfid, match.title, match.from_date, f"waitlist:{position}")
         log.warning(

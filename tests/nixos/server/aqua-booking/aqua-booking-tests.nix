@@ -369,19 +369,15 @@
               assert out.count("targets on ") == 1, out
               machine.fail("test -e /var/lib/aqua-booking/booked.jsonl")
 
-          with subtest("scripted login books a free seat and notifies the success topic"):
+          with subtest("scripted login books a free seat without notifying"):
               set_mode("book")
               machine.succeed("systemctl start aqua-booking.service")
-              post = wait_for_success(1)[0]
-              assert post["title"] == "machine: Aqua Aerobics booked", post
-              assert "confirmed seat" in post["message"], post
               # A position on a class with space is not a waitlist place.
-              assert "#1" not in post["message"], post
-              assert post["priority"] == 4, post
               machine.succeed(
                   "journalctl --sync; journalctl -u aqua-booking.service -o cat"
-                  " | grep -q 'result: booked S1'"
+                  " | grep -q 'result: booked S1 .* confirmed seat$'"
               )
+              assert success_posts() == [], success_posts()
               # Implicit flow hands back no refresh token, so none is ever written.
               machine.fail("test -e /var/lib/aqua-booking/refresh_token")
               assert bookings_count() == 1, bookings_count()
@@ -407,7 +403,7 @@
           with subtest("a full class joins the waitlist and reports the position"):
               set_mode("waitlist")
               machine.succeed("systemctl start aqua-booking.service")
-              post = wait_for_success(2)[1]
+              post = wait_for_success(1)[0]
               assert post["title"] == "machine: Aqua Aerobics waitlisted", post
               assert "#3" in post["message"], post
               # journald must have parsed the <4> prefix into a real priority,
@@ -420,7 +416,7 @@
           with subtest("a missing class posts a low-priority schedule-change note"):
               set_mode("missing")
               machine.succeed("systemctl start aqua-booking.service")
-              post = wait_for_success(3)[2]
+              post = wait_for_success(2)[1]
               assert post["title"] == "machine: Aqua Aerobics: nothing to book", post
               assert post["priority"] == 2, post
               assert post["tags"] == ["calendar"], post
@@ -430,9 +426,11 @@
               machine.succeed("rm -f /var/lib/aqua-stub/bookings-count")
               before = len(success_posts())
               machine.succeed("systemctl start aqua-booking.service")
-              post = wait_for_success(before + 1)[before]
-              assert post["title"] == "machine: Aqua Aerobics booked", post
-              assert "recovered after a retry" in post["message"], post
+              machine.succeed(
+                  "journalctl --sync; journalctl -u aqua-booking.service -o cat"
+                  " | grep -q 'confirmed seat (recovered after a retry)'"
+              )
+              assert len(success_posts()) == before, success_posts()
               # Exactly one POST reached the server; the retry re-checked, it did not re-POST.
               assert bookings_count() == 1, bookings_count()
 
@@ -488,8 +486,7 @@
               set_mode("multi", multi)
               auth_before = counter("authorize-count", multi)
               multi.succeed("systemctl start aqua-booking.service")
-              got = sorted(post["title"] for post in wait_for_success(2, node=multi))
-              assert got == ["multi: Aqua Aerobics booked", "multi: Yoga booked"], got
+              assert success_posts(multi) == [], success_posts(multi)
               assert bookings_count(multi) == 2, bookings_count(multi)
               # One feed sweep resolved both, so both rode the same token.
               assert counter("authorize-count", multi) == auth_before + 1, counter(
@@ -504,13 +501,11 @@
               before = len(success_posts(multi))
               count_before = bookings_count(multi)
               multi.succeed("systemctl start aqua-booking.service")
-              got = {
-                  post["title"]: post for post in wait_for_success(before + 2, node=multi)[before:]
-              }
-              assert "multi: Yoga booked" in got, got
+              got = wait_for_success(before + 1, node=multi)[before:]
               # The morning class never appeared; only it gets the schedule-change note.
-              note = got.get("multi: Aqua Aerobics: nothing to book")
-              assert note is not None, got
+              assert len(got) == 1, got
+              note = got[0]
+              assert note["title"] == "multi: Aqua Aerobics: nothing to book", note
               assert note["priority"] == 2, note
               # The evening class was booked once, on the first sweep, and the
               # retries for the missing one never went back over it.

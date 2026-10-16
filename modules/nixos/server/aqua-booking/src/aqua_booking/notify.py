@@ -1,4 +1,4 @@
-"""Success/info notifications via the repo's alert-send, aimed at the ntfy
+"""Missed-seat notifications via the repo's alert-send, aimed at the ntfy
 success topic. Errors are not sent here — the systemd OnFailure template pages
 the alert module when the process exits non-zero.
 """
