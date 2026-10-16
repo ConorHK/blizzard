@@ -9,9 +9,18 @@ in
   };
 
   flake.modules.nixos.paperless =
-    { config, ... }:
+    { config, pkgs, ... }:
     let
       dataDir = "${config.blizzard.storage.data}/paperless";
+
+      export = pkgs.writeShellApplication {
+        name = "paperless-export";
+        runtimeInputs = [ pkgs.podman ];
+        text = ''
+          podman exec paperless document_exporter /usr/src/paperless/export \
+            --delete --no-thumbnail --no-progress-bar
+        '';
+      };
     in
     {
       age.secrets.paperless-secrets = {
@@ -53,6 +62,7 @@ in
                 PAPERLESS_URL = "https://${url}";
                 PAPERLESS_REDIS = "redis://paperless-redis:6379";
                 PAPERLESS_TIME_ZONE = "Europe/Dublin";
+                PAPERLESS_CONSUMER_DELETE_DUPLICATES = "true";
                 # Container root maps to the host containers user.
                 USERMAP_UID = "0";
                 USERMAP_GID = "0";
@@ -65,6 +75,25 @@ in
               Requires = "paperless-redis.service";
             };
           };
+        };
+      };
+
+      home-manager.users.containers.systemd.user = {
+        services.paperless-export = {
+          Unit.Description = "Export Paperless documents and metadata";
+          Service = {
+            Type = "oneshot";
+            ExecStart = "${export}/bin/paperless-export";
+          };
+        };
+        timers.paperless-export = {
+          Unit.Description = "Daily Paperless export";
+          # Ahead of the 03:00 restic run.
+          Timer = {
+            OnCalendar = "02:30";
+            Persistent = true;
+          };
+          Install.WantedBy = [ "timers.target" ];
         };
       };
 
