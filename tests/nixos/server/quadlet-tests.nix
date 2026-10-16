@@ -29,6 +29,7 @@
             container = marker: {
               image = "localhost/demo:latest";
               environments.MARKER = marker;
+              networks = [ "demo.network" ];
             };
           in
           {
@@ -50,13 +51,24 @@
             };
             users.groups.driver = { };
 
-            home-manager.users.containers.virtualisation.quadlet.containers.demo.containerConfig =
-              container "one";
+            home-manager.users.containers.virtualisation.quadlet = {
+              containers.demo.containerConfig = container "one";
+              networks.demo.networkConfig.labels.marker = "one";
+            };
 
-            specialisation.changed.configuration = {
-              home-manager.users.containers.virtualisation.quadlet.containers.demo.containerConfig = lib.mkForce (
-                container "two"
-              );
+            specialisation = {
+              changed.configuration = {
+                home-manager.users.containers.virtualisation.quadlet.containers.demo.containerConfig = lib.mkForce (
+                  container "two"
+                );
+              };
+              # A nixpkgs bump rewrites every network unit.
+              network-changed.configuration = {
+                home-manager.users.containers.virtualisation.quadlet = {
+                  containers.demo.containerConfig = lib.mkForce (container "two");
+                  networks.demo.networkConfig.labels.marker = lib.mkForce "two";
+                };
+              };
             };
 
             environment.etc."demo-image.tar".source = image;
@@ -78,6 +90,7 @@
 
           machine.wait_for_unit("multi-user.target")
           machine.wait_for_unit("user@1000.service")
+          base = machine.succeed("readlink -f /run/current-system").strip()
           as_containers("podman load -i /etc/demo-image.tar")
 
           with subtest("the container starts from its declared definition"):
@@ -91,9 +104,7 @@
           before = invocation()
 
           with subtest("switching to a changed definition restarts the container"):
-              machine.succeed(
-                  "/run/current-system/specialisation/changed/bin/switch-to-configuration switch"
-              )
+              machine.succeed(f"{base}/specialisation/changed/bin/switch-to-configuration switch")
               machine.wait_for_unit("demo.service", user="containers")
 
               unit = as_containers("systemctl --user cat demo.service")
@@ -101,6 +112,18 @@
 
               after = invocation()
               assert after != before, f"container was not restarted ({after})"
+
+          with subtest("a changed network brings its containers back"):
+              # Stopping the network stops its containers too.
+              machine.succeed(
+                  f"{base}/specialisation/network-changed/bin/switch-to-configuration switch"
+              )
+              machine.wait_until_succeeds(
+                  "su containers -s /bin/sh -c "
+                  "'XDG_RUNTIME_DIR=/run/user/$(id -u containers) "
+                  "systemctl --user is-active demo.service'",
+                  timeout=60,
+              )
         '';
       };
     };

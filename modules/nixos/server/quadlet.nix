@@ -49,6 +49,12 @@
             packages = [ pkgs.podman-tui ];
           };
 
+          # A restarted network stops its containers,
+          # and sd-switch restarts only the network.
+          home.activation.startContainers = inputs.home-manager.lib.hm.dag.entryAfter [ "reloadSystemd" ] ''
+            run ${pkgs.systemd}/bin/systemctl --user start --no-block default.target
+          '';
+
           # Renovate bumps leave old images unreaped.
           systemd.user = {
             services.podman-image-prune = {
