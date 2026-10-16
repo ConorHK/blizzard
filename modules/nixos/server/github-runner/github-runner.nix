@@ -81,12 +81,28 @@ in
         };
       };
 
-      systemd.services.github-runner-blizzard = {
-        unitConfig = {
-          StartLimitIntervalSec = 300;
-          StartLimitBurst = 5;
+      # CI swapping into zram froze the host.
+      systemd.slices.ci.sliceConfig = {
+        MemoryHigh = "9G";
+        MemoryMax = "10G";
+        MemorySwapMax = 0;
+        CPUWeight = 20;
+        IOWeight = 20;
+      };
+
+      systemd.services = {
+        github-runner-blizzard = {
+          unitConfig = {
+            StartLimitIntervalSec = 300;
+            StartLimitBurst = 5;
+          };
+          serviceConfig = {
+            Slice = "ci.slice";
+            ReadWritePaths = [ "-/var/lib/container-smoke/requests" ];
+          };
         };
-        serviceConfig.ReadWritePaths = [ "-/var/lib/container-smoke/requests" ];
+        # Builds run in the daemon's cgroup.
+        nix-daemon.serviceConfig.Slice = "ci.slice";
       };
     };
 }

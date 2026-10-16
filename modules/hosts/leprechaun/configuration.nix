@@ -83,12 +83,14 @@
         settings = {
           eval-cores = lib.mkForce 2;
           max-jobs = lib.mkForce 2;
+          cores = 2;
           min-free = lib.mkForce 10737418240; # 10 GB
           max-free = lib.mkForce 21474836480; # 20 GB
         };
       };
 
-      systemd.services.nix-daemon.serviceConfig.MemoryHigh = "5G";
+      # Default ARC ceiling is nearly all RAM.
+      boot.kernelParams = [ "zfs.zfs_arc_max=3221225472" ]; # 3 GiB
 
       programs.nh = {
         enable = true;
