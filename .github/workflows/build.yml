@@ -15,17 +15,27 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
-      # Parallel VMs under ci.slice miss boot timeouts.
-      - name: Run VM tests one at a time
+      # Roots stop min-free GC eating fresh results.
+      - name: Build checks
         run: |
-          tests=$(nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
-            --apply 'checks: builtins.filter (check: check ? driver) (builtins.attrValues checks)
-              |> map (check: { run = check.drvPath; driver = check.driver.drvPath; })')
-          jq -r '.[].driver + "^*"' <<<"$tests" | xargs nix build --no-link
-          jq -r '.[].run + "^*"' <<<"$tests" | while read -r run; do
-            nix build --no-link -L "$run"
-          done
-      - run: nix --extra-experimental-features pipe-operators flake check
+          roots="$RUNNER_TEMP/checks"
+          mkdir -p "$roots"
+          checks=$(nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
+            --apply 'builtins.mapAttrs (_: check: {
+              vm = check ? driver;
+              drv = check.drvPath;
+              driver = check.driver.drvPath or null;
+            })')
+          jq -r 'to_entries[] | select(.value.vm | not) | .value.drv + "^*"' <<<"$checks" |
+            xargs -r nix build --out-link "$roots/check"
+          jq -r 'to_entries[] | select(.value.vm) | .value.driver + "^*"' <<<"$checks" |
+            xargs -r nix build --out-link "$roots/driver"
+          # Parallel VMs under ci.slice miss boot timeouts.
+          jq -r 'to_entries[] | select(.value.vm) | "\(.key) \(.value.drv)"' <<<"$checks" |
+            while read -r name drv; do
+              nix build -L --out-link "$roots/$name" "$drv^*"
+            done
+      - run: nix --extra-experimental-features pipe-operators flake check --no-build
       # Unchanged checks substitute after leprechaun's daily GC.
       - name: Cache check results
         if: ${{ !cancelled() }}
