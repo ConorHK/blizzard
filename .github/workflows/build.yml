@@ -20,31 +20,32 @@ jobs:
         run: |
           roots="$RUNNER_TEMP/checks"
           mkdir -p "$roots"
+          # One eval per check; all at once peaks near 7G.
           checks=$(nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
-            --apply 'builtins.mapAttrs (_: check: {
-              vm = check ? driver;
-              drv = check.drvPath;
-              driver = check.driver.drvPath or null;
-            })')
-          jq -r 'to_entries[] | select(.value.vm | not) | .value.drv + "^*"' <<<"$checks" |
+            --apply builtins.attrNames | jq -r '.[]' | while read -r name; do
+              nix --extra-experimental-features pipe-operators eval --json ".#checks.x86_64-linux.$name" \
+                --apply 'check: {
+                  vm = check ? driver;
+                  drv = check.drvPath;
+                  driver = check.driver.drvPath or null;
+                }' | jq -c --arg name "$name" '. + { name: $name }'
+            done | jq -s .)
+          jq -r '.[] | select(.vm | not) | .drv + "^*"' <<<"$checks" |
             xargs -r nix build --out-link "$roots/check"
-          jq -r 'to_entries[] | select(.value.vm) | .value.driver + "^*"' <<<"$checks" |
+          jq -r '.[] | select(.vm) | .driver + "^*"' <<<"$checks" |
             xargs -r nix build --out-link "$roots/driver"
           # Parallel VMs under ci.slice miss boot timeouts.
-          jq -r 'to_entries[] | select(.value.vm) | "\(.key) \(.value.drv)"' <<<"$checks" |
+          jq -r '.[] | select(.vm) | "\(.name) \(.drv)"' <<<"$checks" |
             while read -r name drv; do
-              nix build -L --out-link "$roots/$name" "$drv^*"
+              nix build -L --out-link "$roots/vm-$name" "$drv^*"
             done
-      - run: nix --extra-experimental-features pipe-operators flake check --no-build
       # Unchanged checks substitute after leprechaun's daily GC.
       - name: Cache check results
         if: ${{ !cancelled() }}
         run: |
           CACHIX_AUTH_TOKEN=$(cat /run/agenix/github-runner-cachix)
           export CACHIX_AUTH_TOKEN
-          nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
-            --apply 'checks: map (check: check.outPath) (builtins.attrValues checks)' |
-            jq -r '.[]' | while read -r path; do [ ! -e "$path" ] || echo "$path"; done |
+          find "$RUNNER_TEMP/checks" -mindepth 1 -maxdepth 1 -exec readlink -f {} + |
             cachix push conorhk ||
             echo "::warning::cachix push of check results failed"
   discover:
