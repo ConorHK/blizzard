@@ -7,7 +7,10 @@ in
     { lib, pkgs, ... }:
     let
       # Tailnet addresses.
-      hosts.leprechaun = "100.91.205.65";
+      hosts = {
+        leprechaun = "100.91.205.65";
+        bananach = "100.96.40.127";
+      };
       server = "100.66.244.36";
 
       a = value: {
