@@ -15,6 +15,16 @@ jobs:
     steps:
       - name: Sync repository
         uses: actions/checkout@v6
+      # Parallel VMs under ci.slice miss boot timeouts.
+      - name: Run VM tests one at a time
+        run: |
+          tests=$(nix --extra-experimental-features pipe-operators eval --json .#checks.x86_64-linux \
+            --apply 'checks: builtins.filter (check: check ? driver) (builtins.attrValues checks)
+              |> map (check: { run = check.drvPath; driver = check.driver.drvPath; })')
+          jq -r '.[].driver + "^*"' <<<"$tests" | xargs nix build --no-link
+          jq -r '.[].run + "^*"' <<<"$tests" | while read -r run; do
+            nix build --no-link -L "$run"
+          done
       - run: nix --extra-experimental-features pipe-operators flake check
       # Unchanged checks substitute after leprechaun's daily GC.
       - name: Cache check results
