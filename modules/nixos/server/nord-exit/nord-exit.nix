@@ -8,9 +8,15 @@ _: {
       tailscalePort = 41642;
     in
     {
-      age.secrets.nord-gluetun = {
-        rekeyFile = ./secrets/nord-gluetun.age;
-        owner = "containers";
+      age.secrets = {
+        nord-gluetun = {
+          rekeyFile = ./secrets/nord-gluetun.age;
+          owner = "containers";
+        };
+        nord-tailscale = {
+          rekeyFile = ./secrets/nord-tailscale.age;
+          owner = "containers";
+        };
       };
 
       systemd.tmpfiles.rules = [ "d ${stateDir} 0750 containers containers -" ];
@@ -51,7 +57,11 @@ _: {
               # renovate: datasource=docker depName=docker.io/tailscale/tailscale
               image = "docker.io/tailscale/tailscale:v1.104.1";
               volumes = [ "${stateDir}:/var/lib/tailscale" ];
+              # TS_AUTHKEY; interactive login times out.
+              environmentFiles = [ config.age.secrets.nord-tailscale.path ];
               environments = {
+                # Reuse saved state; key only joins once.
+                TS_AUTH_ONCE = "true";
                 TS_STATE_DIR = "/var/lib/tailscale";
                 # No tun needed inside gluetun's netns.
                 TS_USERSPACE = "true";
