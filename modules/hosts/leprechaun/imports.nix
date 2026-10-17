@@ -37,6 +37,7 @@
     nextdns
     navidrome
     nginx
+    nord-exit
     nvidia
     ollama
     paperless
