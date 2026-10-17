@@ -62,8 +62,7 @@ in
           ];
           "*" = a server;
           "*.lep" = a hosts.leprechaun;
-          # Keep on server, not their vhost host.
-          audiobookshelf = a server;
+          # Keep on server, not its vhost host.
           photos = a server;
           # octoDNS rejects unescaped semicolons.
           _dmarc = {
