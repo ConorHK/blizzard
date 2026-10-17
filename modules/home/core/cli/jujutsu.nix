@@ -7,6 +7,10 @@ in
     programs = {
       jujutsu = {
         enable = true;
+        settings.user = {
+          name = "Conor Knowles";
+          email = "dev@conorknowles.com";
+        };
         settings.aliases = {
           # jj sync [revset]: fetch, then rebase @'s branch onto it.
           sync = [
