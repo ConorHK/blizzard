@@ -12,6 +12,7 @@
       ];
 
       home.sessionVariables.BROWSER = "firefox";
+      programs.hypr-ws-pin.exempt = [ "firefox" ];
       programs.firefox = {
         enable = true;
         configPath = ".mozilla/firefox";
