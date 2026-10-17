@@ -86,7 +86,8 @@
             };
             network = {
               interval = 1;
-              format = "";
+              format = "n:?";
+              format-linked = "n:lnk";
               format-ethernet = "e:con";
               format-wifi = "w:con";
               format-disconnected = "n:dis";
