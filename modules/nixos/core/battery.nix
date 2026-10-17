@@ -27,6 +27,8 @@
           PCIE_ASPM_ON_BAT = "powersupersave";
           USB_AUTOSUSPEND = 1;
           RUNTIME_PM_ON_BAT = "auto";
+          # TLP masks systemd-rfkill; restore radios itself.
+          RESTORE_DEVICE_STATE_ON_STARTUP = 1;
         };
       };
     };
