@@ -22,7 +22,7 @@ It uses flake-parts with import-tree: every `.nix` file under `modules/` and `te
 nix fmt                     # nixfmt and yamlfmt via treefmt
 nix flake check             # hooks, unit checks and NixOS VM tests
 nix build .#nixosConfigurations.<host>.config.system.build.toplevel
-nix develop                 # or direnv; provides the scripts below
+nix develop                 # provides the scripts below
 rebuild <host>              # nh os switch on the host itself
 rebuild-home <home>         # home-manager switch for a standalone home
 check-hosts                 # eval every host without building

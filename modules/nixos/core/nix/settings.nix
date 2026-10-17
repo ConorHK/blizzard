@@ -70,11 +70,6 @@
         min-free = 128000000; # 128 MB
         max-free = 1000000000; # 1 GB
 
-        # Prevent garbage collection from altering nix-shells managed by nix-direnv
-        # https://github.com/nix-community/nix-direnv#installation
-        keep-outputs = true;
-        keep-derivations = true;
-
         # Store de-duplication is handled by the scheduled `nix.optimise.automatic`
         # timer above; `auto-optimise-store` would additionally hard-link on every
         # build, which duplicates that work — so it is intentionally left off.

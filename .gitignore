@@ -2,8 +2,6 @@
 result
 result-*
 
-# Ignore automatically generated direnv output
-.direnv
 .pre-commit-config.yaml
 
 __pycache__/
