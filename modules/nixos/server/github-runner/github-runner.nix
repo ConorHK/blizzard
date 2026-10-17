@@ -104,53 +104,55 @@ in
         };
       };
 
-      # CI swapping into zram froze the host.
-      systemd.slices.ci.sliceConfig = {
-        MemoryHigh = "9G";
-        MemoryMax = "10G";
-        MemorySwapMax = 0;
-        CPUWeight = 20;
-        IOWeight = 20;
-      };
+      systemd = {
+        # CI swapping into zram froze the host.
+        slices.ci.sliceConfig = {
+          MemoryHigh = "9G";
+          MemoryMax = "10G";
+          MemorySwapMax = 0;
+          CPUWeight = 20;
+          IOWeight = 20;
+        };
 
-      systemd.services = {
-        github-runner-blizzard = {
-          unitConfig = {
-            StartLimitIntervalSec = 300;
-            StartLimitBurst = 5;
+        services = {
+          github-runner-blizzard = {
+            unitConfig = {
+              StartLimitIntervalSec = 300;
+              StartLimitBurst = 5;
+            };
+            serviceConfig = {
+              Slice = "ci.slice";
+              ReadWritePaths = [ "-/var/lib/container-smoke/requests" ];
+            };
           };
-          serviceConfig = {
-            Slice = "ci.slice";
-            ReadWritePaths = [ "-/var/lib/container-smoke/requests" ];
+          # Builds run in the daemon's cgroup.
+          nix-daemon.serviceConfig.Slice = "ci.slice";
+
+          # GitHub cron runs hours late.
+          container-smoke-dispatch = {
+            description = "Dispatch the container-smoke workflow";
+            wants = [ "network-online.target" ];
+            after = [ "network-online.target" ];
+            unitConfig.OnFailure = "alert-failure@container-smoke-dispatch.service";
+            path = [ pkgs.curl ];
+            script = ''
+              printf 'Authorization: Bearer %s\n' "$(tr -d '[:space:]' <"$CREDENTIALS_DIRECTORY/token")" |
+                curl -fsS --retry 3 --retry-all-errors --max-time 20 -H @- \
+                  -H 'Accept: application/vnd.github+json' -d '{"ref":"main"}' \
+                  https://api.github.com/repos/ConorHK/blizzard/actions/workflows/container-smoke.yml/dispatches
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              DynamicUser = true;
+              LoadCredential = "token:${config.age.secrets.github-dispatch-token.path}";
+            };
           };
         };
-        # Builds run in the daemon's cgroup.
-        nix-daemon.serviceConfig.Slice = "ci.slice";
 
-        # GitHub cron runs hours late.
-        container-smoke-dispatch = {
-          description = "Dispatch the container-smoke workflow";
-          wants = [ "network-online.target" ];
-          after = [ "network-online.target" ];
-          unitConfig.OnFailure = "alert-failure@container-smoke-dispatch.service";
-          path = [ pkgs.curl ];
-          script = ''
-            printf 'Authorization: Bearer %s\n' "$(tr -d '[:space:]' <"$CREDENTIALS_DIRECTORY/token")" |
-              curl -fsS --retry 3 --retry-all-errors --max-time 20 -H @- \
-                -H 'Accept: application/vnd.github+json' -d '{"ref":"main"}' \
-                https://api.github.com/repos/ConorHK/blizzard/actions/workflows/container-smoke.yml/dispatches
-          '';
-          serviceConfig = {
-            Type = "oneshot";
-            DynamicUser = true;
-            LoadCredential = "token:${config.age.secrets.github-dispatch-token.path}";
-          };
+        timers.container-smoke-dispatch = {
+          wantedBy = [ "timers.target" ];
+          timerConfig.OnCalendar = dispatchTimes;
         };
-      };
-
-      systemd.timers.container-smoke-dispatch = {
-        wantedBy = [ "timers.target" ];
-        timerConfig.OnCalendar = dispatchTimes;
       };
     };
 }
