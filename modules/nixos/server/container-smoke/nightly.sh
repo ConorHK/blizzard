@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke tests renovate branches inside the maintenance window.
+# Smoke tests or queues renovate branches.
 set -euo pipefail
 
 host=${1:-$(hostname)}
@@ -10,9 +10,10 @@ cp "$(dirname "$0")/ci.sh" "$ci"
 start=$(git rev-parse HEAD)
 trap 'git checkout -q --detach "$start"; rm -f "$ci"' EXIT
 
+open=1
 if ! reason=$(container-smoke-window); then
   echo "Skipped: $reason"
-  exit 0
+  open=0
 fi
 
 status() {
@@ -20,21 +21,36 @@ status() {
     -f state="$2" -f description="${3:0:140}"
 }
 
+# grep -q exit trips pipefail via SIGPIPE.
+changes_image() {
+  git diff "$(git merge-base "$1" origin/main)" "$1" -- '*.nix' |
+    grep -E '^[+-][[:space:]]*image =' >/dev/null
+}
+
 mapfile -t branches < <(gh api --paginate "repos/$repo/branches" \
   --jq '.[] | select(.name | startswith("renovate/")) | "\(.name) \(.commit.sha)"')
 
 for line in "${branches[@]}"; do
   read -r branch sha <<<"$line"
-  decided=$(gh api "repos/$repo/commits/$sha/statuses" \
-    --jq '[.[] | select(.context == "container-smoke" and .state != "pending")] | length')
-  [[ $decided == 0 ]] || continue
-  if ! reason=$(container-smoke-window); then
+  read -r decided marked < <(gh api "repos/$repo/commits/$sha/statuses" \
+    --jq '[.[] | select(.context == "container-smoke")] |
+      "\(map(select(.state != "pending")) | length) \(length)"')
+  ((decided == 0)) || continue
+  if ((open)) && ! reason=$(container-smoke-window); then
     echo "Stopped: $reason"
-    break
+    open=0
+  fi
+
+  git fetch -q origin "$sha"
+  if ((!open)); then
+    if ((marked == 0)) && changes_image "$sha"; then
+      status "$sha" pending "Waits for the next maintenance window"
+      echo "$branch waits for the window."
+    fi
+    continue
   fi
 
   echo "::group::$branch"
-  git fetch -q origin "$sha"
   git checkout -q --detach "$sha"
   rc=0
   out=$(bash "$ci" "$host" </dev/null 2>&1) || rc=$?
@@ -46,7 +62,7 @@ for line in "${branches[@]}"; do
     75)
       status "$sha" pending "Waits for the next maintenance window"
       echo "Window closed; $branch waits for tomorrow."
-      break
+      open=0
       ;;
     *) status "$sha" failure "$(grep -m 1 ': fail' <<<"$out" || tail -n 1 <<<"$out")" ;;
   esac

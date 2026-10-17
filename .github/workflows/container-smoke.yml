@@ -1,8 +1,6 @@
 name: container-smoke
+# Dispatched by leprechaun's timer and renovate.
 on:
-  schedule:
-    # 06:00-06:40 Dublin, in summer and winter.
-    - cron: "*/10 5-6 * * *"
   workflow_dispatch:
 concurrency:
   group: container-smoke
