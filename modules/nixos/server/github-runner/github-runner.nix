@@ -10,23 +10,6 @@ in
       pkgs,
       ...
     }:
-    let
-      inherit (config.blizzard.containerSmoke) window;
-
-      minutes =
-        clock:
-        let
-          parts = map lib.toIntBase10 (lib.splitString ":" clock);
-        in
-        60 * lib.head parts + lib.last parts;
-      clock = m: "${lib.fixedWidthNumber 2 (m / 60)}:${lib.fixedWidthNumber 2 (lib.mod m 60)}";
-
-      # Retries ride out the upgrade reboot.
-      dispatchTimes = lib.pipe (lib.range (minutes window.start) (minutes window.lastStart)) [
-        (lib.filter (m: lib.mod (m - minutes window.start) 10 == 0))
-        (map (m: "*-*-* ${clock m}:00"))
-      ];
-    in
     {
       imports = [
         container-smoke
@@ -94,7 +77,7 @@ in
             renovate
             systemd
           ]
-          ++ [ config.blizzard.containerSmoke.windowCheck ];
+          ++ [ config.blizzard.containerSmoke.gateCheck ];
         serviceOverrides = {
           Restart = lib.mkForce "always";
           RestartSec = "30s";
@@ -151,7 +134,8 @@ in
 
         timers.container-smoke-dispatch = {
           wantedBy = [ "timers.target" ];
-          timerConfig.OnCalendar = dispatchTimes;
+          # Retries runs deferred or cut by reboots.
+          timerConfig.OnCalendar = "hourly";
         };
       };
     };

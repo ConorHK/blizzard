@@ -58,13 +58,13 @@
             # Nothing pulls this in inside a test VM.
             systemd.targets.network-online.wantedBy = [ "multi-user.target" ];
 
-            # The timer keeps the oneshot's timestamps loaded.
+            # Turns the gate on.
             system.autoUpgrade = {
               enable = true;
               flake = "/nonexistent";
               dates = "2199-12-31";
             };
-            systemd.services.nixos-upgrade.script = lib.mkForce "true";
+            systemd.services.nixos-upgrade.script = lib.mkForce "sleep 600";
 
             users.users = {
               driver = {
@@ -84,10 +84,6 @@
             blizzard.containerSmoke = {
               requester = "ci";
               emptyPaths.web = [ "/www/secret" ];
-              window = {
-                start = "00:00";
-                lastStart = "23:59";
-              };
             };
 
             home-manager.users.containers.virtualisation.quadlet.containers = {
@@ -155,17 +151,13 @@
                 "'XDG_RUNTIME_DIR=/run/user/1000 podman load -i /etc/smoke-image.tar'",
             )
 
-            with subtest("a run outside the window is deferred"):
-                # Every HH:MM sorts before 24:00.
-                machine.succeed(
-                    "rm /etc/container-smoke/window",
-                    "echo '24:00 24:00' > /etc/container-smoke/window",
-                )
+            with subtest("a run before a pending reboot is deferred"):
+                machine.succeed("touch /run/systemd/shutdown/scheduled")
                 assert smoke("early", ["web"]) != 0
-                assert result("early")["window"]["status"] == "deferred", result("early")
+                assert result("early")["gate"]["status"] == "deferred", result("early")
                 datasets = machine.succeed("zfs list -H -o name -t all")
                 assert "smoke" not in datasets, datasets
-                machine.succeed("echo '00:00 23:59' > /etc/container-smoke/window")
+                machine.succeed("rm /run/systemd/shutdown/scheduled")
 
             with subtest("a healthy target passes on cloned data"):
                 assert smoke("good", ["web"]) == 0
@@ -187,17 +179,14 @@
             with subtest("the requester starts nothing else"):
                 machine.fail("su ci -s /bin/sh -c 'systemctl restart nix-daemon.service'")
 
-            with subtest("a run waits for today's upgrade"):
-                # The window must open after boot.
-                machine.wait_until_succeeds(
-                    'test $(date -d "today $(date +%H:%M)" +%s) -gt '
-                    "$(($(date +%s) - $(cut -d. -f1 /proc/uptime)))"
-                )
-                machine.succeed('echo "$(date +%H:%M) 23:59" > /etc/container-smoke/window')
-                output = machine.fail("container-smoke-window")
+            with subtest("a run waits for a running upgrade"):
+                machine.succeed("container-smoke-gate")
+                machine.succeed("systemctl start --no-block nixos-upgrade.service")
+                machine.wait_until_fails("container-smoke-gate")
+                output = machine.fail("container-smoke-gate")
                 assert "nixos-upgrade" in output, output
-                machine.succeed("systemctl start nixos-upgrade.service")
-                machine.succeed("container-smoke-window")
+                machine.succeed("systemctl stop nixos-upgrade.service")
+                machine.succeed("container-smoke-gate")
           '';
       };
     };

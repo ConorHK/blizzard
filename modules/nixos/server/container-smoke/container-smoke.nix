@@ -88,21 +88,18 @@ in
         cfg = config.blizzard.containerSmoke;
         stateDir = "/var/lib/container-smoke";
 
-        # Duplicate containers starve production; gatus is silent then.
-        window = pkgs.writeShellApplication {
-          name = "container-smoke-window";
-          runtimeInputs = [
-            pkgs.coreutils
-            pkgs.systemd
-          ];
+        # Upgrade reboots kill runs midway.
+        gate = pkgs.writeShellApplication {
+          name = "container-smoke-gate";
+          runtimeInputs = [ pkgs.systemd ];
           runtimeEnv.UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
-          text = builtins.readFile ./window.sh;
+          text = builtins.readFile ./gate.sh;
         };
 
         run = pkgs.writeShellApplication {
           name = "container-smoke";
           runtimeInputs = [
-            window
+            gate
             config.boot.zfs.package
             config.virtualisation.podman.package
             pkgs.coreutils
@@ -134,24 +131,11 @@ in
             description = "User allowed to start smoke tests.";
           };
 
-          windowCheck = lib.mkOption {
+          gateCheck = lib.mkOption {
             type = lib.types.package;
             readOnly = true;
-            default = window;
+            default = gate;
             description = "Exits 0 when a smoke run may start.";
-          };
-
-          window = {
-            start = lib.mkOption {
-              type = lib.types.strMatching "[0-2][0-9]:[0-5][0-9]";
-              default = "06:00";
-              description = "Local time smoke runs may start from; the upgrade window.";
-            };
-            lastStart = lib.mkOption {
-              type = lib.types.strMatching "[0-2][0-9]:[0-5][0-9]";
-              default = "06:40";
-              description = "Latest start; a 30m run ends before gatus alerts at 07:10.";
-            };
           };
 
           emptyPaths = lib.mkOption {
@@ -162,9 +146,7 @@ in
         };
 
         config = {
-          environment.systemPackages = [ window ];
-          # A file, so tests can close it.
-          environment.etc."container-smoke/window".text = "${cfg.window.start} ${cfg.window.lastStart}\n";
+          environment.systemPackages = [ gate ];
 
           systemd.tmpfiles.rules = [
             "d ${stateDir} 0711 root root -"

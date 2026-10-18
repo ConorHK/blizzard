@@ -23,9 +23,9 @@ uid=$(id -u containers)
 # newuidmap lives in the setuid wrappers.
 export PATH=/run/wrappers/bin:$PATH
 
-# 75: try again in the next window.
-if ! reason=$(container-smoke-window); then
-  jq -n --arg reason "$reason" '{window: {status: "deferred", $reason}}' >"$result"
+# 75: try again after the upgrade.
+if ! reason=$(container-smoke-gate); then
+  jq -n --arg reason "$reason" '{gate: {status: "deferred", $reason}}' >"$result"
   echo "deferred: $reason"
   exit 75
 fi

@@ -11,7 +11,7 @@ start=$(git rev-parse HEAD)
 trap 'git checkout -q --detach "$start"; rm -f "$ci"' EXIT
 
 open=1
-if ! reason=$(container-smoke-window); then
+if ! reason=$(container-smoke-gate); then
   echo "Skipped: $reason"
   open=0
 fi
@@ -36,7 +36,7 @@ for line in "${branches[@]}"; do
     --jq '[.[] | select(.context == "container-smoke")] |
       "\(map(select(.state != "pending")) | length) \(length)"')
   ((decided == 0)) || continue
-  if ((open)) && ! reason=$(container-smoke-window); then
+  if ((open)) && ! reason=$(container-smoke-gate); then
     echo "Stopped: $reason"
     open=0
   fi
@@ -44,8 +44,8 @@ for line in "${branches[@]}"; do
   git fetch -q origin "$sha"
   if ((!open)); then
     if ((marked == 0)) && changes_image "$sha"; then
-      status "$sha" pending "Waits for the next maintenance window"
-      echo "$branch waits for the window."
+      status "$sha" pending "Waits for the host upgrade to finish"
+      echo "$branch waits for the upgrade."
     fi
     continue
   fi
@@ -60,8 +60,8 @@ for line in "${branches[@]}"; do
   case $rc in
     0) status "$sha" success "$(tail -n 1 <<<"$out")" ;;
     75)
-      status "$sha" pending "Waits for the next maintenance window"
-      echo "Window closed; $branch waits for tomorrow."
+      status "$sha" pending "Waits for the host upgrade to finish"
+      echo "Upgrade started; $branch waits for the next dispatch."
       open=0
       ;;
     *) status "$sha" failure "$(grep -m 1 ': fail' <<<"$out" || tail -n 1 <<<"$out")" ;;
