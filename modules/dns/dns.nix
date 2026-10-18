@@ -130,9 +130,15 @@ in
               token = "env/DESEC_TOKEN"; # pragma: allowlist secret
             };
           };
+          # Sync must not delete ACME challenges.
+          processors.no-acme = {
+            class = "octodns.processor.filter.NameRejectlistFilter";
+            rejectlist = [ "/^_acme-challenge(\\.|$)/" ];
+          };
           zones = builtins.mapAttrs (_: _: {
             sources = [ "nix" ];
             targets = [ "desec" ];
+            processors = [ "no-acme" ];
           }) zones;
         }
       );
