@@ -5,18 +5,11 @@ from kittens.tui.handler import result_handler
 # kitty re-execs kittens but caches their imports.
 sys.modules.pop("zmx_kitten", None)
 
-from zmx_kitten import HELPER, family, open_command, remote_context, sanitize
+from zmx_kitten import HELPER, open_command, remote_context
 
 
 def main(args):
     return ""
-
-
-def base_name(window, boss, session):
-    if session:
-        return family(session)
-    tab = window.tabref() or boss.active_tab
-    return sanitize(family(tab.effective_title if tab else "")) or "kitty"
 
 
 @result_handler(no_ui=True)
@@ -26,30 +19,24 @@ def handle_result(args, answer, target_window_id, boss):
     if window is None:
         return
 
+    host, session, cwd = remote_context(window)
     # A local pane escapes the remote context.
-    local = location == "local"
-    tab = location == "tab"
-    if local:
-        # Still check for local zmx session
-        _, session, cwd = remote_context(window)
-        host = ""
-    else:
-        host, session, cwd = remote_context(window)
+    if location == "local" and host:
+        host = session = cwd = ""
 
     launch = ["launch"]
-    if tab:
+    if location == "tab":
         launch.append("--type=tab")
     else:
-        where = "split" if local else location
+        where = "split" if location == "local" else location
         launch += ["--type=window", f"--location={where}"]
 
-    open_args = [HELPER, "--base", base_name(window, boss, session)]
+    # zmx-open names the session after the project.
+    open_args = [HELPER]
     if session:
         open_args += ["--from", session]
     elif cwd:
         open_args += ["--cwd", cwd]
-    if tab:
-        open_args.append("--new-family")
 
     if host:
         launch.append(f"--var=remote_host={host}")

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shlex
@@ -103,6 +104,27 @@ def reported_cwd(window):
     return short_host(rest.split("/", 1)[0]), path_from_osc7_url(url)
 
 
+def local_report():
+    try:
+        done = subprocess.run(
+            [HELPER, "--list"], capture_output=True, text=True, timeout=TIMEOUT
+        )
+        return json.loads(done.stdout)["sessions"]
+    except OSError, subprocess.SubprocessError, ValueError, KeyError:
+        return []
+
+
+# A local session may hold an ssh to elsewhere.
+def ssh_hop(session):
+    local = short_host(socket.gethostname())
+    for entry in local_report():
+        if entry.get("name") != session or not entry.get("ssh"):
+            continue
+        same = entry.get("cwd_host", local) == local
+        return no_nuls(entry["ssh"]), "", "" if same else no_nuls(entry["cwd"])
+    return None
+
+
 def ssh_destination(cmdline):
     args = cmdline[1:]
     index = 0
@@ -144,6 +166,11 @@ def remote_context(window):
 
     if not session and osc_host == (host or local):
         cwd = osc_path
+
+    if session and not host:
+        hop = ssh_hop(session)
+        if hop:
+            return hop
 
     return no_nuls(host), no_nuls(session), no_nuls(cwd)
 
