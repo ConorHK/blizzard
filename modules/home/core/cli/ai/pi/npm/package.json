@@ -11,7 +11,7 @@
     "pi-intercom": "0.17.1",
     "pi-mcp-adapter": "5.3.2",
     "pi-messenger": "0.15.2",
-    "pi-subagents": "0.78.0",
+    "pi-subagents": "0.79.1",
     "pi-tool-display": "0.5.0",
     "picomatch": "4.0.7"
   }
