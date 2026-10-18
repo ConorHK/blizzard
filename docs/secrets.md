@@ -1,0 +1,89 @@
+# Secrets
+
+Secrets use [agenix](https://github.com/ryantm/agenix) with
+[agenix-rekey](https://github.com/oddlama/agenix-rekey). You encrypt each
+secret once, to a YubiKey master identity. `agenix rekey` then encrypts a
+copy to each host's ssh key. Hosts decrypt only their own copies, at boot.
+
+```
+modules/.../secrets/foo.age      (master key: the YubiKey)
+        | agenix rekey
+        v
+.secrets/<host>/<hash>-foo.age   (host key: /etc/ssh host key)
+        | activation
+        v
+/run/agenix/foo                  (plaintext, on the host)
+```
+
+## The pieces
+
+- **Master identity**: [`.secrets/age-yubikey-identity.pub`](../.secrets/age-yubikey-identity.pub).
+  Only the YubiKey holds the private half, so creating, editing or rekeying
+  a secret needs it plugged in.
+- **Source secrets**: `secrets/*.age` beside the module that uses them, for
+  example [`modules/nixos/server/duckdns/secrets/`](../modules/nixos/server/duckdns/secrets/).
+  The module points at its file with `age.secrets.<name>.rekeyFile`.
+- **Rekeyed copies**: `.secrets/<host>/` for NixOS hosts, and
+  `.secrets/homes/<home>/` for standalone homes. They are committed, so hosts
+  and CI never need the YubiKey.
+- **Host keys**: each host sets `age.rekey.hostPubkey` in its
+  `configuration.nix` (for example
+  [puca](../modules/hosts/puca/configuration.nix)). Homes set it in `home.nix`
+  (for example [dullahan](../modules/hosts/dullahan/home.nix)).
+
+## Where it is wired
+
+- NixOS: [`modules/nixos/core/agenix.nix`](../modules/nixos/core/agenix.nix),
+  part of `core`. It sets `storageMode = "local"` and
+  `localStorageDir = .secrets/<hostName>`. It also aliases `secrets` to
+  `age.secrets`.
+- Home Manager: [`modules/home/core/agenix.nix`](../modules/home/core/agenix.nix).
+  It decrypts into `~/.local/share/agenix`. Each home sets its own
+  `localStorageDir`.
+- Flake: [`modules/flake/agenix.nix`](../modules/flake/agenix.nix) points
+  agenix-rekey at every `nixosConfigurations` and `homeConfigurations` entry.
+- Dev shell: [`modules/flake/devshell.nix`](../modules/flake/devshell.nix)
+  provides `agenix` and `age-plugin-yubikey`. It also sets
+  `AGENIX_REKEY_ADD_TO_GIT=true`, so rekeyed files get staged for you.
+
+## Add a secret
+
+1. `nix develop`, with the YubiKey plugged in.
+2. Create `modules/<path>/secrets/<name>.age` with `agenix edit`.
+3. Reference it in the module: `age.secrets.<name>.rekeyFile = ./secrets/<name>.age;`
+4. `git add` the new `.age`. Nix flakes only see tracked files, so
+   `agenix rekey` cannot find an untracked secret.
+5. Run `agenix rekey`. New files appear under `.secrets/<host>/`, already
+   staged.
+6. Commit the source and rekeyed files together.
+
+Consumers read the path, not the value:
+`config.age.secrets.<name>.path`. Pass it to services through
+`LoadCredential` or an env file, never argv
+(see [`duckdns.nix`](../modules/nixos/server/duckdns/duckdns.nix)).
+
+## Add a host
+
+1. Get its ssh host public key (`/etc/ssh/ssh_host_ed25519_key.pub`).
+2. Set `age.rekey.hostPubkey` in its `configuration.nix`.
+3. Run `agenix rekey` to create `.secrets/<host>/`.
+
+The host build fails until step 3 lands, because agenix-rekey refuses to
+build with missing rekeyed files.
+
+## Expiring credentials
+
+Some tokens expire or can be revoked. [`secret-expiry.nix`](../modules/nixos/core/secret-expiry.nix)
+(in `core`) checks registered secrets daily, and alerts 14 days before expiry
+(`warnDays`). Built-in probes check cachix tokens for write access and GitHub
+tokens. Register a secret under `blizzard.secretExpiry.secrets`, as
+[`github-runner.nix`](../modules/nixos/server/github-runner/github-runner.nix)
+does.
+
+## Guards
+
+- `ripsecrets` runs in pre-commit
+  ([`checks.nix`](../modules/flake/checks.nix)) and catches plaintext tokens
+  committed by mistake.
+- The `.age` files are safe to commit: without a host key or the YubiKey,
+  they are ciphertext.

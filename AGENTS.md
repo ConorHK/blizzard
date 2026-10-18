@@ -46,6 +46,10 @@ Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecre
 
 `nixosHosts.<host>` has one option, `system`. `mkHost` in `modules/flake/nixos.nix` combines `core` with `flake.modules.nixos."nixosConfigurations/<host>"`.
 
+## Design notes
+
+`docs/` explains flows that span files: hosts, deploys, secrets, monitoring, pi extensions. Update the matching note when you change one.
+
 ## Secrets
 
 agenix-rekey with a YubiKey master identity (`.secrets/age-yubikey-identity.pub`). Source secrets sit next to their module as `secrets/*.age`; rekeyed copies live in `.secrets/<host>` and `.secrets/homes/<home>`. `git add` a new `.age` before `agenix rekey`, or Nix cannot see it.
