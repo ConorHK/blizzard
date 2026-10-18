@@ -51,10 +51,8 @@
     restic
     restic-secrets
     satisfactory
-    selkie
     server-users
     smartd
-    snoop
     syncthing-server
     systemd-boot
     tunarr

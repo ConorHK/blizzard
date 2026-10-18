@@ -37,7 +37,6 @@
 | `qbittorrent` | qbittorrent, qbit-manage | 8080, 8181 | qbittorrent.lep, qbit-manage.lep |
 | `restic` | restic (backup 03:00, freshness check 10:00) | — | — |
 | `satisfactory` | satisfactory server | 7777 (TCP/UDP), 8888 | — |
-| `selkie` | nixos container for AI agents, user-namespaced | 10.111.0.2 (tailnet) | - |
 | `smartd` | smartd | — | — |
 | `syncthing-server` | syncthing hub for the `share` folder | 22000 (TCP/UDP), 21027 (UDP) | - |
 | `voice` | wyoming-whisper, kokoro-fastapi, wyoming-openai | 10300, 10200 | — |
@@ -82,18 +81,6 @@ Nothing else pages: failed passwords, sudo refusals and system drift are deliber
 
 Evaluated and deliberately not used — it does not work correctly against this deployment's login path. Do not re-add it without revisiting that.
 
-## ai debug access
-
-`snoop` is a read-only ssh account for AI debugging on leprechaun (`modules/nixos/server/snoop.nix`). It keys in via `ssh leprechaun-snoop` (key at `~/.ssh/leprechaun-snoop`, registered in `modules/home/core/cli/ssh.nix`), reads the whole journal through the `systemd-journal` group, and reaches rootless containers through `podman-ro`:
-
-```
-journalctl _SYSTEMD_USER_UNIT=actual-budget.service -n 100   # one container's logs
-journalctl _UID=$(id -u containers) -f                        # all container logs
-doas /run/current-system/sw/bin/podman-ro ps -a               # container status
-```
-
-`podman-ro` allows only `events images info inspect logs port ps stats version`, each with a fixed flag allowlist, so global flags such as `--runtime` are refused. `inspect` output drops `Config.Env`, which holds the agenix-loaded secrets. It drops to the `containers` user via a doas rule — sudo is wheel-only (`execWheelOnly`). snoop has no password, no wheel, and no container lifecycle control. snoop logins alert like any other (accepted).
-
 ## tests
 
 `nix flake check` runs everything below. The VM tests boot a real machine, so they
@@ -123,8 +110,6 @@ assert behaviour a build cannot: alerts are captured by a recorder inside the VM
 | `restic` | repository init, backup, byte-identical restore, container pause hooks, freshness on an empty and on a stale repository, failure paging | ~30s |
 | `restic-zfs` | restic reads the ZFS snapshot rather than live files, containers are back before restic reads | VM |
 | `secret-expiry` | probe-reported expiry warns inside the window, rejected credentials page with the reason, a secret with no known expiry asks for one | VM |
-| `selkie-isolation` | a container with selkie's isolation settings: init runs as a non-root host uid, the host Nix daemon reports `Trusted: 0` to container root, the idmapped home stays owned by host uid 1001, goose keeps sudo, tun and fuse still work | ~4 min without KVM |
-| `snoop-podman-ro` | `podman-ro` refuses unknown subcommands and any flag outside its allowlist, wherever it appears | instant |
 | `tests-mirror` | every file under `tests/` has a matching `modules/` path | instant |
 | `waybar-<check>-<host>` | waybar commands resolve, every dispatch it can emit is valid Hyprland Lua | instant |
 | `zfs-alerts` | a healthy scrub stays quiet, a faulted vdev pages through `alert-send` | VM |
