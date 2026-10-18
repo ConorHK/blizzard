@@ -28,6 +28,8 @@ rebuild-home <home>         # home-manager switch for a standalone home
 check-hosts                 # eval every host without building
 ```
 
+On dullahan, skip `nix flake check`: it is too heavy. Build the touched host instead, then run targeted checks (`nix build .#checks.x86_64-linux.{pre-commit,tests-mirror,treefmt,lib}`).
+
 Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecrets, flake-checker.
 
 ## Layout
