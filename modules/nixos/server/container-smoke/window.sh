@@ -12,7 +12,8 @@ fi
 if [[ $UPGRADES == true ]]; then
   opened=$(date -d "today $START" +%s)
   booted=$(($(date +%s) - $(cut -d. -f1 /proc/uptime)))
-  exited=$(systemctl show --timestamp=unix -p ActiveExitTimestamp --value nixos-upgrade.service)
+  # Oneshots never go active; ActiveExitTimestamp stays unset.
+  exited=$(systemctl show --timestamp=unix -p ExecMainExitTimestamp --value nixos-upgrade.service)
   exited=${exited#@}
   # A reboot means today's upgrade finished.
   if systemctl is-active --quiet nixos-upgrade.service ||

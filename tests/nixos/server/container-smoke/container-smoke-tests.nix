@@ -58,6 +58,14 @@
             # Nothing pulls this in inside a test VM.
             systemd.targets.network-online.wantedBy = [ "multi-user.target" ];
 
+            # The timer keeps the oneshot's timestamps loaded.
+            system.autoUpgrade = {
+              enable = true;
+              flake = "/nonexistent";
+              dates = "2199-12-31";
+            };
+            systemd.services.nixos-upgrade.script = lib.mkForce "true";
+
             users.users = {
               driver = {
                 isNormalUser = true;
@@ -178,6 +186,18 @@
 
             with subtest("the requester starts nothing else"):
                 machine.fail("su ci -s /bin/sh -c 'systemctl restart nix-daemon.service'")
+
+            with subtest("a run waits for today's upgrade"):
+                # The window must open after boot.
+                machine.wait_until_succeeds(
+                    'test $(date -d "today $(date +%H:%M)" +%s) -gt '
+                    "$(($(date +%s) - $(cut -d. -f1 /proc/uptime)))"
+                )
+                machine.succeed('echo "$(date +%H:%M) 23:59" > /etc/container-smoke/window')
+                output = machine.fail("container-smoke-window")
+                assert "nixos-upgrade" in output, output
+                machine.succeed("systemctl start nixos-upgrade.service")
+                machine.succeed("container-smoke-window")
           '';
       };
     };
