@@ -27,6 +27,7 @@ in
         qbittorrentDir = "${data}/qbittorrent";
         quiDir = "${data}/qui";
         slskdDir = "${data}/slskd";
+        mamDir = "${data}/mam";
       in
       {
         age.secrets = {
@@ -44,6 +45,7 @@ in
           "d ${qbittorrentDir} 0750 containers containers -"
           "d ${quiDir} 0750 containers containers -"
           "d ${slskdDir} 0750 containers containers -"
+          "d ${mamDir} 0700 containers containers -"
           "d ${media}/slskd 0775 containers containers -"
           "d ${media}/slskd/downloads 0775 containers containers -"
           "d ${media}/slskd/incomplete 0775 containers containers -"
@@ -79,7 +81,7 @@ in
                 networks = [ "arr.network" ];
               };
               # A new gluetun netns strands its clients; restart them.
-              unitConfig.Upholds = "qbittorrent.service slskd.service";
+              unitConfig.Upholds = "qbittorrent.service slskd.service mam-updater.service";
             };
 
             qbittorrent = {
@@ -125,6 +127,27 @@ in
                   SLSKD_UMASK = "0002";
                   TZ = "Europe/Dublin";
                 };
+                user = "0:0";
+                networks = [ "gluetun.container" ];
+                noNewPrivileges = true;
+              };
+              unitConfig = {
+                BindsTo = "gluetun.service";
+                After = "gluetun.service";
+              };
+            };
+
+            # MAM must see qbittorrent's exit IP.
+            mam-updater = {
+              containerConfig = {
+                # renovate: datasource=docker depName=docker.io/alpine/curl
+                image = "docker.io/alpine/curl:8.22.0";
+                entrypoint = "/bin/sh";
+                exec = "/update.sh";
+                volumes = [
+                  "${./mam-update.sh}:/update.sh:ro"
+                  "${mamDir}:/mam"
+                ];
                 user = "0:0";
                 networks = [ "gluetun.container" ];
                 noNewPrivileges = true;

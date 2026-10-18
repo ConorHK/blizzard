@@ -47,6 +47,7 @@
     podman-egress-watchdog
     qbittorrent
     quadlet
+    readmeabook
     restic
     restic-secrets
     satisfactory
