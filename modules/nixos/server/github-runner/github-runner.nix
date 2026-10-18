@@ -53,18 +53,18 @@ in
       };
 
       # Expired tokens stall every CI push.
+      # The runner token only registers once.
       blizzard = {
         secretExpiry.secrets = {
+          # Issuers report no expiry for these.
           cachix = {
             file = config.age.secrets.github-runner-cachix.path;
+            expires = "never";
             probe = config.blizzard.secretExpiry.probes.cachix "conorhk";
-          };
-          github-runner = {
-            file = config.age.secrets.github-runner-token.path;
-            probe = config.blizzard.secretExpiry.probes.github;
           };
           github-dispatch = {
             file = config.age.secrets.github-dispatch-token.path;
+            expires = "never";
             probe = config.blizzard.secretExpiry.probes.github;
           };
         };
