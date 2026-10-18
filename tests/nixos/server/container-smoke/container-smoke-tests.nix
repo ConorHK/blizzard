@@ -107,6 +107,12 @@
                     unitConfig.Requires = "db.service";
                   };
               crash = container [ "false" ];
+              # Answers one connection, then restarts.
+              flap = lib.recursiveUpdate (container [
+                "sh"
+                "-c"
+                "mkdir /srv && nc -l -p 8080 -e true && sleep 3 && exec httpd -f -p 8080 -h /srv"
+              ]) { containerConfig.publishPorts = [ "127.0.0.1:8082:8080" ]; };
             };
 
             environment.etc."smoke-image.tar".source = image;
@@ -167,6 +173,10 @@
             with subtest("the run leaves no clones behind"):
                 datasets = machine.succeed("zfs list -H -o name -t all")
                 assert "smoke" not in datasets, datasets
+
+            with subtest("a port that drops during startup passes"):
+                assert smoke("flap", ["flap"]) == 0, result("flap")
+                assert result("flap")["flap"]["status"] == "pass", result("flap")
 
             with subtest("a crashing target fails"):
                 assert smoke("bad", ["crash"]) != 0

@@ -188,7 +188,7 @@ answers() {
 
 # Port: wait for HTTP. Else: stay up 60s.
 probe() {
-  local name=$1 port status tries=12
+  local name=$1 port status answered=0 tries=12
   port=$(entry "$name" | jq -r '.port // empty')
   [[ -n $port ]] && tries=60
   for _ in $(seq "$tries"); do
@@ -197,17 +197,25 @@ probe() {
       record "$name" fail "$(state "$name")"
       return 1
     fi
-    if [[ -n $port ]] && answers "$port"; then break; fi
+    if [[ -n $port ]] && answers "$port"; then
+      answered=1
+      break
+    fi
     sleep 5
   done
-  if [[ -n $port ]] && ! answers "$port"; then
+  if [[ -n $port ]] && ((!answered)); then
     record "$name" fail "port $port silent after 300s"
     return 1
   fi
+  # Startup can answer once, then drop.
   sleep 10
   read -r status _ < <(state "$name")
   if [[ $status != running ]]; then
     record "$name" fail "$(state "$name")"
+    return 1
+  fi
+  if [[ -n $port ]] && ! answers "$port"; then
+    record "$name" fail "port $port stopped answering"
     return 1
   fi
   record "$name" pass "${port:+port $port answered}"
