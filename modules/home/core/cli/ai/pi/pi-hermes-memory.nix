@@ -11,6 +11,8 @@ in
       ...
     }:
     let
+      cfg = config.programs.pi.hermesMemory;
+      settingsFormat = pkgs.formats.json { };
       # Node pi needs native better-sqlite3.
       sqlitePrebuild =
         {
@@ -41,14 +43,24 @@ in
       };
     in
     {
-      options.programs.pi.hermesMemory.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install the hermes-memory extension.";
+      options.programs.pi.hermesMemory = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Install the hermes-memory extension.";
+        };
+        settings = lib.mkOption {
+          inherit (settingsFormat) type;
+          default = { };
+          description = "Contents of ~/.pi/agent/hermes-memory-config.json.";
+        };
       };
 
-      config = lib.mkIf config.programs.pi.hermesMemory.enable {
+      config = lib.mkIf cfg.enable {
         programs.pi.extensionDirs.hermes-memory = pi-hermes-memory;
+        home.file.".pi/agent/hermes-memory-config.json" = lib.mkIf (cfg.settings != { }) {
+          source = settingsFormat.generate "hermes-memory-config.json" cfg.settings;
+        };
       };
     };
 }

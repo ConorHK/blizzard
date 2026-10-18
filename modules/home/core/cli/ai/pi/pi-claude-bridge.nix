@@ -51,6 +51,11 @@ in
             provider.pathToClaudeCodeExecutable = lib.getExe pkgs.claude-code;
             askClaude.enabled = lib.mkDefault false;
           };
+          # Hermes cannot reach bridge models in-process.
+          hermesMemory.settings = {
+            childExtensionPaths = [ "${pi-claude-bridge}" ];
+            reviewTransport = "subprocess";
+          };
         };
         # Writable copy: the bridge records its startup notice.
         home.activation.piClaudeBridge = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
