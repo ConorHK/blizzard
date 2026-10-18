@@ -4,7 +4,7 @@
   '';
 
   flake.modules.homeManager.firefox =
-    { inputs, ... }:
+    { inputs, pkgs, ... }:
 
     {
       imports = [
@@ -12,9 +12,15 @@
       ];
 
       home.sessionVariables.BROWSER = "firefox";
-      programs.hypr-ws-pin.exempt = [ "firefox" ];
       programs.firefox = {
         enable = true;
+        # Hyprland pins every window of a tokened process.
+        package = pkgs.firefox.overrideAttrs (old: {
+          makeWrapperArgs = old.makeWrapperArgs ++ [
+            "--unset"
+            "HL_INITIAL_WORKSPACE_TOKEN"
+          ];
+        });
         configPath = ".mozilla/firefox";
         policies = {
           AutofillAddressEnabled = false;
