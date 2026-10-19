@@ -50,14 +50,26 @@ def list_command(host):
     return ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=3", host, remote]
 
 
+def failed(host, reason):
+    return {"host": host, "sessions": [], "error": reason}
+
+
 def query(host):
     try:
         done = subprocess.run(
             list_command(host), capture_output=True, text=True, timeout=TIMEOUT
         )
+    except subprocess.TimeoutExpired:
+        return failed(host, "timed out")
+    except OSError, subprocess.SubprocessError:
+        return failed(host, "cannot list sessions")
+    # ssh exits 255 on connection errors.
+    if done.returncode == 255 and not is_local(host):
+        return failed(host, "unreachable")
+    try:
         return {"host": host, "sessions": json.loads(done.stdout)["sessions"]}
-    except OSError, subprocess.SubprocessError, ValueError, KeyError:
-        return {"host": host, "sessions": [], "error": True}
+    except ValueError, KeyError, TypeError:
+        return failed(host, "cannot list sessions")
 
 
 # Runs in the overlay, so slow hosts never block kitty.
@@ -123,7 +135,7 @@ def build_entries(reports):
     for report in reports:
         host = report["host"]
         shown = host or local
-        state = " (unreachable)" if report.get("error") else ""
+        state = f" ({report['error']})" if report.get("error") else ""
         entries.append((None, f"{shown}{state}"))
         for entry in ordered(report["sessions"]):
             entries.append((("attach", host, entry["name"]), label(entry, shown)))
