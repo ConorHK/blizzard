@@ -36,7 +36,6 @@ in
       };
 
       # Expired tokens stall every CI push.
-      # The runner token only registers once.
       blizzard = {
         secretExpiry.secrets = {
           # Issuers report no expiry for these.
@@ -56,6 +55,7 @@ in
         containerSmoke.requester = "github-runner-blizzard";
       };
 
+      # Setting changes re-register; the token expires hourly.
       services.github-runners.blizzard = {
         enable = true;
         url = "https://github.com/ConorHK/blizzard";
