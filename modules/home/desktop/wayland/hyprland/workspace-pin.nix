@@ -6,15 +6,8 @@
   '';
 
   flake.modules.homeManager.hypr-workspace-pin =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     let
-      inherit (config.programs.hypr-ws-pin) exempt;
-
       # Hyprland drops a persistent workspace token when the window that first
       # claimed it closes, so Steam's splash takes the token down with it. Learn
       # each token's workspace from its first window and pin later ones there.
@@ -30,15 +23,10 @@
               addr=''${line#openwindow>>}
               addr=''${addr%%,*}
 
-              read -r pid ws class < <(hyprctl -j clients |
+              read -r pid ws < <(hyprctl -j clients |
                 ${pkgs.jq}/bin/jq -r --arg a "0x$addr" \
-                  '.[] | select(.address==$a) | "\(.pid) \(.workspace.id) \(.class)"')
+                  '.[] | select(.address==$a) | "\(.pid) \(.workspace.id)"')
               [ -n "''${pid:-}" ] && [ "$pid" -gt 0 ] && [ "''${ws:-0}" -gt 0 ] || continue
-              ${lib.optionalString (exempt != [ ]) ''
-                case "$class" in
-                  ${lib.concatMapStringsSep "|" lib.escapeShellArg exempt}) continue ;;
-                esac
-              ''}
 
               token=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null |
                 sed -n 's/^HL_INITIAL_WORKSPACE_TOKEN=//p' | head -1)
@@ -72,12 +60,6 @@
       '';
     in
     {
-      options.programs.hypr-ws-pin.exempt = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Window classes to leave unpinned. Single-instance apps reuse their first token for every window.";
-      };
-
-      config.home.packages = [ wsPin ];
+      home.packages = [ wsPin ];
     };
 }
