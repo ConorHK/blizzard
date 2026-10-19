@@ -48,23 +48,26 @@ let
   publishedOn =
     nixos:
     lib.filter (lib.hasInfix ".") (
-      lib.attrNames (
-        lib.filterAttrs (_: vhost: !vhost.default) (nixos.config.services.nginx.virtualHosts or { })
+      lib.concatLists (
+        lib.mapAttrsToList (name: vhost: lib.optionals (!vhost.default) ([ name ] ++ vhost.serverAliases)) (
+          nixos.config.services.nginx.virtualHosts or { }
+        )
       )
     );
+
+  urlHost =
+    url:
+    let
+      parsed = builtins.match "[a-z][a-z0-9+.-]*://([^/:?#]+).*" url;
+    in
+    if parsed == null then null else lib.head parsed;
 
   checksOn =
     host: nixos:
     let
-      vhosts = publishedOn nixos;
+      names = [ host ] ++ publishedOn nixos;
     in
-    lib.filter (
-      check:
-      lib.hasInfix "://${host}:" check.url
-      || lib.hasInfix "://${host}/" check.url
-      || lib.hasSuffix "://${host}" check.url
-      || lib.any (vhost: lib.hasInfix vhost check.url) vhosts
-    ) checks;
+    lib.filter (check: lib.elem (urlHost check.url) names) checks;
 
   # gatus-watch covers the gatus host's own reboot.
   rebooting = lib.filterAttrs (
@@ -78,7 +81,11 @@ let
     lib.mapAttrsToList (
       host: nixos:
       let
-        window = nixos.config.system.autoUpgrade.rebootWindow;
+        # No window: reboots at any time.
+        window = lib.defaultTo {
+          lower = "00:00";
+          upper = "24:00";
+        } nixos.config.system.autoUpgrade.rebootWindow;
         zone = nixos.config.time.timeZone;
         from = minutes window.lower;
         to = minutes window.upper + bootMargin;
