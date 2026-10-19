@@ -2,6 +2,9 @@
 result
 result-*
 
+# Stale nix-direnv state in old checkouts.
+.direnv/
+
 .pre-commit-config.yaml
 
 __pycache__/
