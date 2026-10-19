@@ -48,7 +48,7 @@ Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecre
 
 ## Design notes
 
-`docs/` explains flows that span files: hosts, deploys, secrets, monitoring, pi extensions. Update the matching note when you change one.
+`docs/` explains flows that span files: hosts, deploys, container smoke tests, secrets, monitoring, pi extensions. Update the matching note when you change one.
 
 ## Secrets
 

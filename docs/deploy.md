@@ -81,7 +81,8 @@ window, and CI fails. It skips the gatus host, which `gatus-watch` covers.
 Other jobs avoid the windows. restic backs up at 03:00
 ([`restic.nix`](../modules/nixos/server/restic/restic.nix)): a reboot
 mid-backup leaves a stale lock, and the stopped unit never fires
-`OnFailure`.
+`OnFailure`. Container smoke runs defer while an upgrade is running or
+due ([container-smoke.md](container-smoke.md)).
 
 ## Failure alerts
 
