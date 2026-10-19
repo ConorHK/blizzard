@@ -20,6 +20,11 @@ modules/.../secrets/foo.age      (master key: the YubiKey)
 - The master identity is [`.secrets/age-yubikey-identity.pub`](../.secrets/age-yubikey-identity.pub).
   Only the YubiKey holds the private half, so creating, editing or rekeying
   a secret needs it plugged in.
+- A backup FIDO2 key (ZUKEY 2) can also decrypt every source secret. Its
+  recipient is [`.secrets/age-fido2-backup-recipient.pub`](../.secrets/age-fido2-backup-recipient.pub),
+  set as `age.rekey.extraEncryptionPubkeys`. It uses
+  `age-plugin-fido2-hmac` with no identity file and a PIN. Encrypting to it
+  needs no token, so day to day only the YubiKey is used.
 - Source secrets sit in `secrets/*.age` beside the module that uses them, for
   example [`modules/nixos/server/duckdns/secrets/`](../modules/nixos/server/duckdns/secrets/).
   The module points at its file with `age.secrets.<name>.rekeyFile`.
@@ -69,6 +74,20 @@ Consumers read the path, `config.age.secrets.<name>.path`, not the value. Pass i
 
 The host build fails until step 3 lands, because agenix-rekey refuses to
 build with missing rekeyed files.
+
+## Backup key
+
+After changing the master or backup keys, run `agenix update-masterkeys`
+with the YubiKey plugged in. It re-encrypts every source secret to the
+current key set.
+
+To recover with only the backup key:
+
+1. Plug it in and decrypt with the magic identity:
+   `rage -d -j fido2-hmac modules/<path>/secrets/<name>.age`.
+2. To make it the master, write its magic identity to a file with
+   `age-plugin-fido2-hmac -m > .secrets/age-fido2-identity.txt`. Point
+   `masterIdentities` at that file, then run `agenix update-masterkeys`.
 
 ## Expiring credentials
 

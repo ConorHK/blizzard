@@ -3,6 +3,7 @@
     {
       inputs,
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -19,7 +20,11 @@
 
         rekey = {
           masterIdentities = [ ../../../.secrets/age-yubikey-identity.pub ];
-          agePlugins = [ pkgs.age-plugin-yubikey ];
+          extraEncryptionPubkeys = [ (lib.fileContents ../../../.secrets/age-fido2-backup-recipient.pub) ];
+          agePlugins = [
+            pkgs.age-plugin-yubikey
+            pkgs.age-plugin-fido2-hmac
+          ];
           storageMode = "local";
         };
       };

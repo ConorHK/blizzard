@@ -17,6 +17,7 @@
           inputs'.agenix-rekey.packages.default
           inputs'.home-manager.packages.default
           pkgs.age-plugin-yubikey
+          pkgs.age-plugin-fido2-hmac
           config.packages.dns-sync
 
           (script "rebuild" ''
