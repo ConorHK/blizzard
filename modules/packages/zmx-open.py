@@ -40,7 +40,6 @@ def parse_args() -> argparse.Namespace:
     """Parse the zmx-open command line."""
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--attach")
-    parser.add_argument("--base")
     parser.add_argument("--from", dest="from_session")
     parser.add_argument("--cwd")
     parser.add_argument("--list", action="store_true")
@@ -214,8 +213,7 @@ def main() -> None:
         session = opts.attach
     else:
         names = {fields["name"] for fields in sessions()}
-        base = sanitize(opts.base or "") or project_name(directory)
-        session = next_session(names, base)
+        session = next_session(names, project_name(directory))
 
     # Escapes precede the exec; zmx would eat them.
     sys.stdout.write(
