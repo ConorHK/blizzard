@@ -17,32 +17,32 @@ modules/.../secrets/foo.age      (master key: the YubiKey)
 
 ## The pieces
 
-- **Master identity**: [`.secrets/age-yubikey-identity.pub`](../.secrets/age-yubikey-identity.pub).
+- The master identity is [`.secrets/age-yubikey-identity.pub`](../.secrets/age-yubikey-identity.pub).
   Only the YubiKey holds the private half, so creating, editing or rekeying
   a secret needs it plugged in.
-- **Source secrets**: `secrets/*.age` beside the module that uses them, for
+- Source secrets sit in `secrets/*.age` beside the module that uses them, for
   example [`modules/nixos/server/duckdns/secrets/`](../modules/nixos/server/duckdns/secrets/).
   The module points at its file with `age.secrets.<name>.rekeyFile`.
-- **Rekeyed copies**: `.secrets/<host>/` for NixOS hosts, and
+- Rekeyed copies sit in `.secrets/<host>/` for NixOS hosts, and
   `.secrets/homes/<home>/` for standalone homes. They are committed, so hosts
   and CI never need the YubiKey.
-- **Host keys**: each host sets `age.rekey.hostPubkey` in its
+- Each host sets `age.rekey.hostPubkey` in its
   `configuration.nix` (for example
   [puca](../modules/hosts/puca/configuration.nix)). Homes set it in `home.nix`
   (for example [dullahan](../modules/hosts/dullahan/home.nix)).
 
 ## Where it is wired
 
-- NixOS: [`modules/nixos/core/agenix.nix`](../modules/nixos/core/agenix.nix),
-  part of `core`. It sets `storageMode = "local"` and
+- For NixOS, [`modules/nixos/core/agenix.nix`](../modules/nixos/core/agenix.nix)
+  sits in `core`. It sets `storageMode = "local"` and
   `localStorageDir = .secrets/<hostName>`. It also aliases `secrets` to
   `age.secrets`.
-- Home Manager: [`modules/home/core/agenix.nix`](../modules/home/core/agenix.nix).
-  It decrypts into `~/.local/share/agenix`. Each home sets its own
+- For Home Manager, [`modules/home/core/agenix.nix`](../modules/home/core/agenix.nix)
+  decrypts into `~/.local/share/agenix`. Each home sets its own
   `localStorageDir`.
-- Flake: [`modules/flake/agenix.nix`](../modules/flake/agenix.nix) points
+- At the flake level, [`modules/flake/agenix.nix`](../modules/flake/agenix.nix) points
   agenix-rekey at every `nixosConfigurations` and `homeConfigurations` entry.
-- Dev shell: [`modules/flake/devshell.nix`](../modules/flake/devshell.nix)
+- The dev shell in [`modules/flake/devshell.nix`](../modules/flake/devshell.nix)
   provides `agenix` and `age-plugin-yubikey`. It also sets
   `AGENIX_REKEY_ADD_TO_GIT=true`, so rekeyed files get staged for you.
 
@@ -50,15 +50,14 @@ modules/.../secrets/foo.age      (master key: the YubiKey)
 
 1. `nix develop`, with the YubiKey plugged in.
 2. Create `modules/<path>/secrets/<name>.age` with `agenix edit`.
-3. Reference it in the module: `age.secrets.<name>.rekeyFile = ./secrets/<name>.age;`
+3. Reference it in the module with `age.secrets.<name>.rekeyFile = ./secrets/<name>.age;`.
 4. `git add` the new `.age`. Nix flakes only see tracked files, so
    `agenix rekey` cannot find an untracked secret.
 5. Run `agenix rekey`. New files appear under `.secrets/<host>/`, already
    staged.
 6. Commit the source and rekeyed files together.
 
-Consumers read the path, not the value:
-`config.age.secrets.<name>.path`. Pass it to services through
+Consumers read the path, `config.age.secrets.<name>.path`, not the value. Pass it to services through
 `LoadCredential` or an env file, never argv
 (see [`duckdns.nix`](../modules/nixos/server/duckdns/duckdns.nix)).
 
@@ -85,5 +84,5 @@ does.
 - `ripsecrets` runs in pre-commit
   ([`checks.nix`](../modules/flake/checks.nix)) and catches plaintext tokens
   committed by mistake.
-- The `.age` files are safe to commit: without a host key or the YubiKey,
-  they are ciphertext.
+- The `.age` files are safe to commit. Without a host key or the YubiKey,
+  they are only ciphertext.

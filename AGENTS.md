@@ -14,7 +14,7 @@ Blizzard is a NixOS and Home Manager flake for five hosts:
 | leprechaun | Home server: containers, nginx, backups, CI runner |
 | puca | Home Assistant |
 
-It uses flake-parts with import-tree: every `.nix` file under `modules/` and `tests/` is imported automatically. There is no import list.
+It uses flake-parts with import-tree. Every `.nix` file under `modules/` and `tests/` is imported automatically. There is no import list.
 
 ## Commands
 
@@ -28,7 +28,7 @@ rebuild-home <home>         # home-manager switch for a standalone home
 check-hosts                 # eval every host without building
 ```
 
-On dullahan, skip `nix flake check`: it is too heavy. Build the touched host instead, then run targeted checks (`nix build .#checks.x86_64-linux.{pre-commit,tests-mirror,treefmt,lib}`).
+On dullahan, skip `nix flake check`, which is too heavy. Build the touched host instead, then run targeted checks (`nix build .#checks.x86_64-linux.{pre-commit,tests-mirror,treefmt,lib}`).
 
 Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecrets, flake-checker.
 

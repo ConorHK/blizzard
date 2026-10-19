@@ -23,7 +23,7 @@ push, on the self-hosted runner on leprechaun
 - `build-machines` builds each host's toplevel and pushes the closure to the
   `conorhk` cachix cache. Hosts then substitute instead of building.
 
-Concurrency cancels superseded runs on branches, but not on `main`: every
+Concurrency cancels superseded runs on branches, but not on `main`. Every
 `main` run must finish so `deployed` advances.
 
 ## 2. CI promotes to `deployed`
@@ -50,8 +50,8 @@ window (Europe/Dublin, from
 | 2 | leprechaun | 06:00-07:00 | Matches gatus's global maintenance window. |
 | 3 | bananach | 07:00-08:00 | Runs gatus, so it goes last. |
 
-The hour gaps mean a bad commit never takes down every host at once: a
-running host still sends the alert.
+The hour gaps mean a bad commit never takes down every host at once, so a
+host that still runs can send the alert.
 
 abhartach and dullahan set `autoUpgrade.enable = false`
 ([abhartach](../modules/hosts/abhartach/configuration.nix),
@@ -60,26 +60,26 @@ abhartach and dullahan set `autoUpgrade.enable = false`
 
 ## Monitoring around the reboots
 
-Each reboot would page without these windows:
+Each reboot would page without these windows.
 
-- **leprechaun**: gatus's global `maintenance` (06:00, 70m) in
+- For leprechaun, gatus's global `maintenance` (06:00, 70m) in
   [`gatus.nix`](../modules/nixos/server/gatus/gatus.nix) silences every
   endpoint during its reboot.
-- **puca**: its own `maintenanceWindows` entry (05:00, 70m) in
+- For puca, its own `maintenanceWindows` entry (05:00, 70m) in
   [`puca/imports.nix`](../modules/hosts/puca/imports.nix) silences only
   its endpoint.
-- **bananach**: gatus itself goes down. leprechaun's `gatus-watch`
+- When bananach reboots, gatus itself goes down. leprechaun's `gatus-watch`
   ([`watch.nix`](../modules/nixos/server/gatus/watch.nix)) probes every 5
   minutes and pages after 3 straight failures, so a reboot under 15 minutes
   stays quiet.
 
 The `upgrade-windows` check
 ([`upgrade-windows.nix`](../modules/flake/upgrade-windows.nix)) enforces the
-first two: move a window in `update.nix` without moving its maintenance
+first two. Move a window in `update.nix` without moving its maintenance
 window, and CI fails. It skips the gatus host, which `gatus-watch` covers.
 
 Other jobs avoid the windows. restic backs up at 03:00
-([`restic.nix`](../modules/nixos/server/restic/restic.nix)): a reboot
+([`restic.nix`](../modules/nixos/server/restic/restic.nix)), because a reboot
 mid-backup leaves a stale lock, and the stopped unit never fires
 `OnFailure`. Container smoke runs defer while an upgrade is running or
 due ([container-smoke.md](container-smoke.md)).
@@ -100,10 +100,9 @@ stalled" once the commit has waited `thresholdHours` (12 by default), and
 
 ## Common tasks
 
-- **Ship now**: push to `main` and wait for `promote`. Servers pick it up at
-  their next window.
-- **Ship before the window**: once `promote` finishes, run `rebuild <host>`
-  on the host.
-- **Hold a deploy**: do nothing. A red CI run blocks `deployed` on its own.
-- **Roll back**: push a revert to `main`. `deployed` never rewinds, so a
-  revert is the only way back.
+| Task | Steps |
+|---|---|
+| Ship now | Push to `main` and wait for `promote`. Servers pick it up at their next window. |
+| Ship before the window | Once `promote` finishes, run `rebuild <host>` on the host. |
+| Hold a deploy | Do nothing. A red CI run blocks `deployed` on its own. |
+| Roll back | Push a revert to `main`. `deployed` never rewinds, so a revert is the only way back. |

@@ -1,10 +1,10 @@
 # Pi extensions
 
-Pi extensions come from two places:
+Pi extensions come from two places.
 
-- **npm packages**, pinned in one lockfile and built by Nix without running
+- npm packages, pinned in one lockfile and built by Nix without running
   npm.
-- **Local extensions** in the repo (`advisor/`, `checkpoint/`, `ttsr/`, and
+- Local extensions in the repo (`advisor/`, `checkpoint/`, `ttsr/`, and
   single `.ts` files), built as flake packages or used as plain paths.
 
 ## npm packages
@@ -32,20 +32,21 @@ runtime.
 eval time and:
 
 1. Walks the dependency closure from `node_modules/<name>`, resolving each
-   dependency the way npm does: nearest `node_modules` upward.
+   dependency the way npm does, from the nearest `node_modules` upward.
 2. Drops `@earendil-works/*` packages, which pi provides, plus anything in
    `prune`.
 3. Drops optional dependencies for other platforms (os, cpu, libc).
 4. Fetches each tarball with `fetchurl` using the lockfile's integrity hash,
    then unpacks it into the npm layout under `$out`.
 
-No npm runs at build time, and no extra hash needs maintaining: the
-lockfile's integrity values are the hashes.
+No npm runs at build time. The lockfile's integrity values serve as the
+hashes, so there are no extra hashes to maintain.
 
-It fails eval in two cases:
+It fails eval in two cases.
 
-- `package.json` and the lockfile disagree: "pi-extensions lock is stale".
-- Two packages land at one path: re-nest one by hand.
+- When `package.json` and the lockfile disagree, with "pi-extensions lock
+  is stale".
+- When two packages land at one path. Re-nest one by hand.
 
 Extra arguments pass through to `mkDerivation`. Use that for native
 modules. [`pi-hermes-memory.nix`](../modules/home/core/cli/ai/pi/pi-hermes-memory.nix)
@@ -56,9 +57,9 @@ keeps one `better-sqlite3` prebuild and runs `autoPatchelfHook` on Linux.
 1. Add it to `npm/package.json` with a pinned version.
 2. In `modules/home/core/cli/ai/pi/npm/`, run
    `npm install --package-lock-only --ignore-scripts`.
-3. Create `pi-<name>.nix`, copying
-   [`pi-ask-user.nix`](../modules/home/core/cli/ai/pi/pi-ask-user.nix):
-   build with `mkPiExtension pkgs "<name>" { }`, add an enable option, and
+3. Create `pi-<name>.nix` from a copy of
+   [`pi-ask-user.nix`](../modules/home/core/cli/ai/pi/pi-ask-user.nix).
+   Build with `mkPiExtension pkgs "<name>" { }`, add an enable option, and
    append the result to `programs.pi.settings.packages`.
 4. Build `.#checks.x86_64-linux.pi-extensions-<home>`.
 
@@ -72,16 +73,16 @@ CI runs the load checks on the PR.
 
 These live as source in
 [`modules/home/core/cli/ai/pi/`](../modules/home/core/cli/ai/pi/). Two
-shapes exist:
+shapes exist.
 
-- **Directories** become a flake package (`packages.pi-checkpoint`,
+- Directories become a flake package (`packages.pi-checkpoint`,
   `packages.pi-ttsr`), registered through `programs.pi.extensionDirs`. See
   [`pi-checkpoint.nix`](../modules/home/core/cli/ai/pi/pi-checkpoint.nix).
-- **Single files** go straight in:
+- Single files go straight in, as in
   `programs.pi.extensions.bash-highlight = ./bash-highlight.ts;`
   ([`pi-bash-highlight.nix`](../modules/home/core/cli/ai/pi/pi-bash-highlight.nix)).
 
-A local extension that needs an npm dependency can still use the builder:
+A local extension that needs an npm dependency can still use the builder.
 [`pi-ttsr.nix`](../modules/home/core/cli/ai/pi/pi-ttsr.nix) builds
 `picomatch` with `mkPiExtension`.
 

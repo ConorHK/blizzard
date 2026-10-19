@@ -1,21 +1,7 @@
-# SCAFFOLD — dormant, not yet wired to a real service, not build-verified.
-# The container wiring depends on Cloudflare-side setup that does not exist yet
-# (tunnel UUID + credentials). It evaluates as-is because `shares` is empty.
-# See ./README.md for the full plan, decisions, and manual setup steps.
+# Dormant scaffold, not build-verified. See ./README.md.
 _:
 let
-  # ── Shares ──────────────────────────────────────────────────────────────────
-  # Empty until a real service is wired. To add one, uncomment the example and
-  # fill in the fields. Adding a share here is the ONLY Nix change needed.
-  #
-  #   network  = the target service's existing podman network (isolation boundary)
-  #   target   = container DNS name + port on that network (NOT a host loopback port)
-  #   hostname = public name on the Cloudflare zone
-  #   tunnel   = per-share tunnel UUID from `cloudflared tunnel create`
-  #              (one tunnel per share keeps each connector on one network — see README)
-  #
-  # Each share `<name>` also expects an agenix secret `cloudflare-share-<name>`
-  # backed by ./secrets/<name>.json.age (the tunnel credentials file).
+  # Fields are described in ./README.md.
   shares = {
     # budget = {
     #   network  = "actual-budget.network";
@@ -36,9 +22,7 @@ in
     let
       knownShares = lib.attrNames shares;
 
-      # cloudflared reads a local config.yml → locally-managed ingress. Targets are
-      # pinned here and cannot be re-pointed from the Cloudflare side. Ingress lists
-      # only this share's hostname; everything else 404s at the connector.
+      # Local ingress; Cloudflare cannot re-point it.
       mkConfig =
         name: share:
         pkgs.writeText "cloudflared-${name}.yml" ''
@@ -50,9 +34,7 @@ in
             - service: http_status:404
         '';
 
-      # One dormant cloudflared container per share, joined to ONLY that share's
-      # podman network. autoStart = false → exists after rebuild, runs only when
-      # `share-open` starts it. Unit name: cloudflared-share-<name>.service (user).
+      # Joins only its share's network.
       mkContainer = name: share: {
         name = "cloudflared-share-${name}";
         value = {
@@ -71,7 +53,7 @@ in
         };
       };
 
-      # Drive the rootless `containers` user's systemd, same as the `asc` alias.
+      # Act as the rootless containers user.
       asc = "${pkgs.sudo}/bin/sudo -u containers XDG_RUNTIME_DIR=/run/user/$(id -u containers)";
       knownList = lib.concatStringsSep " " knownShares;
 
@@ -89,7 +71,7 @@ in
           echo "unknown share: $svc (known: ''${known:-<none>})" >&2; exit 1;; esac
         unit="cloudflared-share-$svc.service"
         ${asc} systemctl --user start "$unit"
-        # Transient timer stops the connector after the window, then self-destructs.
+        # Stop the connector when the window ends.
         ${asc} systemd-run --user --on-active="$dur" \
           --unit="share-close-$svc" \
           systemctl --user stop "$unit"
@@ -101,7 +83,7 @@ in
         svc="''${1:-}"
         [ -n "$svc" ] || { echo "usage: share-close <service>" >&2; exit 1; }
         ${asc} systemctl --user stop "cloudflared-share-$svc.service" || true
-        # Cancel the pending auto-close timer if the window hasn't elapsed.
+        # Cancel the pending auto-close timer.
         ${asc} systemctl --user stop "share-close-$svc.timer" 2>/dev/null || true
         echo "closed $svc"
       '';
@@ -118,7 +100,7 @@ in
       '';
     in
     {
-      # Per-share tunnel credentials, readable by the rootless container user.
+      # Tunnel credentials for the rootless user.
       age.secrets = lib.mapAttrs' (name: _: {
         name = "cloudflare-share-${name}";
         value = {
@@ -138,7 +120,6 @@ in
         shareStatus
       ];
 
-      # NOTE: no firewall ports and no `wantedBy` boot target — exposure is
-      # outbound-only and dormant. A reboot mid-window leaves shares CLOSED.
+      # No boot target, so reboots close shares.
     };
 }

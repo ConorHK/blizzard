@@ -26,16 +26,15 @@ After `rebuild abhartach`:
 journalctl --user -u syncthing | grep -i "device ID"
 ```
 
-If it differs, correct the literal — it is the only place the value appears.
+If it differs, correct the literal. It is the only place the value appears.
 
 ### 2. Put the desktop identities under agenix
 
 abhartach and dullahan still use self-generated `cert.pem`/`key.pem` in
 `~/.local/state/syncthing`, so their identities are not reproducible from the repo.
 
-The same generator pattern applies — home-manager's syncthing module has the same
-`cert`/`key` options as the NixOS one. Note that generating fresh keys **rotates**
-those device IDs, so `syncthingDevices.nix` must change in the same commit or the
+The same generator pattern applies, since home-manager's syncthing module has the
+same `cert`/`key` options as the NixOS one. Fresh keys rotate those device IDs, so `syncthingDevices.nix` must change in the same commit or the
 mesh breaks.
 
 ## Gotchas
@@ -48,9 +47,9 @@ mesh breaks.
   disk by Nix. Deleting `config.xml` therefore discards the whole declarative
   state until it runs again.
 - `agenix generate` ignores `AGENIX_REKEY_ADD_TO_GIT`. `git add` the new `.age`
-  before `agenix rekey`, or the rekey fails — Nix cannot see untracked files.
+  before `agenix rekey`, or the rekey fails. Nix cannot see untracked files.
 - `services.syncthing.cert` takes a `str`. Use `"${./cert.pem}"`, never
-  `toString ./cert.pem`: the latter drops string context, so the file is not part
+  `toString ./cert.pem`. The latter drops string context, so the file is not part
   of the closure and never reaches the host. It fails only at runtime, and the
   `ExecStartPre` that installs it does not `set -e`, so the unit still starts and
   silently generates a throwaway identity.

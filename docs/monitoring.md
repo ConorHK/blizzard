@@ -1,7 +1,7 @@
 # Monitoring
 
-gatus on bananach watches every public service. The build enforces
-coverage: a host with an nginx vhost that no check covers fails to evaluate.
+gatus on bananach watches every public service. A host with an nginx vhost
+that no check covers fails to evaluate.
 
 ```
 flake.monitoringChecks (any module) -> specialArgs -> gatus endpoints on bananach
@@ -60,11 +60,11 @@ Exempt a vhost only when watching it makes no sense. bananach exempts
 
 ## Maintenance windows
 
-Two levels silence alerts during planned downtime:
+Two levels silence alerts during planned downtime.
 
-- **Global**: gatus's `maintenance` block (06:00, 70m) silences every
+- gatus's global `maintenance` block (06:00, 70m) silences every
   endpoint. It covers leprechaun's auto-upgrade reboot.
-- **Per check**: `maintenanceWindows` on one check. puca uses one at 05:00
+- `maintenanceWindows` silences one check. puca uses one at 05:00
   for its own reboot ([`puca/imports.nix`](../modules/hosts/puca/imports.nix)).
 
 These windows must cover the upgrade windows in
