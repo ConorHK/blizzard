@@ -27,11 +27,21 @@ in
       let
         inherit (config.blizzard.storage) data media;
         dataDir = "${data}/readmeabook";
+        # Bind sources podman needs present.
+        binds = [
+          "config"
+          "cache"
+          "pgdata"
+          "redis"
+        ];
       in
       {
-        systemd.tmpfiles.rules = lib.concatMap (name: [
-          "d ${dataDir}/${name} 0750 containers containers -"
-        ]) (lib.attrNames instances);
+        # ":" sets owner and mode only on creation.
+        systemd.tmpfiles.rules = lib.concatMap (
+          name:
+          [ "d ${dataDir}/${name} 0750 containers containers -" ]
+          ++ map (bind: "d ${dataDir}/${name}/${bind} :0750 :containers :containers -") binds
+        ) (lib.attrNames instances);
 
         home-manager.users.containers.virtualisation.quadlet.containers = lib.mapAttrs' (
           name: i:
