@@ -85,12 +85,12 @@ in
         "upload"
       ];
 
-      # restic.paths = [
-      #   "${dataDir}/backups"
-      #   "${dataDir}/library"
-      #   "${dataDir}/profile"
-      #   "${dataDir}/upload"
-      # ];
+      restic.paths = [
+        "${dataDir}/backups"
+        "${dataDir}/library"
+        "${dataDir}/profile"
+        "${dataDir}/upload"
+      ];
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;
