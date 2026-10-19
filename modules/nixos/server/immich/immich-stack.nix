@@ -1,9 +1,4 @@
-_:
-let
-  # Immich runs on server, not leprechaun.
-  apiUrl = "http://100.66.244.36:2283/api";
-in
-{
+_: {
   flake.modules.nixos.immich-stack =
     { config, ... }:
     {
@@ -13,15 +8,13 @@ in
       };
 
       home-manager.users.containers.virtualisation.quadlet = {
-        networks.immich-stack.networkConfig = { };
-
         containers.immich-stack.containerConfig = {
           # renovate: datasource=docker depName=docker.io/majorfi/immich-stack
           image = "docker.io/majorfi/immich-stack:0.2.43";
           # API_KEY loaded from agenix-managed env file
           environmentFiles = [ config.age.secrets.immich-stack-secrets.path ];
           environments = {
-            API_URL = apiUrl;
+            API_URL = "http://immich-server:2283/api";
             RUN_MODE = "cron";
             CRON_INTERVAL = "86400";
             DRY_RUN = "false";
@@ -29,7 +22,7 @@ in
             PARENT_EXT_PROMOTE = ".jpg,.jpeg,.png,.heic,.dng";
             LOG_LEVEL = "info";
           };
-          networks = [ "immich-stack.network" ];
+          networks = [ "immich.network" ];
           noNewPrivileges = true;
         };
       };

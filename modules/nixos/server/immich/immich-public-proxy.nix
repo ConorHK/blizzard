@@ -1,7 +1,5 @@
 _:
 let
-  # Immich runs on server, not leprechaun.
-  immichUrl = "http://100.66.244.36:2283";
   url = "photos.goosebox.org";
   port = "3010";
 
@@ -58,16 +56,14 @@ in
     in
     {
       home-manager.users.containers.virtualisation.quadlet = {
-        networks.immich-public-proxy.networkConfig = { };
-
         containers.immich-public-proxy.containerConfig = {
           # renovate: datasource=docker depName=docker.io/alangrainger/immich-public-proxy
           image = "docker.io/alangrainger/immich-public-proxy:4.1.0";
           publishPorts = [ "127.0.0.1:${port}:3000" ];
           volumes = [ "${configFile}:/app/config.json:ro" ];
           # Unset PUBLIC_BASE_URL: previews follow request Host.
-          environments.IMMICH_URL = immichUrl;
-          networks = [ "immich-public-proxy.network" ];
+          environments.IMMICH_URL = "http://immich-server:2283";
+          networks = [ "immich.network" ];
           noNewPrivileges = true;
         };
       };
@@ -75,9 +71,16 @@ in
       services.nginx.virtualHosts.${url} = {
         enableACME = true;
         forceSSL = true;
-        # Share paths only; no Immich here.
+        # Uploads need no body size limit.
+        extraConfig = ''
+          client_max_body_size 0;
+        '';
+        # Share links go to the proxy, the rest to Immich.
         locations = {
-          "/".return = "404";
+          "/" = {
+            proxyPass = "http://127.0.0.1:2283";
+            proxyWebsockets = true;
+          };
           "/share".proxyPass = "http://127.0.0.1:${port}";
           "/s".proxyPass = "http://127.0.0.1:${port}";
         };
