@@ -1,3 +1,4 @@
+{ lib, ... }:
 let
   # Last non-empty commit: @, or @- after `jj commit`.
   tip = "heads(::@ ~ (@ & empty()))";
@@ -7,7 +8,8 @@ in
     programs = {
       jujutsu = {
         enable = true;
-        settings.user = {
+        # Downstream homes set their own identity.
+        settings.user = lib.mapAttrs (_: lib.mkDefault) {
           name = "Conor Knowles";
           email = "dev@conorknowles.com";
         };
