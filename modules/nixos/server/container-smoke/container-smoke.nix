@@ -118,6 +118,7 @@ in
             STATE_DIR = stateDir;
             DATASET = cfg.dataset;
             DATA_DIR = config.blizzard.storage.data;
+            POD_MEMORY = cfg.memory;
           };
           text = builtins.readFile ./run.sh;
         };
@@ -140,6 +141,12 @@ in
             readOnly = true;
             default = gate;
             description = "Exits 0 when a smoke run may start.";
+          };
+
+          memory = lib.mkOption {
+            type = lib.types.strMatching "[0-9]+[bkmg]";
+            default = "4g";
+            description = "Memory cap for each smoke pod, beside production.";
           };
 
           emptyPaths = lib.mkOption {

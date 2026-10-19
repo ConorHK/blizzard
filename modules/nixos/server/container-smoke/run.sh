@@ -126,7 +126,7 @@ done
 
 # Pods fix one userns for all members.
 mapfile -t userns < <(for name in "${order[@]}"; do entry "$name" | jq -r '.userns // empty'; done | sort -u)
-pod_args=(--name "$pod" --network none --no-hosts)
+pod_args=(--name "$pod" --network none --no-hosts --memory "$POD_MEMORY")
 ((${#userns[@]} <= 1)) || { record "${targets[0]}" fail "mixed userns"; exit 1; }
 ((${#userns[@]} == 1)) && pod_args+=("--userns=${userns[0]}")
 
