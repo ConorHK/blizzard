@@ -16,12 +16,25 @@ jar_has_session() {
   awk -F'\t' '$6=="mam_id"{f=1} END{exit !f}' "$JAR" 2>/dev/null
 }
 
+is_ip() {
+  case $1 in
+    '' | *[!0-9.]*) ;;
+    *.*.*.*) return 0 ;;
+  esac
+  case $1 in
+    '' | *[!0-9a-fA-F:]*) return 1 ;;
+    *:*:*) return 0 ;;
+  esac
+  return 1
+}
+
 current_ip() {
   for u in https://api.ipify.org https://checkip.amazonaws.com https://ipinfo.io/ip; do
-    ip=$(curl -sS -m 15 "$u" 2>/dev/null | tr -d '[:space:]')
-    case $ip in
-      *.*.*.*|*:*) printf '%s' "$ip"; return 0 ;;
-    esac
+    ip=$(curl -fsS -m 15 "$u" 2>/dev/null | tr -d '[:space:]')
+    if is_ip "$ip"; then
+      printf '%s' "$ip"
+      return 0
+    fi
   done
   return 1
 }
