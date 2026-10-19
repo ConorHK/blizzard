@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Exits 0 unless an upgrade or reboot is underway.
+# Exits 0 unless an upgrade or reboot is underway or due.
 set -euo pipefail
 
 [[ $UPGRADES == true ]] || exit 0
@@ -12,5 +12,11 @@ if [[ $state != inactive && $state != failed ]]; then
 fi
 if [[ -e /run/systemd/shutdown/scheduled ]]; then
   echo "a reboot is pending"
+  exit 1
+fi
+# The unit idles through its randomized delay.
+next=$(systemctl show -p NextElapseUSecRealtime --value --timestamp=unix nixos-upgrade.timer)
+if [[ $next == @* ]] && ((${next#@} - EPOCHSECONDS < HORIZON)); then
+  echo "nixos-upgrade starts within $((HORIZON / 60)) minutes"
   exit 1
 fi

@@ -197,6 +197,24 @@
                 assert "nixos-upgrade" in output, output
                 machine.succeed("systemctl stop nixos-upgrade.service")
                 machine.succeed("container-smoke-gate")
+
+            with subtest("a run waits for an upgrade due soon"):
+                dropin = "/run/systemd/system/nixos-upgrade.timer.d"
+                machine.succeed(
+                    f"mkdir -p {dropin}",
+                    "printf '[Timer]\\nOnCalendar=\\nOnCalendar=%s\\n' "
+                    f"\"$(date -d '+10 min' '+%F %H:%M:00')\" > {dropin}/soon.conf",
+                    "systemctl daemon-reload",
+                    "systemctl restart nixos-upgrade.timer",
+                )
+                output = machine.fail("container-smoke-gate")
+                assert "starts within" in output, output
+                machine.succeed(
+                    f"rm -r {dropin}",
+                    "systemctl daemon-reload",
+                    "systemctl restart nixos-upgrade.timer",
+                )
+                machine.succeed("container-smoke-gate")
           '';
       };
     };

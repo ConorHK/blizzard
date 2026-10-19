@@ -87,12 +87,16 @@ in
       let
         cfg = config.blizzard.containerSmoke;
         stateDir = "/var/lib/container-smoke";
+        timeoutSec = 30 * 60;
 
         # Upgrade reboots kill runs midway.
         gate = pkgs.writeShellApplication {
           name = "container-smoke-gate";
           runtimeInputs = [ pkgs.systemd ];
-          runtimeEnv.UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
+          runtimeEnv = {
+            UPGRADES = lib.boolToString config.system.autoUpgrade.enable;
+            HORIZON = toString timeoutSec;
+          };
           text = builtins.readFile ./gate.sh;
         };
 
@@ -162,7 +166,7 @@ in
             serviceConfig = {
               Type = "oneshot";
               ExecStart = "${lib.getExe run} %i";
-              TimeoutStartSec = "30min";
+              TimeoutStartSec = timeoutSec;
             };
           };
 
