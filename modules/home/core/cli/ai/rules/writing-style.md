@@ -9,6 +9,9 @@ Applies to every edit and every response:
 - No stage performances: no preamble, no flourish, no narrating the work before doing it.
 - When several words fit, pick the most common one.
 - Use ascii characters only. Never use double dashes. Use dashes sparingly.
+- In responses, write URLs in full as plain text, never as markdown
+  `[text](url)` links. The terminal hides the target, so the reader cannot
+  copy it.
 
 # Addressing the User
 
