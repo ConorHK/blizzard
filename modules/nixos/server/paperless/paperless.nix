@@ -49,7 +49,7 @@ in
           paperless = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/paperless-ngx/paperless-ngx
-              image = "ghcr.io/paperless-ngx/paperless-ngx:3.3.2";
+              image = "ghcr.io/paperless-ngx/paperless-ngx:3.3.3";
               publishPorts = [ "127.0.0.1:8010:8000" ];
               volumes = [
                 "${dataDir}/data:/usr/src/paperless/data"
