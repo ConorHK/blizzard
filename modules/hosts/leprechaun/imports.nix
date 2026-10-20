@@ -23,6 +23,7 @@
     clip-server
     dawarich
     duckdns
+    freshrss
     gatus-watch
     glance
     github-nix-access

@@ -20,6 +20,7 @@
 | `clip-server` | clip | 7391 (tailnet, wg0) | - |
 | `dawarich` | redis, postgis, app, sidekiq | 3001 | dawarich.lep.goosebox.org |
 | `duckdns` | duckdns (timer, every 5 min) | - | - |
+| `freshrss` | freshrss | 8002 | freshrss.lep.goosebox.org |
 | `gatus-watch` | gatus-watch (probes bananach's gatus every 5 min) | - | - |
 | `github-runner` | github-runner, deployed-lag (hourly) | - | - |
 | `glance` | glance | 8092 | glance.lep.goosebox.org |
