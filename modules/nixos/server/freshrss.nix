@@ -1,6 +1,6 @@
 _:
 let
-  url = "freshrss.lep.goosebox.org";
+  url = "rss.goosebox.org";
   port = 8002;
 in
 {
