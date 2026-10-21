@@ -1,6 +1,6 @@
 // Tracks tasks, knowledge and wins in ogham.
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import * as path from "node:path";
 import { type Message, Type, uuidv7 } from "@earendil-works/pi-ai";
@@ -31,6 +31,7 @@ import {
 	type Win,
 	linkText,
 	winsFor,
+	withoutBookkeeping,
 } from "./curate.ts";
 import { type Hit, reindex, search } from "./knowledge.ts";
 import { withLock } from "./lock.ts";
@@ -120,11 +121,16 @@ export default function (pi: ExtensionAPI) {
 		return readFile(file, "utf8").catch(() => undefined);
 	}
 
+	/** Temp file plus rename; sync never sees halves. */
+	async function save(file: string, text: string): Promise<void> {
+		const temp = `${file}.${process.pid}.tmp`;
+		await writeFile(temp, text);
+		await rename(temp, file);
+	}
+
+	/** Rereads under the lock, so slow callers never clobber. */
 	async function edit(file: string, change: (text: string) => string): Promise<void> {
-		await withLock(file, async () => {
-			const text = await readFile(file, "utf8");
-			await writeFile(file, change(text));
-		});
+		await withLock(file, async () => save(file, change(await readFile(file, "utf8"))));
 	}
 
 	async function createOnce(file: string, text: string): Promise<boolean> {
@@ -184,7 +190,7 @@ export default function (pi: ExtensionAPI) {
 				});
 			}
 		}
-		await withLock(abs(INDEX), () => writeFile(abs(INDEX), renderIndex(rows)));
+		await withLock(abs(INDEX), () => save(abs(INDEX), renderIndex(rows, existsSync(abs(WINS)))));
 	}
 
 	function showStatus(ctx: ExtensionContext, extra?: string): void {
@@ -227,7 +233,7 @@ export default function (pi: ExtensionAPI) {
 		const entry = renderWin(win, new Date(), { title: binding.title, file });
 		await withLock(abs(WINS), async () => {
 			const existing = (await read(abs(WINS))) ?? "# Wins\n\n";
-			await writeFile(abs(WINS), `${existing.replace(/\n*$/, "")}\n\n${entry}`);
+			await save(abs(WINS), `${existing.replace(/\n*$/, "")}\n\n${entry}`);
 		});
 	}
 
@@ -277,7 +283,7 @@ export default function (pi: ExtensionAPI) {
 			const link = `[${linkText(binding.title)}](${relativeLink(topicFile, file)})`;
 			await mkdir(abs("topics"), { recursive: true });
 			await withLock(abs(topicFile), async () => {
-				await writeFile(abs(topicFile), appendTopic(await read(abs(topicFile)), topic, now, link));
+				await save(abs(topicFile), appendTopic(await read(abs(topicFile)), topic, now, link));
 			});
 			names.push(slug);
 		}
@@ -505,7 +511,7 @@ export default function (pi: ExtensionAPI) {
 		await quietly(ctx, () => updateWorker("idle"));
 		const binding = bound;
 		if (!binding || settings.curate === false) return;
-		const transcript = serializeConversation(convertToLlm(event.messages));
+		const transcript = serializeConversation(withoutBookkeeping(convertToLlm(event.messages)));
 		// Runs after the turn; never blocks the user.
 		pending = pending.then(async () => {
 			showStatus(ctx, "curating");

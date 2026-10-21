@@ -32,12 +32,14 @@ adopt() {
   rm -rf "$tmp"
 }
 
-# The search index is per host.
+# Search index is per host; .tmp precedes renames.
 exclude() {
   [ -d "$vault/.git" ] || return 0
   mkdir -p "$vault/.git/info"
-  grep -qxF .zvec-grep/ "$vault/.git/info/exclude" 2>/dev/null \
-    || echo .zvec-grep/ >>"$vault/.git/info/exclude"
+  for pattern in .zvec-grep/ '*.tmp'; do
+    grep -qxF "$pattern" "$vault/.git/info/exclude" 2>/dev/null \
+      || echo "$pattern" >>"$vault/.git/info/exclude"
+  done
 }
 
 init() {
@@ -56,6 +58,7 @@ init() {
 
 sync() {
   [ -d "$vault/.git" ] || exit 0
+  exclude
   cd "$vault" || exit 1
   exec 9>.git/ogham-sync.lock
   flock -n 9 || exit 0

@@ -138,9 +138,11 @@ export function linkSlug(url: string): string | undefined {
 	return id ? slugify(decodeURIComponent(id)) : undefined;
 }
 
+export const TITLE_PROMPT_START = "Start an ogham task for ";
+
 export function titlePrompt(url: string): string {
 	return [
-		`Start an ogham task for ${url}.`,
+		`${TITLE_PROMPT_START}${url}.`,
 		`Look up its ID and title with your tools, then call ogham_task with title "<ID>: <title>" and link "${url}".`,
 		"If you cannot read it, use the last part of the URL as the title.",
 		"Then reply with the task name only.",

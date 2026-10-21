@@ -57,14 +57,20 @@ can reach it through intercom.
 
 After each agent run, the extension sends the run's transcript and the task
 note to a side model, set by `programs.pi.ogham.settings.model`. The reply
-is JSON. Status and Next replace the old sections; Decisions, Findings,
-Links (picked from URLs seen in the run) and Log only append, so hand edits
-survive. Curation runs after the turn and never blocks the user; shutdown
-waits up to 30 seconds for it.
+is JSON. Status and Next are replaced each run, so a hand edit there lasts
+only if the curator keeps it (it keeps Next items that are still open).
+Decisions, Findings, Links (picked from URLs seen in the run) and Log only
+append, so hand edits there survive. Before serializing the run, the
+extension drops `ogham_task` calls, their results, and the `/task <url>`
+prompt, so bookkeeping never reaches the note. Curation runs after the turn
+and never blocks the user; shutdown waits up to 30 seconds for it.
 
 Every write to a shared file (task note, `wins.md`, `index.md`, topics) holds
-a lock: an atomic `mkdir` under the temp directory, so the sync timer never
-commits it.
+a lock, an atomic `mkdir` under the temp directory, and rereads the file
+inside it. The curator applies its reply to that fresh copy, never to the
+note it sent the model, so worker joins during a slow call survive. Writes go
+to a `.tmp` file and rename into place; sync excludes `*.tmp` and
+`.zvec-grep/`.
 
 ## Wins
 

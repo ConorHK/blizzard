@@ -1,6 +1,7 @@
 // Side-model prompts and how replies apply.
 import * as path from "node:path";
 import { appendLines, getSection, type Note, parseNote, renderNote, setSection } from "./note.ts";
+import { TITLE_PROMPT_START } from "./vault.ts";
 
 export interface Win {
 	title: string;
@@ -52,6 +53,7 @@ Reply with one JSON object and nothing else:
 
 Rules:
 - Use only facts in the note or transcript. Never guess.
+- Ignore ogham bookkeeping: binding the task, join commands, worker status, and this note itself. They are never findings, status, or log.
 - status replaces the old one. next replaces the old list: keep items still open, drop finished ones, add new ones.
 - decisions, findings, and links hold only new entries not already in the note. Findings are facts worth knowing next time: root causes, where code lives, commands that work, gotchas.
 - links: pick only from the candidate URLs, and only ones worth returning to.
@@ -70,7 +72,9 @@ Reply with one JSON object and nothing else:
 
 Rules:
 - Topics are subjects that outlive the task: a system, service, tool, or practice. Reuse an existing topic slug when one fits.
-- Entries are findings and decisions useful beyond this task. Skip task chatter. Keep sources.
+- Entries are findings and decisions useful beyond this task. Keep sources.
+- Keep only facts that stay true after the task ends: how a system works, where code lives, root causes, commands, gotchas.
+- Skip open work, status, next steps, ticket relationships (which epic a task belongs to), and ogham bookkeeping. An empty topics list is fine.
 - win: set {"title", "summary", "impact", "evidence": [...]} when the task as a whole delivered a win not already recorded.
 ${WIN_RULES}`;
 
@@ -96,6 +100,39 @@ export function clip(text: string, max: number): string {
 	if (text.length <= max) return text;
 	const head = Math.floor(max / 4);
 	return `${text.slice(0, head)}\n[... ${text.length - max} chars cut ...]\n${text.slice(text.length - (max - head))}`;
+}
+
+interface Block {
+	type: string;
+	name?: string;
+	text?: string;
+}
+
+interface LlmMessage {
+	role: string;
+	content: unknown;
+	toolName?: string;
+}
+
+/** Drops ogham's own calls and prompts. */
+export function withoutBookkeeping<T>(messages: T[]): T[] {
+	const kept: T[] = [];
+	for (const item of messages) {
+		const message = item as unknown as LlmMessage;
+		if (message.role === "toolResult" && message.toolName === "ogham_task") continue;
+		if (message.role === "user") {
+			const text = typeof message.content === "string" ? message.content : ((message.content as Block[])[0]?.text ?? "");
+			if (text.startsWith(TITLE_PROMPT_START)) continue;
+		}
+		if (message.role === "assistant" && Array.isArray(message.content)) {
+			const content = (message.content as Block[]).filter((block) => !(block.type === "toolCall" && block.name === "ogham_task"));
+			if (content.length === 0) continue;
+			kept.push({ ...(item as object), content } as T);
+			continue;
+		}
+		kept.push(item);
+	}
+	return kept;
 }
 
 export function candidateUrls(text: string, known: string): string[] {
@@ -251,7 +288,7 @@ export function firstOpen(note: string): string | undefined {
 	return /^- \[ \] (.+)$/m.exec(getSection(parseNote(note), "Next"))?.[1];
 }
 
-export function renderIndex(rows: TaskRow[]): string {
+export function renderIndex(rows: TaskRow[], hasWins: boolean): string {
 	const open = rows.filter((row) => row.status !== "done");
 	const done = rows.filter((row) => row.status === "done");
 	const line = (row: TaskRow) => {
@@ -271,8 +308,8 @@ export function renderIndex(rows: TaskRow[]): string {
 		for (const row of done.sort((a, b) => b.updated.localeCompare(a.updated))) parts.push(line(row));
 		parts.push("");
 	}
-	parts.push("Wins: [wins.md](wins.md)", "");
-	return parts.join("\n");
+	if (hasWins) parts.push("Wins: [wins.md](wins.md)", "");
+	return parts.join("\n").replace(/\n+$/, "\n");
 }
 
 export function relativeLink(from: string, to: string): string {

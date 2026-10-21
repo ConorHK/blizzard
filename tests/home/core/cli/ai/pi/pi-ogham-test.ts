@@ -31,6 +31,7 @@ import {
 	renderIndex,
 	renderWin,
 	winsFor,
+	withoutBookkeeping,
 } from "./ogham/curate.ts";
 import { parseHits } from "./ogham/knowledge.ts";
 import { withLock } from "./ogham/lock.ts";
@@ -220,15 +221,36 @@ test("wins, topics, and the index", () => {
 		win: undefined,
 	});
 
-	const index = renderIndex([
+	const rows = [
 		{ project: "b", file: "projects/b/x/x.md", title: "X [old]", status: "done", updated: "2026-10-19T10:00", next: "stale" },
 		{ project: "b", file: "projects/b/y/y.md", title: "Y", status: "review", updated: "2026-10-20T10:00", next: "Merge" },
 		{ project: "a", file: "projects/a/z/z.md", title: "Z", status: "active", updated: "2026-10-18T10:00" },
-	]);
+	];
+	const index = renderIndex(rows, true);
 	assert.equal(
 		index,
 		"# Tasks\n\n## a\n\n- [Z](projects/a/z/z.md) active, 2026-10-18T10:00\n\n## b\n\n- [Y](projects/b/y/y.md) review, 2026-10-20T10:00. Next: Merge\n\n## Done\n\n- [X \\[old\\]](projects/b/x/x.md) done, 2026-10-19T10:00\n\nWins: [wins.md](wins.md)\n",
 	);
+	assert.doesNotMatch(renderIndex(rows, false), /wins\.md/);
+	assert.match(renderIndex(rows, false), /done, 2026-10-19T10:00\n$/);
+});
+
+test("transcripts drop ogham bookkeeping", () => {
+	const messages = [
+		{ role: "user", content: [{ type: "text", text: titlePrompt("https://t.example/A-1") }] },
+		{ role: "assistant", content: [{ type: "text", text: "Binding." }, { type: "toolCall", name: "ogham_task" }] },
+		{ role: "toolResult", toolName: "ogham_task", content: [{ type: "text", text: "Workers join with OGHAM_TASK=x" }] },
+		{ role: "assistant", content: [{ type: "toolCall", name: "ogham_task" }] },
+		{ role: "user", content: "fix the bug" },
+		{ role: "assistant", content: [{ type: "toolCall", name: "bash" }] },
+		{ role: "toolResult", toolName: "bash", content: [{ type: "text", text: "ok" }] },
+	];
+	assert.deepEqual(withoutBookkeeping(messages), [
+		{ role: "assistant", content: [{ type: "text", text: "Binding." }] },
+		messages[4],
+		messages[5],
+		messages[6],
+	]);
 });
 
 test("locks serialize writers", async () => {

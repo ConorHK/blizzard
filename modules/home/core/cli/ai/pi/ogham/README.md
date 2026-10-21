@@ -10,7 +10,8 @@ keeps the URL as `link`. The folder is named after the ID in the URL
 
 After each agent run, a side model (`model` in `~/.pi/agent/ogham.json`)
 reads the run and rewrites the task note's Status and Next, and appends
-Decisions, Findings, Links and a Log line. When a run reaches a milestone
+Decisions, Findings, Links and a Log line. Hand edits to Status and Next last
+only until the next run; hand edits elsewhere stay. When a run reaches a milestone
 with value outside the team, such as a merged change, a deploy, or a
 resolved ticket, it adds a win to `wins.md`. `index.md` lists every task
 with its status and next step.
