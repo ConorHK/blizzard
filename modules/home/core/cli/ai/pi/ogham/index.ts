@@ -78,7 +78,11 @@ export default function (pi: ExtensionAPI) {
 		const file = workerFile();
 		if (!file || !existsSync(file)) return;
 		const now = new Date();
-		await edit(file, (text) => setFrontmatter(text, { status, updated: stamp(now) }) + (log ? logLine(now, log) : ""));
+		const updates: Record<string, string> = { status, updated: stamp(now) };
+		// pi-intercom sets it in its own session_start.
+		const intercom = process.env.PI_INTERCOM_SESSION_ID;
+		if (intercom) updates.intercom = intercom;
+		await edit(file, (text) => setFrontmatter(text, updates) + (log ? logLine(now, log) : ""));
 	}
 
 	function showStatus(ctx: ExtensionContext): void {

@@ -14,8 +14,11 @@
         name = "ogham";
         runtimeInputs = [
           pkgs.coreutils
+          pkgs.findutils
           pkgs.flock
           pkgs.git
+          # Activation PATH has no ssh.
+          pkgs.openssh
         ];
         text = builtins.readFile ./ogham.sh;
       };

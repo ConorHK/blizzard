@@ -12,7 +12,25 @@ vault=$2
 remote=${3:-}
 
 # Timers and activation cannot answer prompts.
-export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-ssh -o BatchMode=yes}
+export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o LogLevel=ERROR}
+
+warn() {
+  echo "ogham: $*" >&2
+}
+
+# Clones into $vault, keeping files already there.
+adopt() {
+  tmp=$(mktemp -d)
+  if git clone -q --no-checkout "$remote" "$tmp/repo"; then
+    mkdir -p "$vault"
+    mv "$tmp/repo/.git" "$vault/.git"
+    git -C "$vault" reset -q
+    git -C "$vault" ls-files -dz | (cd "$vault" && xargs -0r git checkout --)
+  else
+    warn "clone of $remote failed; retrying next switch"
+  fi
+  rm -rf "$tmp"
+}
 
 init() {
   if [ -d "$vault/.git" ]; then
@@ -20,11 +38,8 @@ init() {
       git -C "$vault" remote set-url origin "$remote" 2>/dev/null \
         || git -C "$vault" remote add origin "$remote"
     fi
-  elif [ -e "$vault" ]; then
-    echo "ogham: $vault exists without .git; skipping" >&2
   elif [ -n "$remote" ]; then
-    git clone -q "$remote" "$vault" \
-      || echo "ogham: clone of $remote failed; retrying next switch" >&2
+    adopt
   else
     git init -q -b main "$vault"
   fi
@@ -45,7 +60,7 @@ sync() {
   branch=$(git symbolic-ref --short HEAD)
   if ! git pull -q --rebase --autostash origin "$branch"; then
     git rebase --abort 2>/dev/null || true
-    echo "ogham: pull failed; resolve $vault by hand" >&2
+    warn "pull failed; resolve $vault by hand"
     exit 1
   fi
   git push -q origin "$branch"

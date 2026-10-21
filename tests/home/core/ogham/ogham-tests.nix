@@ -31,6 +31,7 @@
           }
           ''
             grep -q 'ogham init /home/test/ogham' <<<${pkgs.lib.escapeShellArg home.config.home.activation.ogham.data}
+            grep -q 'export PATH="[^"]*${pkgs.openssh}/bin' ${ogham}
 
             # No remote: local repo, commit only.
             ${ogham} init solo
@@ -40,16 +41,23 @@
             ${ogham} sync solo
             test "$(git -C solo rev-list --count HEAD)" = 1
 
-            # A plain directory is left alone.
-            mkdir plain
-            ${ogham} init plain "$PWD/hub.git"
-            test ! -e plain/.git
-
             # Two clones sync through the hub.
             git init -q --bare -b mainline hub.git
             git clone -q hub.git seed
-            git -C seed commit -q --allow-empty -m init
+            echo hub >seed/hub.md
+            git -C seed add hub.md
+            git -C seed commit -q -m init
             git -C seed push -q origin HEAD:mainline
+
+            # A plain directory is adopted, files kept.
+            mkdir -p plain/projects
+            echo mine >plain/projects/a.md
+            ${ogham} init plain "$PWD/hub.git"
+            test "$(cat plain/projects/a.md)" = mine
+            test "$(cat plain/hub.md)" = hub
+            ${ogham} sync plain
+            git -C hub.git cat-file -e mainline:projects/a.md
+
             ${ogham} init laptop "$PWD/hub.git"
             ${ogham} init desk "$PWD/hub.git"
             echo desk >desk/a.md

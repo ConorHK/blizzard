@@ -17,10 +17,11 @@ A downstream flake imports `homeManager.ogham`, sets `remote`, and enables
 
 ## Sync
 
-Home Manager activation runs `ogham init`. With a remote and no `~/ogham`, it
-clones; a failed clone warns and retries on the next switch. Without a
-remote, it runs `git init`. It leaves an existing directory without `.git`
-alone.
+Home Manager activation runs `ogham init`. With a remote and no
+`~/ogham/.git`, it clones, keeping any files already in `~/ogham`; a failed
+clone warns and retries on the next switch. Without a remote, it runs
+`git init`. The CLI carries its own ssh, since activation runs with a bare
+PATH.
 
 `ogham sync` runs every 5 minutes from a systemd user timer. It commits
 everything, rebases onto the remote, and pushes. A flock keeps runs from
