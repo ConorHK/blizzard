@@ -66,6 +66,7 @@ let
           shmSize = c.shmSize or null;
           noNewPrivileges = c.noNewPrivileges or false;
           emptyPaths = containerSmoke.emptyPaths.${name} or [ ];
+          skip = lib.elem name containerSmoke.skip;
         };
     in
     pkgs.writeText "container-smoke.json" (builtins.toJSON (lib.mapAttrs entry containers));
@@ -153,6 +154,12 @@ in
             type = lib.types.attrsOf (lib.types.listOf lib.types.str);
             default = { };
             description = "Container paths left empty in smoke tests, per container.";
+          };
+
+          skip = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Containers that cannot start without network; they pass untested.";
           };
         };
 

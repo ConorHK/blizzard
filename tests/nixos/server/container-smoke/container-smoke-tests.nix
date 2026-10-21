@@ -84,6 +84,7 @@
             blizzard.containerSmoke = {
               requester = "ci";
               emptyPaths.web = [ "/www/secret" ];
+              skip = [ "online" ];
             };
 
             home-manager.users.containers.virtualisation.quadlet.containers = {
@@ -107,6 +108,8 @@
                     unitConfig.Requires = "db.service";
                   };
               crash = container [ "false" ];
+              # Would fail; skipped instead.
+              online = container [ "false" ];
               # Answers one connection, then restarts.
               flap = lib.recursiveUpdate (container [
                 "sh"
@@ -191,6 +194,13 @@
                 assert smoke("twins", ["twin-a", "twin-b"]) == 0, result("twins")
                 assert result("twins")["twin-a"]["status"] == "pass", result("twins")
                 assert result("twins")["twin-b"]["status"] == "pass", result("twins")
+
+            with subtest("a skipped target passes untested"):
+                assert smoke("skip", ["online"]) == 0, result("skip")
+                assert result("skip")["online"]["status"] == "pass", result("skip")
+                assert smoke("mixed", ["online", "crash"]) != 0, result("mixed")
+                assert result("mixed")["online"]["status"] == "pass", result("mixed")
+                assert result("mixed")["crash"]["status"] == "fail", result("mixed")
 
             with subtest("a crashing target fails"):
                 assert smoke("bad", ["crash"]) != 0

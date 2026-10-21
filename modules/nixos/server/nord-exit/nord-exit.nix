@@ -21,6 +21,12 @@ _: {
 
       systemd.tmpfiles.rules = [ "d ${stateDir} 0750 containers containers -" ];
 
+      # Both exit without a route out.
+      blizzard.containerSmoke.skip = [
+        "gluetun-nord"
+        "tailscale-nord"
+      ];
+
       # Direct LAN path for peers, else DERP.
       networking.firewall.allowedUDPPorts = [ tailscalePort ];
 

@@ -49,6 +49,9 @@ that unit and nothing else.
 
 [`run.sh`](../modules/nixos/server/container-smoke/run.sh) runs as root:
 
+- Passes targets listed in `containerSmoke.skip` without starting them.
+  These need network to start, such as the gluetun and tailscale pair in
+  `nord-exit`.
 - Snapshots and clones the data dataset. Volumes under the data root map
   onto the clone, so writes never reach production.
 - Blanks every other volume, plus each container's `emptyPaths`. Store

@@ -62,6 +62,17 @@ zfs clone -o mountpoint="$work/data" "$snapshot" "$clone"
 
 entry() { jq -c --arg name "$1" '.[$name]' "$spec"; }
 
+# Skipped targets need network to start.
+tested=()
+for target in "${targets[@]}"; do
+  if [[ $(entry "$target" | jq -r '.skip // false') == true ]]; then
+    record "$target" pass "skipped: needs network"
+  else
+    tested+=("$target")
+  fi
+done
+targets=("${tested[@]}")
+
 # Empty dir owned like $1, keeping its top-level dotfiles.
 blank() {
   local source=$1 dir
