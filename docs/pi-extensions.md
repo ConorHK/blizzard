@@ -4,7 +4,7 @@ Pi extensions come from two places.
 
 - npm packages, pinned in one lockfile and built by Nix without running
   npm.
-- Local extensions in the repo (`advisor/`, `checkpoint/`, `ttsr/`, and
+- Local extensions in the repo (`advisor/`, `checkpoint/`, `ogham/`, `ttsr/`, and
   single `.ts` files), built as flake packages or used as plain paths.
 
 ## npm packages
