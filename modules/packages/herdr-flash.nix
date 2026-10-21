@@ -22,7 +22,7 @@
 
         # Tests size frames from the build pty.
         preCheck = ''
-          if [ -t 1 ]; then stty cols 80 rows 24 < /proc/self/fd/1; fi
+          if [ -t 1 ]; then stty cols 80 rows 24 <&1; fi
         '';
 
         # Manifest runs ./bin/herdr-flash.
