@@ -6,9 +6,12 @@ DIR=/mam
 JAR=$DIR/cookies
 SEED=$DIR/mam_id
 STATE=$DIR/state
+ERROR=$DIR/error
 API=https://t.myanonamouse.net/json/dynamicSeedbox.php
 INTERVAL=${INTERVAL:-300}
 RETRY=${RETRY:-900}
+# MAM can drop the IP without warning.
+REFRESH=${REFRESH:-10800}
 
 log() { printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"; }
 
@@ -40,12 +43,14 @@ current_ip() {
 }
 
 update() {
+  ip=$1
   if jar_has_session; then
     set -- -b "$JAR"
   elif [ -s "$SEED" ]; then
     set -- -b "mam_id=$(tr -d '[:space:]' < "$SEED")"
   else
     log "no session; write your mam_id to $SEED"
+    printf 'no session; write mam_id\n' > "$ERROR"
     return 1
   fi
 
@@ -57,15 +62,18 @@ update() {
   seen=$(sed -n 's/.*"ip":"\([^"]*\)".*/\1/p' "$body")
 
   # Promote the rotated cookie only on success.
-  if grep -q '"Success":true' "$body"; then
+  # "No Change" may lack Success; it is still fine.
+  if grep -q '"Success":true' "$body" || [ "$msg" = "No Change" ]; then
     if awk -F'\t' '$6=="mam_id"{f=1} END{exit !f}' "$new"; then
       cat "$new" > "$JAR"
     fi
-    [ -n "$seen" ] && printf '%s\n' "$seen" > "$STATE"
+    printf '%s\n' "${seen:-$ip}" > "$STATE"
+    rm -f "$ERROR"
     log "ok $code: $msg ($seen)"
     rc=0
   else
     log "failed $code: ${msg:-unparsed} ($seen)"
+    printf '%s\n' "$code ${msg:-unparsed}" > "$ERROR"
     rc=1
   fi
 
@@ -77,14 +85,18 @@ log "started; poll ${INTERVAL}s retry ${RETRY}s"
 while :; do
   if ip=$(current_ip); then
     last=$(cat "$STATE" 2>/dev/null) || last=
-    if [ "$ip" = "$last" ]; then
+    if [ "$ip" != "$last" ]; then
+      log "ip changed: ${last:-none} -> $ip"
+    elif [ -n "$(find "$STATE" -mmin -$((REFRESH / 60)))" ]; then
       sleep "$INTERVAL"
       continue
+    else
+      log "refreshing $ip"
     fi
-    log "ip changed: ${last:-none} -> $ip"
-    if update; then sleep "$INTERVAL"; else sleep "$RETRY"; fi
+    if update "$ip"; then sleep "$INTERVAL"; else sleep "$RETRY"; fi
   else
     log "no public ip; vpn down?"
+    printf 'no public ip\n' > "$ERROR"
     sleep "$RETRY"
   fi
 done

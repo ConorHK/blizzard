@@ -21,7 +21,12 @@ in
     };
 
     modules.nixos.qbittorrent =
-      { config, ... }:
+      {
+        config,
+        lib,
+        pkgs,
+        ...
+      }:
       let
         inherit (config.blizzard.storage) data media;
         qbittorrentDir = "${data}/qbittorrent";
@@ -40,20 +45,6 @@ in
             owner = "containers";
           };
         };
-
-        systemd.tmpfiles.rules = [
-          "d ${qbittorrentDir} 0750 containers containers -"
-          "d ${quiDir} 0750 containers containers -"
-          "d ${slskdDir} 0750 containers containers -"
-          "d ${mamDir} 0700 containers containers -"
-          "d ${media}/slskd 0775 containers containers -"
-          "d ${media}/slskd/downloads 0775 containers containers -"
-          "d ${media}/slskd/incomplete 0775 containers containers -"
-          "d ${media}/torrents 0775 containers containers -"
-          "d ${media}/torrents/radarr 0775 containers containers -"
-          "d ${media}/torrents/sonarr 0775 containers containers -"
-          "d ${media}/cross-seed 0775 containers containers -"
-        ];
 
         home-manager.users.containers.virtualisation.quadlet = {
           networks.arr.networkConfig = { };
@@ -173,6 +164,61 @@ in
               user = "0:0";
               networks = [ "arr.network" ];
               noNewPrivileges = true;
+            };
+          };
+        };
+
+        systemd = {
+          tmpfiles.rules = [
+            "d ${qbittorrentDir} 0750 containers containers -"
+            "d ${quiDir} 0750 containers containers -"
+            "d ${slskdDir} 0750 containers containers -"
+            "d ${mamDir} 0700 containers containers -"
+            "d ${media}/slskd 0775 containers containers -"
+            "d ${media}/slskd/downloads 0775 containers containers -"
+            "d ${media}/slskd/incomplete 0775 containers containers -"
+            "d ${media}/torrents 0775 containers containers -"
+            "d ${media}/torrents/radarr 0775 containers containers -"
+            "d ${media}/torrents/sonarr 0775 containers containers -"
+            "d ${media}/cross-seed 0775 containers containers -"
+          ];
+
+          # Catches failed, stuck or stopped updaters.
+          services.mam-watch = {
+            description = "Alert when the MAM IP goes stale";
+            unitConfig.OnFailure = "alert-failure@mam-watch.service";
+            serviceConfig = {
+              Type = "oneshot";
+              StateDirectory = "mam-watch";
+            };
+            script = ''
+              set -uo pipefail
+              stamp=${mamDir}/state
+              alerted=/var/lib/mam-watch/alerted
+              send=${lib.getExe config.blizzard.alerts.send}
+              now=$(${pkgs.coreutils}/bin/date +%s)
+              seen=$(${pkgs.coreutils}/bin/stat -c %Y "$stamp" 2>/dev/null || echo 0)
+              # Updater refreshes every 3h.
+              if (( now - seen < 4 * 3600 )); then
+                if [ -e "$alerted" ]; then
+                  rm "$alerted"
+                  $send "MAM IP ok" "MAM accepts the VPN IP again." 3 "+1"
+                fi
+                exit 0
+              fi
+              [ -e "$alerted" ] && exit 0
+              reason=$(${pkgs.coreutils}/bin/cat ${mamDir}/error 2>/dev/null || echo "updater not running")
+              $send "MAM IP stale" "MAM torrents may fail: $reason. See podman logs mam-updater." 4 warning
+              touch "$alerted"
+            '';
+          };
+
+          timers.mam-watch = {
+            description = "Check the MAM IP every 15 minutes";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = "15min";
+              OnUnitActiveSec = "15min";
             };
           };
         };
