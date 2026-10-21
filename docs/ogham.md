@@ -45,7 +45,9 @@ line of each reply. A new worker appends a link to the task note's
 `/task` alone lists each worker's status, pane and intercom id. Given a URL,
 `/task` sends the agent a prompt to look up the item's ID and title, since
 only the agent has the tools to read it; the task note keeps the URL as
-`link`.
+`link`. A task with a link takes its slug from the last URL path segment
+that holds a digit, the ticket ID, so the slug does not depend on the
+fetched title.
 
 An orchestrator session starts workers in herdr panes with
 `OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker

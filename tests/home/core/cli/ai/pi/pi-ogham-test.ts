@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { test } from "node:test";
 import {
 	findUrl,
+	linkSlug,
 	logLine,
 	parseRef,
 	projectFor,
@@ -86,10 +87,12 @@ test("tasks from links keep the URL", () => {
 
 	assert.equal(findUrl(`${url} the sync`), url);
 	assert.equal(findUrl("fix the sync"), undefined);
-	const prompt = titlePrompt(`${url}  fix the sync`, url);
-	assert.match(prompt, /ogham_task with title "<ID>: <title>" and link "https:\/\/tickets\.example\.com\/issues\/ABC-123"/);
-	assert.match(prompt, /The user added: "fix the sync"\. Pass it as goal/);
-	assert.doesNotMatch(titlePrompt(url, url), /user added/);
+	assert.match(titlePrompt(url), /ogham_task with title "<ID>: <title>" and link "https:\/\/tickets\.example\.com\/issues\/ABC-123"/);
+
+	assert.equal(linkSlug(url), "abc-123");
+	assert.equal(linkSlug("https://tickets.example.com/P12345/communication"), "p12345");
+	assert.equal(linkSlug("https://example.com/docs/intro"), undefined);
+	assert.equal(linkSlug("not a url"), undefined);
 });
 
 test("worker summaries read back the frontmatter", () => {

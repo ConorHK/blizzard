@@ -1,4 +1,4 @@
-// Tracks the current task and its workers in ogham.
+// Tracks tasks and workers in ogham.
 import { existsSync } from "node:fs";
 import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -8,6 +8,7 @@ import { defineTool, type ExtensionAPI, type ExtensionContext, withFileMutationQ
 import {
 	findUrl,
 	formatRef,
+	linkSlug,
 	logLine,
 	type NewTask,
 	parseRef,
@@ -138,7 +139,8 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	async function start(ctx: ExtensionContext, role: Role, task: NewTask, project?: string): Promise<string> {
-		const ref = { project: project ? projectName(project) : projectFor(ctx.cwd), slug: slugify(task.title) };
+		const slug = (task.link && linkSlug(task.link)) || slugify(task.title);
+		const ref = { project: project ? projectName(project) : projectFor(ctx.cwd), slug };
 		const result = await bind(ctx, { ...task, ref, role });
 		pi.appendEntry<Binding>(ENTRY, { ref, title: task.title, role });
 		return result;
@@ -215,7 +217,7 @@ export default function (pi: ExtensionAPI) {
 				else if (input.startsWith("join ")) text = await join(ctx, input.slice(5), "worker");
 				else if (url) {
 					// Only the agent can read the title.
-					pi.sendUserMessage(titlePrompt(input, url), ctx.isIdle() ? undefined : { deliverAs: "followUp" });
+					pi.sendUserMessage(titlePrompt(url), ctx.isIdle() ? undefined : { deliverAs: "followUp" });
 					text = `Looking up the title of ${url}.`;
 				} else text = await start(ctx, "worker", { title: input });
 				ctx.ui.notify(text, "info");

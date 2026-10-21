@@ -126,19 +126,28 @@ export function findUrl(text: string): string | undefined {
 	return /https?:\/\/\S+/.exec(text)?.[0];
 }
 
-/** Asks the agent to name a task from a URL. */
-export function titlePrompt(input: string, url: string): string {
-	const rest = input.replace(url, " ").replace(/\s+/g, " ").trim();
+/** Ticket ID from the URL, so retitles reuse it. */
+export function linkSlug(url: string): string | undefined {
+	let segments: string[];
+	try {
+		segments = new URL(url).pathname.split("/").filter(Boolean);
+	} catch {
+		return undefined;
+	}
+	const id = segments.reverse().find((segment) => /\d/.test(segment));
+	return id ? slugify(decodeURIComponent(id)) : undefined;
+}
+
+export function titlePrompt(url: string): string {
 	return [
 		`Start an ogham task for ${url}.`,
 		`Look up its ID and title with your tools, then call ogham_task with title "<ID>: <title>" and link "${url}".`,
 		"If you cannot read it, use the last part of the URL as the title.",
-		...(rest ? [`The user added: "${rest}". Pass it as goal if it states one.`] : []),
 		"Then reply with the task name only.",
 	].join("\n");
 }
 
-/** Appended to the task note; keep Workers last. */
+/** Appended; Workers stays the last section. */
 export function workerLine(info: Pick<WorkerInfo, "session" | "role" | "pane">): string {
 	const id = workerId(info.session);
 	return `- [${id}](workers/${id}.md) ${info.role}${info.pane ? `, pane ${info.pane}` : ""}\n`;
