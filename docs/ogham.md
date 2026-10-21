@@ -42,7 +42,10 @@ system prompt carries the task note path. The extension sets the worker
 note's `status` on agent start, agent end and shutdown, and logs the first
 line of each reply. A new worker appends a link to the task note's
 `## Workers` list, which stays the last section so appends land there.
-`/task` alone lists each worker's status, pane and intercom id.
+`/task` alone lists each worker's status, pane and intercom id. Given a URL,
+`/task` sends the agent a prompt to look up the item's ID and title, since
+only the agent has the tools to read it; the task note keeps the URL as
+`link`.
 
 An orchestrator session starts workers in herdr panes with
 `OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker

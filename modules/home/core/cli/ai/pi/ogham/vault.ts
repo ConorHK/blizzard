@@ -104,9 +104,38 @@ export function setFrontmatter(text: string, updates: Record<string, string>): s
 	return `---\n${lines.join("\n")}\n---\n${text.slice(match[0].length)}`;
 }
 
-export function renderTask(ref: TaskRef, title: string, goal: string | undefined, now: Date): string {
-	const fields = frontmatter({ type: "task", project: ref.project, status: "active", created: stamp(now) });
-	return `${fields}# ${title}\n\n## Goal\n\n${goal ?? ""}\n\n## Log\n\n## Workers\n\n`;
+export interface NewTask {
+	title: string;
+	goal?: string;
+	link?: string;
+}
+
+export function renderTask(ref: TaskRef, task: NewTask, now: Date): string {
+	const fields = frontmatter({
+		type: "task",
+		project: ref.project,
+		status: "active",
+		link: task.link,
+		created: stamp(now),
+	});
+	const link = task.link ? `${task.link}\n\n` : "";
+	return `${fields}# ${task.title}\n\n${link}## Goal\n\n${task.goal ?? ""}\n\n## Log\n\n## Workers\n\n`;
+}
+
+export function findUrl(text: string): string | undefined {
+	return /https?:\/\/\S+/.exec(text)?.[0];
+}
+
+/** Asks the agent to name a task from a URL. */
+export function titlePrompt(input: string, url: string): string {
+	const rest = input.replace(url, " ").replace(/\s+/g, " ").trim();
+	return [
+		`Start an ogham task for ${url}.`,
+		`Look up its ID and title with your tools, then call ogham_task with title "<ID>: <title>" and link "${url}".`,
+		"If you cannot read it, use the last part of the URL as the title.",
+		...(rest ? [`The user added: "${rest}". Pass it as goal if it states one.`] : []),
+		"Then reply with the task name only.",
+	].join("\n");
 }
 
 /** Appended to the task note; keep Workers last. */

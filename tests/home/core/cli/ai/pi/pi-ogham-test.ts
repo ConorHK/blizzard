@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { test } from "node:test";
 import {
+	findUrl,
 	logLine,
 	parseRef,
 	projectFor,
@@ -13,6 +14,7 @@ import {
 	replyHeadline,
 	setFrontmatter,
 	slugify,
+	titlePrompt,
 	taskNotePath,
 	workerLine,
 	workerNotePath,
@@ -65,7 +67,7 @@ test("frontmatter updates keep the body", () => {
 });
 
 test("task note ends with the workers list", () => {
-	const note = renderTask(ref, "Fix sync", "Make it work", now);
+	const note = renderTask(ref, { title: "Fix sync", goal: "Make it work" }, now);
 	assert.match(note, /^---\ntype: task\nproject: blizzard\nstatus: active\ncreated: 2026-10-20T14:05\n---\n# Fix sync\n/);
 	assert.match(note, /## Goal\n\nMake it work\n\n## Log\n\n## Workers\n\n$/);
 	assert.equal(
@@ -73,6 +75,21 @@ test("task note ends with the workers list", () => {
 		"- [01a15dd2](workers/01a15dd2.md) worker, pane w2:p1P\n",
 	);
 	assert.equal(workerLine({ session: "01a15dd2-70e3", role: "orchestrator" }), "- [01a15dd2](workers/01a15dd2.md) orchestrator\n");
+});
+
+test("tasks from links keep the URL", () => {
+	const url = "https://tickets.example.com/issues/ABC-123";
+	const note = renderTask(ref, { title: "ABC-123: Sync breaks", link: url }, now);
+	assert.match(note, /\nlink: "https:\/\/tickets\.example\.com\/issues\/ABC-123"\n/);
+	assert.match(note, /# ABC-123: Sync breaks\n\nhttps:\/\/tickets\.example\.com\/issues\/ABC-123\n\n## Goal/);
+	assert.equal(slugify("ABC-123: Sync breaks"), "abc-123-sync-breaks");
+
+	assert.equal(findUrl(`${url} the sync`), url);
+	assert.equal(findUrl("fix the sync"), undefined);
+	const prompt = titlePrompt(`${url}  fix the sync`, url);
+	assert.match(prompt, /ogham_task with title "<ID>: <title>" and link "https:\/\/tickets\.example\.com\/issues\/ABC-123"/);
+	assert.match(prompt, /The user added: "fix the sync"\. Pass it as goal/);
+	assert.doesNotMatch(titlePrompt(url, url), /user added/);
 });
 
 test("worker summaries read back the frontmatter", () => {

@@ -6,8 +6,10 @@ import * as path from "node:path";
 import { Type } from "@earendil-works/pi-ai";
 import { defineTool, type ExtensionAPI, type ExtensionContext, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import {
+	findUrl,
 	formatRef,
 	logLine,
+	type NewTask,
 	parseRef,
 	projectFor,
 	projectName,
@@ -22,6 +24,7 @@ import {
 	type TaskRef,
 	taskDir,
 	taskNotePath,
+	titlePrompt,
 	workerLine,
 	workerNotePath,
 	workerSummary,
@@ -37,12 +40,13 @@ interface Binding {
 
 interface BindRequest extends Binding {
 	goal?: string;
+	link?: string;
 	parent?: string;
 }
 
 const DESCRIPTION = `Bind this session to an ogham task, a markdown note in the user's notes repo.
 
-Call it when the user says which task they are working on. Pass title to create or reuse a task in the current repo's project. Pass task ("project/slug") to join a task another session created. Pass done to close the bound task. Pass nothing to list the task's workers with their status, pane, and intercom id.
+Call it when the user says which task they are working on. Pass title to create or reuse a task in the current repo's project. If the user gives a ticket or URL, look up its ID and title first, pass "<ID>: <title>" as title and the URL as link. Pass task ("project/slug") to join a task another session created. Pass done to close the bound task. Pass nothing to list the task's workers with their status, pane, and intercom id.
 
 Each session gets its own worker note under the task, updated automatically.`;
 
@@ -93,7 +97,7 @@ export default function (pi: ExtensionAPI) {
 		if (!existsSync(vault)) throw new Error(`No ogham vault at ${vault}.`);
 		const now = new Date();
 		const { ref } = request;
-		await createOnce(abs(taskNotePath(ref)), renderTask(ref, request.title, request.goal, now));
+		await createOnce(abs(taskNotePath(ref)), renderTask(ref, request, now));
 
 		if (bound && formatRef(bound.ref) !== formatRef(ref)) await updateWorker("moved", `moved to ${formatRef(ref)}`);
 		bound = { ref, title: request.title, role: request.role };
@@ -133,10 +137,10 @@ export default function (pi: ExtensionAPI) {
 		return result;
 	}
 
-	async function start(ctx: ExtensionContext, title: string, role: Role, project?: string, goal?: string): Promise<string> {
-		const ref = { project: project ? projectName(project) : projectFor(ctx.cwd), slug: slugify(title) };
-		const result = await bind(ctx, { ref, title, role, goal });
-		pi.appendEntry<Binding>(ENTRY, { ref, title, role });
+	async function start(ctx: ExtensionContext, role: Role, task: NewTask, project?: string): Promise<string> {
+		const ref = { project: project ? projectName(project) : projectFor(ctx.cwd), slug: slugify(task.title) };
+		const result = await bind(ctx, { ...task, ref, role });
+		pi.appendEntry<Binding>(ENTRY, { ref, title: task.title, role });
 		return result;
 	}
 
@@ -176,6 +180,7 @@ export default function (pi: ExtensionAPI) {
 				task: Type.Optional(Type.String({ description: "Existing task to join, as project/slug." })),
 				project: Type.Optional(Type.String({ description: "Project name. Defaults to the repo name." })),
 				goal: Type.Optional(Type.String({ description: "One-line goal for a new task." })),
+				link: Type.Optional(Type.String({ description: "Ticket or doc URL for a new task." })),
 				role: Type.Optional(
 					Type.Union([Type.Literal("orchestrator"), Type.Literal("worker")], {
 						description: "orchestrator if this session drives other workers.",
@@ -188,8 +193,10 @@ export default function (pi: ExtensionAPI) {
 				let text: string;
 				if (params.done) text = await finish(ctx);
 				else if (params.task) text = await join(ctx, params.task, role);
-				else if (params.title) text = await start(ctx, params.title, role, params.project, params.goal);
-				else text = await describe();
+				else if (params.title) {
+					const { title, goal, link } = params;
+					text = await start(ctx, role, { title, goal, link }, params.project);
+				} else text = await describe();
 				if (bound) text += `\n${joinHint(formatRef(bound.ref))}`;
 				return { content: [{ type: "text", text }], details: { task: bound ? formatRef(bound.ref) : undefined } };
 			},
@@ -200,12 +207,17 @@ export default function (pi: ExtensionAPI) {
 		description: "Show, start, join, or finish the ogham task",
 		handler: async (args, ctx) => {
 			const input = args.trim();
+			const url = findUrl(input);
 			try {
 				let text: string;
 				if (!input) text = await describe();
 				else if (input === "done") text = await finish(ctx);
 				else if (input.startsWith("join ")) text = await join(ctx, input.slice(5), "worker");
-				else text = await start(ctx, input, "worker");
+				else if (url) {
+					// Only the agent can read the title.
+					pi.sendUserMessage(titlePrompt(input, url), ctx.isIdle() ? undefined : { deliverAs: "followUp" });
+					text = `Looking up the title of ${url}.`;
+				} else text = await start(ctx, "worker", { title: input });
 				ctx.ui.notify(text, "info");
 			} catch (error) {
 				ctx.ui.notify((error as Error).message, "error");

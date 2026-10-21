@@ -3,7 +3,9 @@
 Tracks what each pi session works on in the ogham notes repo (`~/ogham`, or
 `OGHAM_VAULT`).
 
-Tell the agent the task, or run `/task <title>`. The `ogham_task` tool
+Tell the agent the task, or run `/task <title>`. `/task <url>` asks the
+agent to look up the ticket's ID and title, names the task after them, and
+keeps the URL as `link`. The `ogham_task` tool
 creates `projects/<repo>/<slug>/<slug>.md` and binds the session to it. Each
 session writes only its own worker note, `workers/<session>.md`, so parallel
 sessions never edit the same file. The extension updates `status`
