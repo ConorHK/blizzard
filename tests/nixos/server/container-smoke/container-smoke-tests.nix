@@ -113,7 +113,16 @@
                 "-c"
                 "mkdir /srv && nc -l -p 8080 -e true && sleep 3 && exec httpd -f -p 8080 -h /srv"
               ]) { containerConfig.publishPorts = [ "127.0.0.1:8082:8080" ]; };
-            };
+            }
+            # Both bind 7000, like two instances of one app.
+            // lib.genAttrs [ "twin-a" "twin-b" ] (
+              _:
+              lib.recursiveUpdate (container [
+                "sh"
+                "-c"
+                "mkdir /srv && exec httpd -f -p 7000 -h /srv"
+              ]) { containerConfig.publishPorts = [ "127.0.0.1:7000:7000" ]; }
+            );
 
             environment.etc."smoke-image.tar".source = image;
           };
@@ -177,6 +186,11 @@
             with subtest("a port that drops during startup passes"):
                 assert smoke("flap", ["flap"]) == 0, result("flap")
                 assert result("flap")["flap"]["status"] == "pass", result("flap")
+
+            with subtest("unrelated targets on one port both pass"):
+                assert smoke("twins", ["twin-a", "twin-b"]) == 0, result("twins")
+                assert result("twins")["twin-a"]["status"] == "pass", result("twins")
+                assert result("twins")["twin-b"]["status"] == "pass", result("twins")
 
             with subtest("a crashing target fails"):
                 assert smoke("bad", ["crash"]) != 0

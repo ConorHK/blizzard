@@ -53,12 +53,14 @@ that unit and nothing else.
   onto the clone, so writes never reach production.
 - Blanks every other volume, plus each container's `emptyPaths`. Store
   paths and `/etc/localtime` mount as they are.
-- Starts the targets and their `Requires`/`BindsTo` closure in one pod with
-  no network, capped at `containerSmoke.memory` (4g).
+- Groups targets that share a `Requires`/`BindsTo` closure. Each group
+  runs in its own pod, one after another, with no network and a cap of
+  `containerSmoke.memory` (4g). Pod members share `127.0.0.1`, so two
+  instances of one app in one pod would clash on ports.
 - Passes a container with a port once the port answers and still answers
   10 seconds later, within 300 seconds. Passes a container with no port once
   it has stayed up for about 70 seconds.
-- Destroys the pod, clone and snapshot on exit.
+- Destroys the pods, clone and snapshot on exit.
 
 Results land in `results/<id>.json` (kept 7 days). Container logs hold app
 data, so they stay root-only in `logs/<id>` (kept 14 days) and never reach CI.

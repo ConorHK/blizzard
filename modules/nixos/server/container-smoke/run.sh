@@ -15,7 +15,7 @@ mapfile -t targets < <(jq -r '.targets[]' "$request")
 work=$STATE_DIR/runs/$id
 logs=$STATE_DIR/logs/$id
 result=$STATE_DIR/results/$id.json
-pod=smoke-$id
+pods=()
 snapshot=$DATASET@smoke-$id
 clone=${DATASET%%/*}/smoke-$id
 uid=$(id -u containers)
@@ -36,7 +36,9 @@ as_containers() {
 
 # shellcheck disable=SC2329 # Runs from the EXIT trap.
 cleanup() {
-  as_containers podman pod rm --force --time 5 "$pod" >/dev/null 2>&1 || true
+  for pod in "${pods[@]}"; do
+    as_containers podman pod rm --force --time 5 "$pod" >/dev/null 2>&1 || true
+  done
   zfs destroy "$clone" 2>/dev/null || true
   zfs destroy "$snapshot" 2>/dev/null || true
   rm -rf "$work"
@@ -110,33 +112,32 @@ volume_args() {
 }
 
 # Members: targets and their requirement closure.
-declare -A seen=()
+# Unrelated targets get separate pods, so ports never clash.
+declare -A seen=() parent=()
 order=()
+root() {
+  local name=$1
+  while [[ ${parent[$name]} != "$name" ]]; do name=${parent[$name]}; done
+  echo "$name"
+}
 visit() {
   [[ -n ${seen[$1]:-} ]] && return
   seen[$1]=1
-  local dep
-  for dep in $(entry "$1" | jq -r '.requires[]'); do visit "$dep"; done
+  parent[$1]=$1
+  local dep a b
+  for dep in $(entry "$1" | jq -r '.requires[]'); do
+    visit "$dep"
+    a=$(root "$1")
+    b=$(root "$dep")
+    [[ $a == "$b" ]] || parent[$a]=$b
+  done
   order+=("$1")
 }
 for target in "${targets[@]}"; do
   [[ $(entry "$target") != null ]] || { record "$target" fail "not in spec"; exit 1; }
   visit "$target"
 done
-
-# Pods fix one userns for all members.
-mapfile -t userns < <(for name in "${order[@]}"; do entry "$name" | jq -r '.userns // empty'; done | sort -u)
-pod_args=(--name "$pod" --network none --no-hosts --memory "$POD_MEMORY")
-((${#userns[@]} <= 1)) || { record "${targets[0]}" fail "mixed userns"; exit 1; }
-((${#userns[@]} == 1)) && pod_args+=("--userns=${userns[0]}")
-
-# Production hostnames resolve to the pod.
-hosts=$work/hosts
-printf '127.0.0.1 localhost %s\n::1 localhost\n' "${order[*]}" >"$hosts"
-chmod 0644 "$hosts"
-as_containers podman pod create "${pod_args[@]}" >/dev/null
-
-infra=$(as_containers podman pod inspect "$pod" --format '{{.InfraContainerID}}')
+mapfile -t groups < <(for target in "${targets[@]}"; do root "$target"; done | sort -u)
 
 start() {
   local name=$1 json image args=()
@@ -159,16 +160,6 @@ start() {
   mapfile -t -O "${#args[@]}" args < <(jq -r '.exec // [] | .[]' <<<"$json")
   as_containers podman "${args[@]}" >/dev/null
 }
-
-for name in "${order[@]}"; do start "$name"; done
-
-pid=$(as_containers podman inspect "$infra" --format '{{.State.Pid}}')
-
-links=$(nsenter --target "$pid" --net ip -o link show | awk -F': ' '{print $2}')
-if [[ $links != lo ]]; then
-  record "${targets[0]}" fail "pod has network: $links"
-  exit 1
-fi
 
 state() { as_containers podman inspect "$pod-$1" --format '{{.State.Status}} {{.State.ExitCode}}'; }
 
@@ -221,11 +212,54 @@ probe() {
   record "$name" pass "${port:+port $port answered}"
 }
 
-failed=0
-for target in "${targets[@]}"; do probe "$target" || failed=1; done
+# Runs one group in its own pod.
+run_group() {
+  local group=$1 members=() name target userns pod_args infra links
+  for name in "${order[@]}"; do
+    [[ $(root "$name") == "$group" ]] && members+=("$name")
+  done
+  pod=smoke-$id-$group
+  pods+=("$pod")
 
-for name in "${order[@]}"; do
-  as_containers podman logs "$pod-$name" >"$logs/$name.log" 2>&1 || true
-done
+  # Pods fix one userns for all members.
+  mapfile -t userns < <(for name in "${members[@]}"; do entry "$name" | jq -r '.userns // empty'; done | sort -u)
+  pod_args=(--name "$pod" --network none --no-hosts --memory "$POD_MEMORY")
+  if ((${#userns[@]} > 1)); then
+    record "$group" fail "mixed userns"
+    failed=1
+    return
+  fi
+  ((${#userns[@]} == 1)) && pod_args+=("--userns=${userns[0]}")
+
+  # Production hostnames resolve to the pod.
+  hosts=$work/hosts-$group
+  printf '127.0.0.1 localhost %s\n::1 localhost\n' "${members[*]}" >"$hosts"
+  chmod 0644 "$hosts"
+  as_containers podman pod create "${pod_args[@]}" >/dev/null
+
+  infra=$(as_containers podman pod inspect "$pod" --format '{{.InfraContainerID}}')
+  for name in "${members[@]}"; do start "$name"; done
+  pid=$(as_containers podman inspect "$infra" --format '{{.State.Pid}}')
+
+  links=$(nsenter --target "$pid" --net ip -o link show | awk -F': ' '{print $2}')
+  if [[ $links != lo ]]; then
+    record "$group" fail "pod has network: $links"
+    exit 1
+  fi
+
+  for target in "${targets[@]}"; do
+    [[ $(root "$target") == "$group" ]] || continue
+    probe "$target" || failed=1
+  done
+
+  for name in "${members[@]}"; do
+    as_containers podman logs "$pod-$name" >"$logs/$name.log" 2>&1 || true
+  done
+  # Frees memory for the next group.
+  as_containers podman pod rm --force --time 5 "$pod" >/dev/null
+}
+
+failed=0
+for group in "${groups[@]}"; do run_group "$group"; done
 
 exit "$failed"
