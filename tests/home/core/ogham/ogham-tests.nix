@@ -35,9 +35,14 @@
 
             # No remote: local repo, commit only.
             ${ogham} init solo
+            mkdir solo/.zvec-grep
+            touch solo/.zvec-grep/index
             echo note >solo/a.md
             ${ogham} sync solo
             test "$(git -C solo rev-list --count HEAD)" = 1
+            test -z "$(git -C solo ls-files .zvec-grep)"
+            ${ogham} init solo
+            test "$(grep -c zvec-grep solo/.git/info/exclude)" = 1
             ${ogham} sync solo
             test "$(git -C solo rev-list --count HEAD)" = 1
 

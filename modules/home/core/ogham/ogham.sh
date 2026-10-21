@@ -32,6 +32,14 @@ adopt() {
   rm -rf "$tmp"
 }
 
+# The search index is per host.
+exclude() {
+  [ -d "$vault/.git" ] || return 0
+  mkdir -p "$vault/.git/info"
+  grep -qxF .zvec-grep/ "$vault/.git/info/exclude" 2>/dev/null \
+    || echo .zvec-grep/ >>"$vault/.git/info/exclude"
+}
+
 init() {
   if [ -d "$vault/.git" ]; then
     if [ -n "$remote" ]; then
@@ -43,6 +51,7 @@ init() {
   else
     git init -q -b main "$vault"
   fi
+  exclude
 }
 
 sync() {

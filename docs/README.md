@@ -11,4 +11,4 @@ see [AGENTS.md](../AGENTS.md).
 | [secrets.md](secrets.md) | agenix-rekey, the YubiKey, adding secrets and hosts |
 | [monitoring.md](monitoring.md) | `monitoringChecks`, the coverage rule, maintenance windows |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |
-| [ogham.md](ogham.md) | The notes repo, git sync, pi task tracking |
+| [ogham.md](ogham.md) | The notes repo: sync, task curation, wins, search |

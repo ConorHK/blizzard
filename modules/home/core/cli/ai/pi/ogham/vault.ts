@@ -119,7 +119,7 @@ export function renderTask(ref: TaskRef, task: NewTask, now: Date): string {
 		created: stamp(now),
 	});
 	const link = task.link ? `${task.link}\n\n` : "";
-	return `${fields}# ${task.title}\n\n${link}## Goal\n\n${task.goal ?? ""}\n\n## Log\n\n## Workers\n\n`;
+	return `${fields}# ${task.title}\n\n${link}## Goal\n\n${task.goal ? `${task.goal}\n\n` : ""}## Status\n\n## Next\n\n## Log\n\n## Workers\n`;
 }
 
 export function findUrl(text: string): string | undefined {
@@ -147,10 +147,9 @@ export function titlePrompt(url: string): string {
 	].join("\n");
 }
 
-/** Appended; Workers stays the last section. */
 export function workerLine(info: Pick<WorkerInfo, "session" | "role" | "pane">): string {
 	const id = workerId(info.session);
-	return `- [${id}](workers/${id}.md) ${info.role}${info.pane ? `, pane ${info.pane}` : ""}\n`;
+	return `- [${id}](workers/${id}.md) ${info.role}${info.pane ? `, pane ${info.pane}` : ""}`;
 }
 
 export function renderWorker(info: WorkerInfo): string {
@@ -169,7 +168,7 @@ export function renderWorker(info: WorkerInfo): string {
 		started: stamp(info.now),
 		updated: stamp(info.now),
 	});
-	return `${fields}# ${info.name ?? workerId(info.session)}\n\n## Log\n\n`;
+	return `${fields}# ${info.name ?? workerId(info.session)}\n`;
 }
 
 export function readFrontmatter(text: string): Record<string, string> {
@@ -191,38 +190,4 @@ export function workerSummary(fields: Record<string, string>): string {
 	if (fields.intercom) parts.push(`intercom ${fields.intercom}`);
 	if (fields.updated) parts.push(`updated ${fields.updated}`);
 	return parts.filter(Boolean).join(" ");
-}
-
-export function logLine(now: Date, text: string): string {
-	const time = stamp(now).slice(11);
-	const line = text.replace(/\s+/g, " ").trim();
-	return `- ${time} ${line.length > 160 ? `${line.slice(0, 157)}...` : line}\n`;
-}
-
-interface TextBlock {
-	type: string;
-	text?: string;
-}
-
-interface MessageLike {
-	role?: string;
-	content?: unknown;
-}
-
-/** First non-empty line of the last reply. */
-export function replyHeadline(messages: readonly unknown[]): string | undefined {
-	for (let i = messages.length - 1; i >= 0; i--) {
-		const message = messages[i] as MessageLike;
-		if (message?.role !== "assistant" || !Array.isArray(message.content)) continue;
-		const text = (message.content as TextBlock[])
-			.filter((block) => block.type === "text" && block.text)
-			.map((block) => block.text)
-			.join("\n");
-		const line = text
-			.split("\n")
-			.map((part) => part.trim())
-			.find(Boolean);
-		if (line) return line;
-	}
-	return undefined;
 }

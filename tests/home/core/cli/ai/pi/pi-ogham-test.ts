@@ -6,13 +6,11 @@ import { test } from "node:test";
 import {
 	findUrl,
 	linkSlug,
-	logLine,
 	parseRef,
 	projectFor,
 	readFrontmatter,
 	renderTask,
 	renderWorker,
-	replyHeadline,
 	setFrontmatter,
 	slugify,
 	titlePrompt,
@@ -22,6 +20,21 @@ import {
 	workerSummary,
 	yamlValue,
 } from "./ogham/vault.ts";
+import {
+	appendTopic,
+	applyCuration,
+	candidateUrls,
+	clip,
+	firstOpen,
+	parseCuration,
+	parsePromotion,
+	renderIndex,
+	renderWin,
+	winsFor,
+} from "./ogham/curate.ts";
+import { parseHits } from "./ogham/knowledge.ts";
+import { withLock } from "./ogham/lock.ts";
+import { appendLines, getSection, parseNote, renderNote, setSection } from "./ogham/note.ts";
 
 const now = new Date(2026, 9, 20, 14, 5);
 const ref = { project: "blizzard", slug: "fix-sync" };
@@ -63,19 +76,19 @@ test("frontmatter updates keep the body", () => {
 	const updated = setFrontmatter(note, { status: "working", extra: "x y" });
 	assert.match(updated, /\nstatus: working\n/);
 	assert.match(updated, /\nextra: "x y"\n---\n/);
-	assert.equal(updated.split("## Log").length, 2);
+	assert.match(updated, /---\n# 01a15dd2\n$/);
 	assert.equal(setFrontmatter("body\n", { a: "b" }), "---\na: b\n---\nbody\n");
 });
 
 test("task note ends with the workers list", () => {
 	const note = renderTask(ref, { title: "Fix sync", goal: "Make it work" }, now);
 	assert.match(note, /^---\ntype: task\nproject: blizzard\nstatus: active\ncreated: 2026-10-20T14:05\n---\n# Fix sync\n/);
-	assert.match(note, /## Goal\n\nMake it work\n\n## Log\n\n## Workers\n\n$/);
+	assert.match(note, /## Goal\n\nMake it work\n\n## Status\n\n## Next\n\n## Log\n\n## Workers\n$/);
 	assert.equal(
 		workerLine({ session: "01a15dd2-70e3", role: "worker", pane: "w2:p1P" }),
-		"- [01a15dd2](workers/01a15dd2.md) worker, pane w2:p1P\n",
+		"- [01a15dd2](workers/01a15dd2.md) worker, pane w2:p1P",
 	);
-	assert.equal(workerLine({ session: "01a15dd2-70e3", role: "orchestrator" }), "- [01a15dd2](workers/01a15dd2.md) orchestrator\n");
+	assert.equal(workerLine({ session: "01a15dd2-70e3", role: "orchestrator" }), "- [01a15dd2](workers/01a15dd2.md) orchestrator");
 });
 
 test("tasks from links keep the URL", () => {
@@ -103,14 +116,129 @@ test("worker summaries read back the frontmatter", () => {
 	assert.deepEqual(readFrontmatter("no frontmatter"), {});
 });
 
-test("log lines use the reply headline", () => {
-	const messages = [
-		{ role: "assistant", content: [{ type: "text", text: "old" }] },
-		{ role: "user", content: "next" },
-		{ role: "assistant", content: [{ type: "toolCall" }, { type: "text", text: "\n\n  Sync fixed: push works.\nDetails" }] },
-	];
-	assert.equal(replyHeadline(messages), "Sync fixed: push works.");
-	assert.equal(replyHeadline([{ role: "user", content: "hi" }]), undefined);
-	assert.equal(logLine(now, "a\nb"), "- 14:05 a b\n");
-	assert.equal(logLine(now, "x".repeat(200)).length, "- 14:05 ".length + 160 + 1);
+test("sections parse, insert in order, and round trip", () => {
+	const text = renderTask(ref, { title: "Fix sync", link: "https://x.example/A-1" }, now);
+	const note = parseNote(text);
+	assert.deepEqual(
+		note.sections.map((section) => section.name),
+		["Goal", "Status", "Next", "Log", "Workers"],
+	);
+	assert.equal(renderNote(note), text);
+	const added = setSection(setSection(note, "Findings", "- f"), "Links", "- l");
+	assert.deepEqual(
+		added.sections.map((section) => section.name),
+		["Goal", "Status", "Next", "Findings", "Links", "Log", "Workers"],
+	);
+	const custom = setSection(parseNote("# T\n\n## Mine\n\nkeep\n"), "Status", "s");
+	assert.equal(renderNote(custom), "# T\n\n## Mine\n\nkeep\n\n## Status\n\ns\n");
+	assert.equal(getSection(appendLines(added, "Workers", ["- w1", "- w2"]), "Workers"), "- w1\n- w2");
+});
+
+test("curator replies parse defensively", () => {
+	const reply = `Sure:\n\`\`\`json\n{"status": "Two CRs posted.", "next": ["Merge CR-1", 3], "decisions": ["Split it"],
+	"findings": [], "links": [{"url": "https://cr.example/1", "label": "CR 1"}, {"bad": 1}], "log": "posted\nboth",
+	"state": "review", "win": {"title": "t", "impact": ""}}\n\`\`\``;
+	const update = parseCuration(reply);
+	assert.ok(update);
+	assert.deepEqual(update.next, ["Merge CR-1"]);
+	assert.deepEqual(update.links, [{ url: "https://cr.example/1", label: "CR 1" }]);
+	assert.equal(update.log, "posted both");
+	assert.equal(update.state, "review");
+	assert.equal(update.win, undefined);
+	assert.equal(parseCuration("no json here"), undefined);
+	assert.equal(parseCuration('{"state": "done"}')?.state, undefined);
+});
+
+test("curation rewrites status and next, appends the rest", () => {
+	const before = renderNote(
+		appendLines(parseNote(renderTask(ref, { title: "Fix sync" }, now)), "Workers", ["- [01a15dd2](workers/01a15dd2.md) worker"]),
+	);
+	const once = applyCuration(
+		before,
+		{
+			status: "Sync fixed locally.",
+			next: ["Post CR"],
+			decisions: ["Use flock"],
+			findings: ["Activation PATH has no ssh (ogham.sh)"],
+			links: [{ url: "https://cr.example/1", label: "CR 1" }],
+			log: "fixed sync",
+			win: { title: "Sync ships", summary: "", impact: "Notes reach the hub", evidence: [] },
+		},
+		now,
+		"01a15dd2",
+	);
+	const twice = applyCuration(
+		once,
+		{ status: "CR posted.", next: [], decisions: [], findings: [], links: [{ url: "https://cr.example/1", label: "dup" }] },
+		now,
+		"01a15dd2",
+	);
+	const note = parseNote(twice);
+	assert.equal(getSection(note, "Status"), "CR posted.");
+	assert.equal(getSection(note, "Next"), "");
+	assert.equal(getSection(note, "Decisions"), "- 2026-10-20 Use flock");
+	assert.equal(getSection(note, "Links"), "- [CR 1](https://cr.example/1)");
+	assert.equal(getSection(note, "Log"), "- 2026-10-20 14:05 01a15dd2 fixed sync\n- 2026-10-20 14:05 01a15dd2 win: Sync ships");
+	assert.equal(note.sections.at(-1)?.name, "Workers");
+	assert.equal(firstOpen(once), "Post CR");
+});
+
+test("urls, clipping, and zg hits", () => {
+	const text = 'see https://cr.example/1, and (https://t.example/A-2). "https://cr.example/1"';
+	assert.deepEqual(candidateUrls(text, ""), ["https://cr.example/1", "https://t.example/A-2"]);
+	assert.deepEqual(candidateUrls(text, "https://cr.example/1"), ["https://t.example/A-2"]);
+	const clipped = clip("a".repeat(100) + "z".repeat(100), 40);
+	assert.ok(clipped.startsWith("a".repeat(10)) && clipped.endsWith("z".repeat(30)));
+	assert.equal(clip("short", 40), "short");
+	const output = `query groups (1):\nhits: 2\n\n#1 matchedBy=fts+vector topics/reset.md:8-11\nheading: 2026-10-20\nsource:\n8\t## 2026-10-20\n9\t\n10\t- NHS check runs before the wipe\n\n#2 matchedBy=vector topics/reset.md:2-3\nheading: type: topic\nsource:\n2\ttype: topic\n3\t---\n`;
+	assert.deepEqual(parseHits(output), [
+		{ file: "topics/reset.md", lines: "8-11", text: "## 2026-10-20\n\n- NHS check runs before the wipe" },
+	]);
+});
+
+test("wins, topics, and the index", () => {
+	const task = { title: "A-1: Fix sync", file: "projects/blizzard/a-1/a-1.md" };
+	const win = renderWin({ title: "Sync ships", summary: "Notes sync.", impact: "No lost notes", evidence: ["https://cr.example/1"] }, now, task);
+	assert.equal(
+		win,
+		"## 2026-10-20 Sync ships\n\nNotes sync.\n\n- Impact: No lost notes\n- Evidence: https://cr.example/1\n- Task: [A-1: Fix sync](projects/blizzard/a-1/a-1.md)\n",
+	);
+	const wins = `# Wins\n\n${win}\n## 2026-10-21 Other\n\n- Impact: x\n- Task: [B](projects/x/b/b.md)\n`;
+	assert.equal(winsFor(wins, task.file), win.trim());
+	assert.equal(winsFor(wins, "projects/none.md"), "");
+
+	const topic = { slug: "sync", title: "Sync", summary: "How notes sync.", entries: ["flock guards runs"] };
+	const created = appendTopic(undefined, topic, now, "[A-1](../projects/blizzard/a-1/a-1.md)");
+	assert.equal(created, "---\ntype: topic\n---\n# Sync\n\nHow notes sync.\n\n## 2026-10-20\n\n- flock guards runs ([A-1](../projects/blizzard/a-1/a-1.md))\n");
+	const same = appendTopic(created, { ...topic, entries: ["second"] }, now, "[A-1](x)");
+	assert.match(same, /flock guards runs .*\n- second \(\[A-1\]\(x\)\)\n$/);
+	const later = appendTopic(same, { ...topic, entries: ["third"] }, new Date(2026, 9, 22, 9, 0), "[A-1](x)");
+	assert.match(later, /\n\n## 2026-10-22\n\n- third/);
+
+	assert.deepEqual(parsePromotion('{"topics": [{"slug": "s", "title": "S", "entries": []}, {"slug": "t", "title": "T", "entries": ["e"]}]}'), {
+		topics: [{ slug: "t", title: "T", summary: undefined, entries: ["e"] }],
+		win: undefined,
+	});
+
+	const index = renderIndex([
+		{ project: "b", file: "projects/b/x/x.md", title: "X [old]", status: "done", updated: "2026-10-19T10:00", next: "stale" },
+		{ project: "b", file: "projects/b/y/y.md", title: "Y", status: "review", updated: "2026-10-20T10:00", next: "Merge" },
+		{ project: "a", file: "projects/a/z/z.md", title: "Z", status: "active", updated: "2026-10-18T10:00" },
+	]);
+	assert.equal(
+		index,
+		"# Tasks\n\n## a\n\n- [Z](projects/a/z/z.md) active, 2026-10-18T10:00\n\n## b\n\n- [Y](projects/b/y/y.md) review, 2026-10-20T10:00. Next: Merge\n\n## Done\n\n- [X \\[old\\]](projects/b/x/x.md) done, 2026-10-19T10:00\n\nWins: [wins.md](wins.md)\n",
+	);
+});
+
+test("locks serialize writers", async () => {
+	const order: string[] = [];
+	const slow = (name: string) =>
+		withLock("ogham-test-lock", async () => {
+			order.push(`${name}+`);
+			await new Promise((resolve) => setTimeout(resolve, 30));
+			order.push(`${name}-`);
+		});
+	await Promise.all([slow("a"), slow("b")]);
+	assert.ok(order.join(",") === "a+,a-,b+,b-" || order.join(",") === "b+,b-,a+,a-", order.join(","));
 });
