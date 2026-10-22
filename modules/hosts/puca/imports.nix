@@ -20,6 +20,9 @@
     github-nix-access
     grub-boot
     home-assistant
+    restic
+    restic-b2
+    restic-secrets
     server-users
   ];
 }

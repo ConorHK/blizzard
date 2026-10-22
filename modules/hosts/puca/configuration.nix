@@ -5,6 +5,9 @@
     networking.hostName = "puca";
     networking.ipv4.address = "192.168.0.165";
 
+    # Rootful podman writes the config as root.
+    restic.user = "root";
+
     system = {
       stateVersion = "25.05";
     };

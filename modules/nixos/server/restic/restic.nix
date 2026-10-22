@@ -39,9 +39,22 @@ _: {
     in
     {
       options.restic = {
+        # Backend modules turn this into repository.
+        bucket = lib.mkOption {
+          type = lib.types.str;
+          default = "restic-backup-${config.networking.hostName}";
+          description = "Per-host bucket the backend stores the repository in.";
+        };
+
         repository = lib.mkOption {
           type = lib.types.str;
-          description = "Restic repository URL.";
+          description = "Restic repository URL, set by a backend module.";
+        };
+
+        user = lib.mkOption {
+          type = lib.types.str;
+          default = "containers";
+          description = "User the backup runs as.";
         };
 
         paths = lib.mkOption {
@@ -340,7 +353,7 @@ _: {
         };
 
         services.restic.backups.service-data = {
-          user = "containers";
+          inherit (cfg) user;
           paths = allPaths;
           inherit (cfg)
             repository

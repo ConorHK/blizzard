@@ -50,6 +50,7 @@
     quadlet
     readmeabook
     restic
+    restic-b2
     restic-secrets
     satisfactory
     server-users
