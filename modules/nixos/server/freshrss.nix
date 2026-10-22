@@ -26,7 +26,7 @@ in
 
         containers.freshrss.containerConfig = {
           # renovate: datasource=docker depName=docker.io/freshrss/freshrss
-          image = "docker.io/freshrss/freshrss:1.30.3";
+          image = "docker.io/freshrss/freshrss:1.30.4";
           publishPorts = [ "127.0.0.1:${toString port}:80" ];
           volumes = [
             "${dataDir}/data:/var/www/FreshRSS/data"
