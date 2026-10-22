@@ -2,7 +2,6 @@
 
 Applies to every edit and every response:
 
-- Comment blocks: 7 words or fewer.
 - Function names: 4 words or fewer.
 - User-facing message strings: 10 words or fewer.
 - Write in the active voice.
@@ -12,6 +11,9 @@ Applies to every edit and every response:
 - In responses, write URLs in full as plain text, never as markdown
   `[text](url)` links. The terminal hides the target, so the reader cannot
   copy it.
+- Put anything the reader may copy (URLs, CR IDs, build IDs, commands) in
+  bullet points or code blocks, never in table cells. Table rows do not copy
+  cleanly from the terminal.
 
 # Addressing the User
 

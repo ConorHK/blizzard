@@ -38,7 +38,7 @@ there elsewhere.
 Applies to every edit, in every language:
 
 - Add a comment ONLY when it explains something the code cannot convey on its own, such as a non-obvious *why*, an external constraint, or a subtle invariant. If the code already says it, do not restate it.
-- Keep every comment as terse as possible: the fewest words that carry the point.
+- Keep every comment to one sentence in simple words that carries the point.
 - Do NOT narrate dropped, alternate, or previous approaches. Production code has no reader who holds that history; contrasting against a design that no longer exists only misleads.
 - Do NOT write comments that go stale. Do not duplicate a value, restate the adjacent line, or describe transient state the code will outlive.
 
@@ -48,6 +48,13 @@ When in doubt, delete the comment and let the code speak.
 
 Never put imports inside functions or methods. Put every import at module
 level, at the top of the file. This applies in every language.
+
+## Parse Formats With Existing Libraries
+
+Before parsing a config format, file type, or protocol by hand, check how
+sibling packages read it and use the same library (for Brazil config in
+TypeScript, `@amzn/brazil-config-parser`). Never hand-roll a parser or
+reimplement precedence and substitution rules a library already handles.
 
 ## Remote Hosts Require Confirmation
 
