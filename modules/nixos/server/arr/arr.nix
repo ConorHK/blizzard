@@ -53,7 +53,7 @@ let
     };
     autobrr = {
       # renovate: datasource=docker depName=ghcr.io/autobrr/autobrr
-      image = "ghcr.io/autobrr/autobrr:v1.88.0";
+      image = "ghcr.io/autobrr/autobrr:v1.89.0";
       port = 7474;
       health = "/api/healthz/liveness";
       media = false;
