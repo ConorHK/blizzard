@@ -24,6 +24,24 @@
 
         # bananach cannot page while it is down.
         gatusWatch.url = "http://100.96.40.127:8080/health";
+
+        # Old .lep names; drop once unused.
+        nginx.redirects = lib.mapAttrs' (old: lib.nameValuePair "${old}.lep.goosebox.org") (
+          lib.genAttrs [
+            "autobrr"
+            "budget"
+            "changedetection"
+            "lidarr"
+            "photon"
+            "photos"
+            "slskd"
+          ] (name: "${name}.goosebox.org")
+          // {
+            dawarich = "location.goosebox.org";
+            glance = "news.goosebox.org";
+            mealie = "recipes.goosebox.org";
+          }
+        );
       };
 
       boot = {

@@ -18,7 +18,7 @@ the option:
 ```nix
 flake.monitoringChecks.immich = {
   name = "immich";
-  url = "https://photos.lep.goosebox.org";
+  url = "https://photos.goosebox.org";
 };
 ```
 
@@ -51,8 +51,8 @@ Each one must be a substring of some check's `url`, or appear in
 `blizzard.monitoring.exempt`. Otherwise evaluation fails with
 `no monitoringChecks entry covers <vhost>`.
 
-The match is a substring test, so a check on `https://photos.lep.goosebox.org/api/ping`
-covers the `photos.lep.goosebox.org` vhost.
+The match is a substring test, so a check on `https://photos.goosebox.org/api/ping`
+covers the `photos.goosebox.org` vhost.
 
 Exempt a vhost only when watching it makes no sense. bananach exempts
 `monitor.goosebox.org`, gatus's own UI

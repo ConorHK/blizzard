@@ -1,6 +1,6 @@
 _:
 let
-  url = "dawarich.lep.goosebox.org";
+  url = "location.goosebox.org";
   port = 3001;
 
   # renovate: datasource=docker depName=docker.io/freikin/dawarich
@@ -12,7 +12,7 @@ let
     DATABASE_HOST = "dawarich-db";
     DATABASE_USERNAME = "postgres";
     DATABASE_NAME = "dawarich_development";
-    APPLICATION_HOSTS = "localhost,${url},location.goosebox.org,dawarich.goosebox.org,locationapi.goosebox.org";
+    APPLICATION_HOSTS = "localhost,${url},dawarich.goosebox.org,locationapi.goosebox.org";
     APPLICATION_PROTOCOL = "https";
     TIME_ZONE = "Europe/Dublin";
     SELF_HOSTED = "true";

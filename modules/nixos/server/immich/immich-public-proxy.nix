@@ -1,6 +1,6 @@
 _:
 let
-  url = "photos.goosebox.org";
+  url = "share.photos.goosebox.org";
   port = "3010";
 
   # Metadata is per-field opt-in upstream.
@@ -68,21 +68,20 @@ in
         };
       };
 
-      services.nginx.virtualHosts.${url} = {
-        enableACME = true;
-        forceSSL = true;
-        # Uploads need no body size limit.
-        extraConfig = ''
-          client_max_body_size 0;
-        '';
-        # Share links go to the proxy, the rest to Immich.
-        locations = {
-          "/" = {
-            proxyPass = "http://127.0.0.1:2283";
-            proxyWebsockets = true;
-          };
-          "/share".proxyPass = "http://127.0.0.1:${port}";
-          "/s".proxyPass = "http://127.0.0.1:${port}";
+      services.nginx.virtualHosts = {
+        ${url} = {
+          enableACME = true;
+          forceSSL = true;
+          # Uploads need no body size limit.
+          extraConfig = ''
+            client_max_body_size 0;
+          '';
+          locations."/".proxyPass = "http://127.0.0.1:${port}";
+        };
+        # Share links sent before the move.
+        "photos.goosebox.org".locations = {
+          "/share/".return = "308 https://${url}$request_uri";
+          "/s/".return = "308 https://${url}$request_uri";
         };
       };
     };

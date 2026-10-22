@@ -1,6 +1,6 @@
 _:
 let
-  url = "budget.lep.goosebox.org";
+  url = "budget.goosebox.org";
 in
 {
   flake.monitoringChecks.actual-budget = {

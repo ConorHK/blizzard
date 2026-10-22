@@ -1,6 +1,6 @@
 _:
 let
-  url = "mealie.lep.goosebox.org";
+  url = "recipes.goosebox.org";
 in
 {
   flake.monitoringChecks.mealie = {

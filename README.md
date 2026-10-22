@@ -12,29 +12,29 @@
 
 | Module | Services | Ports | Reverse proxy |
 |--------|----------|-------|---------------|
-| `actual-budget` | actual-server | 5006 | budget.lep.goosebox.org |
+| `actual-budget` | actual-server | 5006 | budget.goosebox.org |
 | `aqua-booking` | aqua-booking (timer, 07:00 Europe/London) | - | - |
 | `audiobookshelf` | audiobookshelf | 13378 | audiobookshelf.goosebox.org |
 | `calibre` | calibre-web, shelfmark | 8183, 8084 | calibre.goosebox.org, shelfmark.goosebox.org |
-| `changedetection` | changedetection.io, sockpuppetbrowser | 5000 | changedetection.lep.goosebox.org |
+| `changedetection` | changedetection.io, sockpuppetbrowser | 5000 | changedetection.goosebox.org |
 | `clip-server` | clip | 7391 (tailnet, wg0) | - |
-| `dawarich` | redis, postgis, app, sidekiq | 3001 | dawarich.lep.goosebox.org |
+| `dawarich` | redis, postgis, app, sidekiq | 3001 | location.goosebox.org |
 | `duckdns` | duckdns (timer, every 5 min) | - | - |
 | `freshrss` | freshrss | 8002 | rss.goosebox.org |
 | `gatus-watch` | gatus-watch (probes bananach's gatus every 5 min) | - | - |
 | `github-runner` | github-runner, deployed-lag (hourly) | - | - |
-| `glance` | glance | 8092 | glance.lep.goosebox.org |
+| `glance` | glance | 8092 | news.goosebox.org |
 | `hister` | hister | 4433 | search.goosebox.org |
-| `immich` | redis, postgres, machine-learning, server | 2283 | photos.lep.goosebox.org |
-| `immich-public-proxy` | immich-public-proxy | 3010 | photos.goosebox.org |
+| `immich` | redis, postgres, machine-learning, server | 2283 | photos.goosebox.org |
+| `immich-public-proxy` | immich-public-proxy | 3010 | share.photos.goosebox.org |
 | `immich-stack` | immich-stack (cron, daily) | - | - |
 | `matrix` | synapse, mautrix whatsapp/discord/meta bridges | 8008 | matrix.goosebox.org |
-| `mealie` | mealie | 9925 | mealie.lep.goosebox.org |
+| `mealie` | mealie | 9925 | recipes.goosebox.org |
 | `navidrome` | navidrome | 4533 | music.goosebox.org |
 | `nextdns` | nextdns | 53 (wg0 only) | - |
 | `nginx` | nginx, ACME (deSEC DNS-01) | 80, 443 | - |
 | `ollama` | ollama (nomic-embed-text, for hister) | 11434 | - |
-| `photon` | photon | 2322 | photon.lep.goosebox.org |
+| `photon` | photon | 2322 | photon.goosebox.org |
 | `qbittorrent` | qbittorrent, qbit-manage | 8080, 8181 | qbittorrent.lep, qbit-manage.lep |
 | `restic` | restic (backup 03:00, freshness check 10:00) | - | - |
 | `satisfactory` | satisfactory server | 7777 (TCP/UDP), 8888 | - |

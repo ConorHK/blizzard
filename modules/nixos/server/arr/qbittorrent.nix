@@ -2,7 +2,7 @@ _:
 let
   url = "qui.lep.goosebox.org";
   quiPort = 7476;
-  slskdUrl = "slskd.lep.goosebox.org";
+  slskdUrl = "slskd.goosebox.org";
   slskdPort = 5030;
   # AirVPN forwarded port.
   slskdListenPort = 14948;

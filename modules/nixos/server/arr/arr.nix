@@ -1,6 +1,6 @@
 { lib, ... }:
 let
-  # Web apps behind nginx at <name>.lep.goosebox.org.
+  # Web apps behind nginx at <name>.goosebox.org.
   apps = {
     sonarr = {
       # renovate: datasource=docker depName=ghcr.io/hotio/sonarr
@@ -62,7 +62,14 @@ let
     };
   };
 
-  host = name: "${name}.lep.goosebox.org";
+  # Server's compose still owns these names.
+  onServer = [
+    "sonarr"
+    "radarr"
+    "prowlarr"
+    "bazarr"
+  ];
+  host = name: if lib.elem name onServer then "${name}.lep.goosebox.org" else "${name}.goosebox.org";
 in
 {
   flake = {

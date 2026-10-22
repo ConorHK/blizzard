@@ -1,6 +1,6 @@
 _:
 let
-  url = "photos.lep.goosebox.org";
+  url = "photos.goosebox.org";
 in
 {
   flake.monitoringChecks.immich = {

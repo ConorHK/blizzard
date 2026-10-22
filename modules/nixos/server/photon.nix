@@ -1,6 +1,6 @@
 _:
 let
-  url = "photon.lep.goosebox.org";
+  url = "photon.goosebox.org";
   probe = "http://127.0.0.1:2322/reverse?lon=-6.2603&lat=53.3498";
 in
 {

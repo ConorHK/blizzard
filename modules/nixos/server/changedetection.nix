@@ -1,6 +1,6 @@
 _:
 let
-  url = "changedetection.lep.goosebox.org";
+  url = "changedetection.goosebox.org";
   port = 5000;
 in
 {

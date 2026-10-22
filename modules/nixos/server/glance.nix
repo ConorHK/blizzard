@@ -2,13 +2,13 @@ _: {
   flake = {
     monitoringChecks.glance = {
       name = "glance";
-      url = "https://glance.lep.goosebox.org";
+      url = "https://news.goosebox.org";
     };
 
     modules.nixos.glance =
       { pkgs, ... }:
       let
-        url = "glance.lep.goosebox.org";
+        url = "news.goosebox.org";
         port = 8092;
 
         glanceConfig = (pkgs.formats.yaml { }).generate "glance.yml" {
