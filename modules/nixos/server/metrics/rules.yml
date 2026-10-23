@@ -9,7 +9,10 @@ groups:
           description: "{{ $labels.instance }} has not answered for 5 minutes"
       - alert: DiskFull
         expr: |
-          100 * (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*"}
+          100 * (1 - node_filesystem_avail_bytes{
+            fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*",
+            mountpoint!~"/run/restic-zfs/.*"
+          }
             / node_filesystem_size_bytes) >= 90
         for: 15m
         annotations:
@@ -17,7 +20,10 @@ groups:
           description: "{{ $labels.mountpoint }} at {{ $value | printf \"%.0f\" }}%"
       - alert: DiskFillingFast
         expr: |
-          node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*"}
+          node_filesystem_avail_bytes{
+            fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*",
+            mountpoint!~"/run/restic-zfs/.*"
+          }
             / node_filesystem_size_bytes < 0.2
           and predict_linear(node_filesystem_avail_bytes[6h], 24 * 3600) < 0
         for: 1h

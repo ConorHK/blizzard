@@ -183,3 +183,22 @@ tests:
             exp_annotations:
               summary: Service memory high
               description: /u/user@993.service/app.slice/immich.service uses 40% of host memory
+  - name: a restic snapshot mount does not page twice
+    interval: 1m
+    input_series:
+      - series: node_filesystem_avail_bytes{host="leprechaun", mountpoint="/storage/data", fstype="zfs"}
+        values: 5x30
+      - series: node_filesystem_size_bytes{host="leprechaun", mountpoint="/storage/data", fstype="zfs"}
+        values: 100x30
+      - series: node_filesystem_avail_bytes{host="leprechaun", mountpoint="/run/restic-zfs/storage/data", fstype="zfs"}
+        values: 5x30
+      - series: node_filesystem_size_bytes{host="leprechaun", mountpoint="/run/restic-zfs/storage/data", fstype="zfs"}
+        values: 100x30
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: DiskFull
+        exp_alerts:
+          - exp_labels: {host: leprechaun, mountpoint: /storage/data, fstype: zfs}
+            exp_annotations:
+              summary: Disk full
+              description: /storage/data at 95%
