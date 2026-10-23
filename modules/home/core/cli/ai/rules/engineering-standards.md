@@ -56,6 +56,13 @@ explicit confirmation first. This includes read-only inspection commands
 (`ssh host 'iptables-save'`, `ss`, `nix eval`, status checks). Show the exact
 command and wait for approval. Local repo edits do not need confirmation.
 
+## Pushing Requires Explicit Approval
+
+Never push, or move a remote bookmark or branch, without the user saying
+"push" for that change. Agreeing to a deploy plan is not approval to push.
+In blizzard, a push to `main` reaches every server through CI and the
+nightly upgrade.
+
 ## Standing Constraints Outlast the Conversation
 
 When a session opens with a constraint (read-only, no writes, do not touch X),
