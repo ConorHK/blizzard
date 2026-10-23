@@ -29,8 +29,9 @@
             hostname=$1
 
             echo -e "\n=> Deploying system '$hostname'"
-            nh os switch \
-              --hostname "$hostname" \
+            # systemd-run activation survives tailscaled restarts.
+            ${pkgs.lib.getExe pkgs.nixos-rebuild-ng} switch \
+              --flake ".#$hostname" \
               --target-host "root@$hostname" \
               --build-host "root@$hostname"
           '')

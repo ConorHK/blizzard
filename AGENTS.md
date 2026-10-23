@@ -23,7 +23,7 @@ nix fmt                     # nixfmt and yamlfmt via treefmt
 nix flake check             # hooks, unit checks and NixOS VM tests
 nix build .#nixosConfigurations.<host>.config.system.build.toplevel
 nix develop                 # provides the scripts below
-rebuild <host>              # nh os switch on the host itself
+rebuild <host>              # nixos-rebuild switch, built and activated on the host
 rebuild-home <home>         # home-manager switch for a standalone home
 check-hosts                 # eval every host without building
 ```
