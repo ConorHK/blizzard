@@ -59,7 +59,7 @@ _: {
         send = lib.mkOption {
           type = lib.types.package;
           readOnly = true;
-          description = "alert-send <title> <message> [priority] [comma-tags] — queues an alert for the ntfy security topic and tries to deliver it.";
+          description = "alert-send <title> <message> [priority] [comma-tags] — queues an alert for the ntfy security topic and tries to deliver it. ALERT_HOST overrides the hostname in the title.";
         };
 
         endpoint = lib.mkOption {
@@ -131,7 +131,7 @@ _: {
 
             payload=$(jq -n \
               --arg topic "$NTFY_TOPIC" \
-              --arg title "${config.networking.hostName}: $title" \
+              --arg title "''${ALERT_HOST:-${config.networking.hostName}}: $title" \
               --arg message "$message" \
               --argjson priority "$priority" \
               --arg tags "$tags" \

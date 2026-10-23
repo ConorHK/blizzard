@@ -10,6 +10,7 @@
     disk-alerts
     determinate-nix
     login-alerts
+    metrics-exporters
     network
     nix
     root

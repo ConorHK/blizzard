@@ -1,17 +1,12 @@
 { config, ... }:
 let
   inherit (config.flake) nixosConfigurations;
+  hosts = config.flake.tailnetAddresses;
 in
 {
   perSystem =
     { lib, pkgs, ... }:
     let
-      # Tailnet addresses.
-      hosts = {
-        leprechaun = "100.91.205.65";
-        bananach = "100.96.40.127";
-        puca = "100.95.121.34";
-      };
       server = "100.66.244.36";
 
       a = value: {

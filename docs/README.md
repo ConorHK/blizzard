@@ -10,5 +10,6 @@ see [AGENTS.md](../AGENTS.md).
 | [container-smoke.md](container-smoke.md) | Testing Renovate image bumps on cloned data |
 | [secrets.md](secrets.md) | agenix-rekey, the YubiKey, adding secrets and hosts |
 | [monitoring.md](monitoring.md) | `monitoringChecks`, the coverage rule, maintenance windows |
+| [metrics.md](metrics.md) | Prometheus, exporters, resource alerts through ntfy |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |
 | [ogham.md](ogham.md) | The notes repo: sync, task curation, wins, search |

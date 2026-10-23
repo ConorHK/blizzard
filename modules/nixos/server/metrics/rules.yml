@@ -1,0 +1,100 @@
+groups:
+  - name: hosts
+    rules:
+      - alert: HostDown
+        expr: up == 0
+        for: 5m
+        annotations:
+          summary: "{{ $labels.job }} exporter down"
+          description: "{{ $labels.instance }} has not answered for 5 minutes"
+      - alert: DiskFull
+        expr: |
+          100 * (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*"}
+            / node_filesystem_size_bytes) >= 90
+        for: 15m
+        annotations:
+          summary: Disk full
+          description: "{{ $labels.mountpoint }} at {{ $value | printf \"%.0f\" }}%"
+      - alert: DiskFillingFast
+        expr: |
+          node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs|squashfs|overlay|fuse.*"}
+            / node_filesystem_size_bytes < 0.2
+          and predict_linear(node_filesystem_avail_bytes[6h], 24 * 3600) < 0
+        for: 1h
+        annotations:
+          summary: Disk filling fast
+          description: "{{ $labels.mountpoint }} fills within a day at this rate"
+      - alert: MemoryLow
+        # The kernel counts ZFS ARC as used, though it shrinks on demand.
+        expr: |
+          (node_memory_MemAvailable_bytes + node_zfs_arc_size or node_memory_MemAvailable_bytes)
+            / node_memory_MemTotal_bytes < 0.1
+        for: 10m
+        annotations:
+          summary: Memory low
+          description: "{{ $value | humanizePercentage }} of memory available"
+      - alert: MemoryRunningOut
+        expr: |
+          (node_memory_MemAvailable_bytes + node_zfs_arc_size or node_memory_MemAvailable_bytes)
+            / node_memory_MemTotal_bytes < 0.3
+          and predict_linear(node_memory_MemAvailable_bytes[6h], 24 * 3600) < 0
+        for: 1h
+        annotations:
+          summary: Memory running out
+          description: "Memory runs out within a day at this rate"
+      - alert: CpuBusy
+        # Long, so CI builds stay quiet.
+        expr: |
+          1 - avg by (host) (rate(node_cpu_seconds_total{mode="idle"}[10m])) > 0.9
+        for: 2h
+        annotations:
+          summary: CPU busy
+          description: "CPU {{ $value | humanizePercentage }} busy for 2 hours"
+      - alert: MemoryPressure
+        expr: rate(node_pressure_memory_stalled_seconds_total[5m]) > 0.1
+        for: 10m
+        annotations:
+          summary: Memory pressure
+          description: "Every task stalled on memory {{ $value | humanizePercentage }} of the time"
+      - alert: OOMKill
+        expr: increase(node_vmstat_oom_kill[10m]) > 0
+        annotations:
+          summary: OOM kill
+          description: "The kernel killed {{ $value | printf \"%.0f\" }} processes in 10 minutes"
+  - name: containers
+    rules:
+      - alert: CgroupCpuSpin
+        expr: |
+          rate(container_cpu_usage_seconds_total{
+            id=~".+\\.service",
+            id!~".*/user@[0-9]+\\.service|.*/ci\\.slice/.*|.*/(nix-daemon|github-runner-.+)\\.service"
+          }[10m]) > 0.9
+        for: 1h
+        annotations:
+          summary: Service pegs a core
+          description: "{{ $labels.id }} at {{ $value | humanizePercentage }} of a core for an hour"
+      - alert: CgroupMemoryHigh
+        # Limited cgroups page via CgroupNearMemoryLimit.
+        expr: |
+          (
+            container_memory_working_set_bytes{id=~".+\\.service", id!~".*/user@[0-9]+\\.service"}
+              / on (host) group_left machine_memory_bytes > 0.25
+          )
+          unless on (host, id) container_spec_memory_limit_bytes > 0
+        for: 1h
+        annotations:
+          summary: Service memory high
+          description: "{{ $labels.id }} uses {{ $value | humanizePercentage }} of host memory"
+      - alert: CgroupNearMemoryLimit
+        expr: |
+          container_memory_working_set_bytes
+            / (container_spec_memory_limit_bytes > 0) > 0.9
+        for: 10m
+        annotations:
+          summary: Near memory limit
+          description: "{{ $labels.id }} at {{ $value | humanizePercentage }} of its limit"
+      - alert: CgroupOOM
+        expr: increase(container_oom_events_total[10m]) > 0
+        annotations:
+          summary: Cgroup OOM
+          description: "{{ $labels.id }} hit its memory limit"

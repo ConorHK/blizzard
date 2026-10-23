@@ -49,7 +49,7 @@ _: {
           for mount in "''${mounts[@]}"; do
             pct=$(usage "$mount")
             stamp="$state/$(systemd-escape --path "$mount")"
-            if [ "$pct" -lt ${toString cfg.threshold} ]; then
+            if [ "$pct" -lt ${toString cfg.threshold} ] || ! ${lib.boolToString cfg.page}; then
               rm -f "$stamp"
               continue
             fi
@@ -78,6 +78,12 @@ _: {
           type = lib.types.ints.between 1 100;
           default = 90;
           description = "Percent used that triggers cleanup, then an alert.";
+        };
+
+        page = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Alert when cleanup leaves a disk full.";
         };
 
         gcOptions = lib.mkOption {

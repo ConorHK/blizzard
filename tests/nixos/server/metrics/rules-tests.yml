@@ -1,0 +1,185 @@
+rule_files:
+  - rules.yml
+evaluation_interval: 1m
+tests:
+  - name: a dead exporter pages after five minutes
+    interval: 1m
+    input_series:
+      - series: up{job="node", instance="puca:9100", host="puca"}
+        values: 1 0x10
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: HostDown
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: HostDown
+        exp_alerts:
+          - exp_labels: {job: node, instance: "puca:9100", host: puca}
+            exp_annotations:
+              summary: node exporter down
+              description: puca:9100 has not answered for 5 minutes
+  - name: a full disk pages, tmpfs does not
+    interval: 1m
+    input_series:
+      - series: node_filesystem_avail_bytes{host="puca", mountpoint="/", fstype="ext4"}
+        values: 5x30
+      - series: node_filesystem_size_bytes{host="puca", mountpoint="/", fstype="ext4"}
+        values: 100x30
+      - series: node_filesystem_avail_bytes{host="puca", mountpoint="/run", fstype="tmpfs"}
+        values: 0x30
+      - series: node_filesystem_size_bytes{host="puca", mountpoint="/run", fstype="tmpfs"}
+        values: 100x30
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: DiskFull
+        exp_alerts:
+          - exp_labels: {host: puca, mountpoint: /, fstype: ext4}
+            exp_annotations:
+              summary: Disk full
+              description: / at 95%
+  - name: a roomy disk filling fast pages only once nearly full
+    interval: 1m
+    input_series:
+      - series: node_filesystem_avail_bytes{host="puca", mountpoint="/", fstype="ext4"}
+        values: 3000-2x1200
+      - series: node_filesystem_size_bytes{host="puca", mountpoint="/", fstype="ext4"}
+        values: 6000x1200
+    alert_rule_test:
+      - eval_time: 10h
+        alertname: DiskFillingFast
+        exp_alerts: []
+      - eval_time: 20h
+        alertname: DiskFillingFast
+        exp_alerts:
+          - exp_labels: {host: puca, mountpoint: /, fstype: ext4}
+            exp_annotations:
+              summary: Disk filling fast
+              description: / fills within a day at this rate
+  - name: ZFS ARC counts as available memory
+    interval: 1m
+    input_series:
+      - series: node_memory_MemAvailable_bytes{host="leprechaun"}
+        values: 5x20
+      - series: node_zfs_arc_size{host="leprechaun"}
+        values: 30x20
+      - series: node_memory_MemTotal_bytes{host="leprechaun"}
+        values: 100x20
+      - series: node_memory_MemAvailable_bytes{host="puca"}
+        values: 5x20
+      - series: node_memory_MemTotal_bytes{host="puca"}
+        values: 100x20
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: MemoryLow
+        exp_alerts:
+          - exp_labels: {host: puca}
+            exp_annotations:
+              summary: Memory low
+              description: 5% of memory available
+  - name: an OOM kill pages at once
+    interval: 1m
+    input_series:
+      - series: node_vmstat_oom_kill{host="puca"}
+        values: 0 0 1 1
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: OOMKill
+        exp_alerts:
+          - exp_labels: {host: puca}
+            exp_annotations:
+              summary: OOM kill
+              description: The kernel killed 1 processes in 10 minutes
+  - name: only limited cgroups near their limit page
+    interval: 1m
+    input_series:
+      - series: container_memory_working_set_bytes{host="leprechaun", id="/system.slice/github-runner.service"}
+        values: 95x20
+      - series: container_spec_memory_limit_bytes{host="leprechaun", id="/system.slice/github-runner.service"}
+        values: 100x20
+      - series: container_memory_working_set_bytes{host="leprechaun", id="/system.slice/nginx.service"}
+        values: 95x20
+      - series: container_spec_memory_limit_bytes{host="leprechaun", id="/system.slice/nginx.service"}
+        values: 0x20
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: CgroupNearMemoryLimit
+        exp_alerts:
+          - exp_labels: {host: leprechaun, id: /system.slice/github-runner.service}
+            exp_annotations:
+              summary: Near memory limit
+              description: /system.slice/github-runner.service at 95% of its limit
+  - name: memory sliding toward zero pages before it runs out
+    interval: 1m
+    input_series:
+      - series: node_memory_MemAvailable_bytes{host="leprechaun"}
+        values: 25-0.02x600
+      - series: node_memory_MemTotal_bytes{host="leprechaun"}
+        values: 100x600
+      - series: node_memory_MemAvailable_bytes{host="puca"}
+        values: 25x600
+      - series: node_memory_MemTotal_bytes{host="puca"}
+        values: 100x600
+    alert_rule_test:
+      - eval_time: 7h
+        alertname: MemoryRunningOut
+        exp_alerts:
+          - exp_labels: {host: leprechaun}
+            exp_annotations:
+              summary: Memory running out
+              description: Memory runs out within a day at this rate
+  - name: a busy CPU pages only after two hours
+    interval: 1m
+    input_series:
+      - series: node_cpu_seconds_total{host="puca", cpu="0", mode="idle"}
+        values: 0+3x200
+    alert_rule_test:
+      - eval_time: 1h
+        alertname: CpuBusy
+        exp_alerts: []
+      - eval_time: 150m
+        alertname: CpuBusy
+        exp_alerts:
+          - exp_labels: {host: puca}
+            exp_annotations:
+              summary: CPU busy
+              description: CPU 95% busy for 2 hours
+  - name: a spinning service pages, CI does not
+    interval: 1m
+    input_series:
+      - series: container_cpu_usage_seconds_total{host="leprechaun", cpu="total", id="/s/hister.service"}
+        values: 0+60x100
+      - series: container_cpu_usage_seconds_total{host="leprechaun", cpu="total", id="/s/github-runner-b.service"}
+        values: 0+60x100
+      - series: container_cpu_usage_seconds_total{host="leprechaun", cpu="total", id="/s/nix-daemon.service"}
+        values: 0+60x100
+    alert_rule_test:
+      - eval_time: 80m
+        alertname: CgroupCpuSpin
+        exp_alerts:
+          - exp_labels: {host: leprechaun, cpu: total, id: /s/hister.service}
+            exp_annotations:
+              summary: Service pegs a core
+              description: /s/hister.service at 100% of a core for an hour
+  - name: an unlimited service hogging memory pages
+    interval: 1m
+    input_series:
+      - series: machine_memory_bytes{host="leprechaun"}
+        values: 100x100
+      - series: container_memory_working_set_bytes{host="leprechaun", id="/u/user@993.service/app.slice/immich.service"}
+        values: 40x100
+      - series: container_spec_memory_limit_bytes{host="leprechaun", id="/u/user@993.service/app.slice/immich.service"}
+        values: 0x100
+      - series: container_memory_working_set_bytes{host="leprechaun", id="/u/user@993.service"}
+        values: 60x100
+      - series: container_memory_working_set_bytes{host="leprechaun", id="/s/github-runner-b.service"}
+        values: 40x100
+      - series: container_spec_memory_limit_bytes{host="leprechaun", id="/s/github-runner-b.service"}
+        values: 50x100
+    alert_rule_test:
+      - eval_time: 75m
+        alertname: CgroupMemoryHigh
+        exp_alerts:
+          - exp_labels: {host: leprechaun, id: /u/user@993.service/app.slice/immich.service}
+            exp_annotations:
+              summary: Service memory high
+              description: /u/user@993.service/app.slice/immich.service uses 40% of host memory
