@@ -6,15 +6,15 @@
       inherit (config.flake.testSupport) alertRecorder alertHelpers;
     in
     {
-      checks.restic = pkgs.testers.runNixOSTest {
-        name = "restic";
+      checks.backup = pkgs.testers.runNixOSTest {
+        name = "backup";
 
         nodes.machine =
           { pkgs, ... }:
           {
             imports = [
               alertRecorder
-              config.flake.modules.nixos.restic
+              config.flake.modules.nixos.backup
             ];
 
             environment.systemPackages = [
@@ -45,13 +45,15 @@
               };
             };
 
-            restic = {
-              repository = "/var/restic-repo";
-              paths = [ "/var/data" ];
-              dumpPaths = [ "/var/dumps" ];
-              passwordFile = "/etc/restic-password";
+            blizzard.backup = {
               ntfyTopicFile = "/etc/restic-topic";
-              pauseContainers = [ "dummy" ];
+              jobs.service-data = {
+                repository = "/var/restic-repo";
+                paths = [ "/var/data" ];
+                dumpPaths = [ "/var/dumps" ];
+                passwordFile = "/etc/restic-password";
+                pauseContainers = [ "dummy" ];
+              };
             };
           };
 
@@ -85,7 +87,7 @@
           machine.succeed("install -d -o containers -g containers /var/restic-repo")
 
           with subtest("freshness alerts when the repository has no snapshots"):
-              machine.succeed("systemctl start restic-backups-freshness.service")
+              machine.succeed("systemctl start restic-freshness-service-data.service")
               alert = wait_for_posts(1)[0]
               assert alert["title"] == "machine: Backup stale", alert
               assert "no snapshots" in alert["message"], alert
@@ -106,8 +108,8 @@
 
           with subtest("the restore drill passes when files match"):
               before = len(posts())
-              machine.succeed("systemctl start restic-restore-drill.service")
-              journal = machine.succeed("journalctl -u restic-restore-drill.service")
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
+              journal = machine.succeed("journalctl -u restic-restore-drill-service-data.service")
               assert "2 databases intact" in journal, journal
               assert "null byte" not in journal, journal
               assert len(posts()) == before, posts()
@@ -118,14 +120,14 @@
               machine.succeed("echo restarted > /var/data/family-photos")
               machine.succeed(f"touch -d @$(( $(date -d '{taken}' +%s) - 60 )) /var/data/family-photos")
               before = len(posts())
-              machine.succeed("systemctl start restic-restore-drill.service")
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
               assert len(posts()) == before, posts()
               machine.succeed("echo irreplaceable > /var/data/family-photos && touch -d '2020-01-01' /var/data/family-photos")
 
           with subtest("the restore drill alerts when disk and backup differ"):
               before = len(posts())
               machine.succeed("echo 'rotted' > /var/data/private/db && touch -d '2020-01-01' /var/data/private/db")
-              machine.succeed("systemctl start restic-restore-drill.service")
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
               assert "1 restored files differ" in alert["message"], alert
@@ -136,7 +138,7 @@
               # Back up the rotted file too, so only databases fail.
               machine.succeed("systemctl start restic-backups-service-data.service")
               before = len(posts())
-              machine.succeed("systemctl start restic-restore-drill.service")
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
               assert "2 restored databases are corrupt" in alert["message"], alert
@@ -151,13 +153,13 @@
 
           with subtest("freshness stays quiet while the newest snapshot is recent"):
               before = len(posts())
-              machine.succeed("systemctl start restic-backups-freshness.service")
+              machine.succeed("systemctl start restic-freshness-service-data.service")
               assert len(posts()) == before, posts()
 
           with subtest("freshness alerts when a dump goes stale"):
               before = len(posts())
               machine.succeed("touch -d '3 days ago' /var/dumps/pg.sql.gz")
-              machine.succeed("systemctl start restic-backups-freshness.service")
+              machine.succeed("systemctl start restic-freshness-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Backup stale", alert
               assert "1 dumps over 26h old in /var/dumps" in alert["message"], alert
@@ -168,14 +170,14 @@
               machine.succeed("rm -rf /var/restic-repo && mkdir -p /var/restic-repo")
               as_root("init")
               as_root("backup --time '2020-01-01 00:00:00' /var/restored")
-              machine.succeed("systemctl start restic-backups-freshness.service")
+              machine.succeed("systemctl start restic-freshness-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Backup stale", alert
-              assert "backup has not run" in alert["message"], alert
+              assert "newest snapshot is" in alert["message"], alert
 
           with subtest("the restore drill alerts when a path is missing"):
               before = len(posts())
-              machine.succeed("systemctl start restic-restore-drill.service")
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
               assert "2 backup paths missing" in alert["message"], alert
@@ -190,15 +192,15 @@
         '';
       };
 
-      checks.restic-zfs = pkgs.testers.runNixOSTest {
-        name = "restic-zfs";
+      checks.backup-zfs = pkgs.testers.runNixOSTest {
+        name = "backup-zfs";
 
         nodes.machine =
           { pkgs, ... }:
           {
             imports = [
               alertRecorder
-              config.flake.modules.nixos.restic
+              config.flake.modules.nixos.backup
             ];
 
             boot.supportedFilesystems = [ "zfs" ];
@@ -228,13 +230,15 @@
               };
             };
 
-            restic = {
-              repository = "/var/restic-repo";
-              paths = [ "/var/data" ];
-              zfsDatasets."tank/data" = "/var/data";
-              passwordFile = "/etc/restic-password";
+            blizzard.backup = {
               ntfyTopicFile = "/etc/restic-topic";
-              pauseContainers = [ "dummy" ];
+              jobs.service-data = {
+                repository = "/var/restic-repo";
+                paths = [ "/var/data" ];
+                zfsDatasets."tank/data" = "/var/data";
+                passwordFile = "/etc/restic-password";
+                pauseContainers = [ "dummy" ];
+              };
             };
           };
 

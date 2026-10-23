@@ -27,10 +27,12 @@ in
         };
       };
 
-      restic.paths = [ dataDir ];
-      # Stop the container during the backup: Actual is SQLite-backed, so a live
-      # copy of /data can catch a torn write.
-      restic.pauseContainers = [ "actual-budget" ];
+      blizzard.backup.jobs.service-data = {
+        paths = [ dataDir ];
+        # Stop the container during the backup: Actual is SQLite-backed, so a live
+        # copy of /data can catch a torn write.
+        pauseContainers = [ "actual-budget" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

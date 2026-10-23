@@ -73,7 +73,7 @@ in
           };
         };
 
-        restic.paths = [ "${calibreDir}/config/processed_books/imported" ];
+        blizzard.backup.jobs.service-data.paths = [ "${calibreDir}/config/processed_books/imported" ];
 
         services.nginx.virtualHosts = {
           "${urlCalibreWeb}" = {

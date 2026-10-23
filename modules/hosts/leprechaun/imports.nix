@@ -16,6 +16,10 @@
     aqua-booking
     aqua-booking-secret
     audiobookshelf
+    backup
+    backup-b2
+    backup-phone
+    backup-secrets
     bitbang
     calibre
     changedetection
@@ -49,9 +53,6 @@
     qbittorrent
     quadlet
     readmeabook
-    restic
-    restic-b2
-    restic-secrets
     satisfactory
     server-users
     smartd

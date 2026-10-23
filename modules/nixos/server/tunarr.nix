@@ -42,7 +42,7 @@ in
         noNewPrivileges = true;
       };
 
-      restic = {
+      blizzard.backup.jobs.service-data = {
         # Stopped for a consistent SQLite copy.
         paths = [ dataDir ];
         pauseContainers = [ "tunarr" ];

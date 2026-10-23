@@ -36,8 +36,10 @@ in
         };
       };
 
-      restic.paths = [ dataDir ];
-      restic.pauseContainers = [ "mealie" ];
+      blizzard.backup.jobs.service-data = {
+        paths = [ dataDir ];
+        pauseContainers = [ "mealie" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

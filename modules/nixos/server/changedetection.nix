@@ -61,10 +61,12 @@ in
         };
       };
 
-      restic.paths = [ dataDir ];
-      # /datastore is JSON plus snapshot blobs written outside any transaction, so a
-      # live copy can catch a half-written watch history.
-      restic.pauseContainers = [ "changedetection" ];
+      blizzard.backup.jobs.service-data = {
+        paths = [ dataDir ];
+        # /datastore is JSON plus snapshot blobs written outside any transaction, so a
+        # live copy can catch a half-written watch history.
+        pauseContainers = [ "changedetection" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

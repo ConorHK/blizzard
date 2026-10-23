@@ -4,15 +4,42 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOwlNw/AL4VIXCrnUlllMVpWj/G0e82AuU3YbjcwtKQ1";
 
-      restic = {
-        # Matches disko.nix.
-        zfsDatasets = {
-          "storage/data" = config.blizzard.storage.data;
-          "storage/media" = config.blizzard.storage.media;
+      age.secrets =
+        let
+          # Backups run as `containers`.
+          owned = file: {
+            rekeyFile = file;
+            owner = "containers";
+          };
+        in
+        {
+          restic-password = owned ./secrets/restic-password.age;
+          # B2 keys are scoped to one bucket.
+          restic-env = owned ./secrets/restic-env.age;
+          phone-backup-password = {
+            rekeyFile = ./secrets/phone-backup-password.age;
+            generator.script = "alnum";
+          };
+          phone-backup-b2.rekeyFile = ./secrets/phone-backup-b2.age;
         };
-      };
 
       blizzard = {
+        backup.jobs = {
+          service-data = {
+            passwordFile = config.age.secrets.restic-password.path;
+            environmentFile = config.age.secrets.restic-env.path;
+            # Matches disko.nix.
+            zfsDatasets = {
+              "storage/data" = config.blizzard.storage.data;
+              "storage/media" = config.blizzard.storage.media;
+            };
+          };
+          phone = {
+            passwordFile = config.age.secrets.phone-backup-password.path;
+            environmentFile = config.age.secrets.phone-backup-b2.path;
+          };
+        };
+
         bitbang.shareMembers = [ "driver" ];
 
         # Every host shares this token; check once.

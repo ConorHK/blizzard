@@ -46,9 +46,11 @@ in
         };
       };
 
-      restic.paths = [ dataDir ];
-      # SQLite; a live copy can tear.
-      restic.pauseContainers = [ "freshrss" ];
+      blizzard.backup.jobs.service-data = {
+        paths = [ dataDir ];
+        # SQLite; a live copy can tear.
+        pauseContainers = [ "freshrss" ];
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

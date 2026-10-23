@@ -9,7 +9,7 @@ State as of 2026-08-24.
 - leprechaun's identity is `KGAUJQQ-HTI6NC4-PEYY4SO-BHTF63E-TGWZB6E-GZJZKRB-BWLIKEX-FNKMCQD`,
   produced by the `syncthing-key` agenix-rekey generator. `key.pem` is encrypted in
   `secrets/key.age`; `cert.pem` and `device-id` are public and committed.
-- The share is deliberately **not** in `restic.paths`.
+- The share is deliberately **not** in any backup job.
 
 ## TODO
 

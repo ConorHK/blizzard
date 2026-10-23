@@ -42,7 +42,7 @@ in
         };
       };
 
-      restic = {
+      blizzard.backup.jobs.service-data = {
         # Stopped for a consistent SQLite copy.
         paths = [ "${dataDir}/config" ];
         exclude = [

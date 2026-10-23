@@ -97,16 +97,20 @@ in
         };
       };
 
-      # Smoke tests skip the documents.
-      blizzard.containerSmoke.emptyPaths.paperless = [
-        "/usr/src/paperless/consume"
-        "/usr/src/paperless/export"
-        "/usr/src/paperless/media"
-      ];
+      blizzard = {
+        # Smoke tests skip the documents.
+        containerSmoke.emptyPaths.paperless = [
+          "/usr/src/paperless/consume"
+          "/usr/src/paperless/export"
+          "/usr/src/paperless/media"
+        ];
 
-      restic.paths = [ dataDir ];
-      # SQLite: stop to avoid a torn copy.
-      restic.pauseContainers = [ "paperless" ];
+        backup.jobs.service-data = {
+          paths = [ dataDir ];
+          # SQLite: stop to avoid a torn copy.
+          pauseContainers = [ "paperless" ];
+        };
+      };
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

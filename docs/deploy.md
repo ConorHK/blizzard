@@ -78,8 +78,8 @@ The `upgrade-windows` check
 first two. Move a window in `update.nix` without moving its maintenance
 window, and CI fails. It skips the gatus host, which `gatus-watch` covers.
 
-Other jobs avoid the windows. restic backs up at 03:00
-([`restic.nix`](../modules/nixos/server/restic/restic.nix)), because a reboot
+Other jobs avoid the windows. restic backs up at 03:00, the phone at 01:30
+([`backup.nix`](../modules/nixos/server/backup/backup.nix)), because a reboot
 mid-backup leaves a stale lock, and the stopped unit never fires
 `OnFailure`. Container smoke runs defer while an upgrade is running or
 due ([container-smoke.md](container-smoke.md)).

@@ -88,10 +88,12 @@ _: {
         };
       };
 
-      restic.dumpPaths = [ dumpDir ];
-      restic.paths = [
-        "${data}/qbittorrent/config"
-        "${data}/qbittorrent/data/BT_backup"
-      ];
+      blizzard.backup.jobs.service-data = {
+        dumpPaths = [ dumpDir ];
+        paths = [
+          "${data}/qbittorrent/config"
+          "${data}/qbittorrent/data/BT_backup"
+        ];
+      };
     };
 }

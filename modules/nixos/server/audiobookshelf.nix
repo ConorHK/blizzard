@@ -46,7 +46,7 @@ in
       };
 
       # Back up ABS's own consistent {sqlite + covers} snapshot, not the live /config
-      restic.paths = [ "${configDir}/metadata/backups" ];
+      blizzard.backup.jobs.service-data.paths = [ "${configDir}/metadata/backups" ];
 
       services.nginx.virtualHosts."${url}" = {
         enableACME = true;

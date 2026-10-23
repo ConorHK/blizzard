@@ -226,7 +226,7 @@ in
         };
       };
 
-      restic = {
+      blizzard.backup.jobs.service-data = {
         dumpPaths = [ "${dataDir}/dumps" ];
         paths = [ "${dataDir}/media_store" ];
         exclude = [ "${dataDir}/media_store/local_thumbnails" ];

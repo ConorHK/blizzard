@@ -138,7 +138,7 @@ in
         };
       };
 
-      restic = {
+      blizzard.backup.jobs.service-data = {
         paths = [ dataDir ];
         dumpPaths = [ dumpDir ];
         # A live copy can tear; the dump replaces it.

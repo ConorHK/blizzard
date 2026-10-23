@@ -85,7 +85,7 @@ in
         "upload"
       ];
 
-      restic.paths = [
+      blizzard.backup.jobs.service-data.paths = [
         "${dataDir}/backups"
         "${dataDir}/library"
         "${dataDir}/profile"

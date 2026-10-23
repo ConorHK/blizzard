@@ -37,6 +37,6 @@
       networking.firewall.allowedTCPPorts = [ 8123 ];
 
       # Home Assistant's own scheduled backups.
-      restic.paths = [ "${configPath}/backups" ];
+      blizzard.backup.jobs.service-data.paths = [ "${configPath}/backups" ];
     };
 }

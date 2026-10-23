@@ -38,6 +38,6 @@ _topLevel: {
           noNewPrivileges = true;
         };
       };
-      restic.paths = [ "${dataDir}/data/backups" ];
+      blizzard.backup.jobs.service-data.paths = [ "${dataDir}/data/backups" ];
     };
 }
