@@ -1,42 +1,55 @@
+{ inputs, ... }:
+let
+  url = "home.goosebox.org";
+in
 {
+  flake.monitoringChecks.home-assistant = {
+    name = "home-assistant";
+    url = "https://${url}";
+  };
+
   flake.modules.nixos.home-assistant =
-    {
-      config,
-      lib,
-      ...
-    }:
+    { config, ... }:
     let
-      configPath = toString config.blizzard.storage.home-assistant;
-      timezone = "Europe/Dublin";
+      dataDir = "${config.blizzard.storage.data}/home-assistant";
       usbDevice = "/dev/ttyUSB0";
-      # TODO: initial load requires mkdir ~/storage/homeassistant and reboot
     in
     {
-      virtualisation.oci-containers = {
-        backend = lib.mkDefault "podman";
+      imports = [ inputs.quadlet-nix.nixosModules.quadlet ];
 
-        containers.homeassistant = {
-          # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-          image = "ghcr.io/home-assistant/home-assistant:2026.10.2";
-          autoStart = true;
-          volumes = [
-            "${configPath}:/config"
-            "/etc/localtime:/etc/localtime:ro"
-            "/run/dbus:/run/dbus:ro"
-          ];
-          environment.TZ = timezone;
-          extraOptions = [
-            "--network=host"
-            "--device=${usbDevice}:${usbDevice}"
-            "--cap-add=NET_RAW"
-            "--cap-add=NET_ADMIN"
-          ];
-        };
+      # Rootful: host network, USB radio and dbus.
+      virtualisation.quadlet.containers.homeassistant.containerConfig = {
+        # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
+        image = "ghcr.io/home-assistant/home-assistant:2026.10.2";
+        volumes = [
+          "${dataDir}:/config"
+          "/etc/localtime:/etc/localtime:ro"
+          "/run/dbus:/run/dbus:ro"
+        ];
+        environments.TZ = "Europe/Dublin";
+        networks = [ "host" ];
+        devices = [ "${usbDevice}:${usbDevice}" ];
+        addCapabilities = [
+          "NET_RAW"
+          "NET_ADMIN"
+        ];
       };
+
+      systemd.tmpfiles.rules = [ "d ${dataDir} 0750 root root -" ];
 
       networking.firewall.allowedTCPPorts = [ 8123 ];
 
+      # Needs trusted_proxies in configuration.yaml.
+      services.nginx.virtualHosts.${url} = {
+        enableACME = true;
+        forceSSL = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8123";
+          proxyWebsockets = true;
+        };
+      };
+
       # Home Assistant's own scheduled backups.
-      blizzard.backup.jobs.service-data.paths = [ "${configPath}/backups" ];
+      blizzard.backup.jobs.service-data.paths = [ "${dataDir}/backups" ];
     };
 }

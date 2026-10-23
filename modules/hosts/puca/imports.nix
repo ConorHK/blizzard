@@ -1,16 +1,22 @@
 { config, ... }:
+let
+  # Its auto-upgrade reboot, before gatus's global window.
+  rebootWindow = [
+    {
+      start = "05:00";
+      duration = "70m";
+    }
+  ];
+in
 {
-  flake.monitoringChecks.puca-host = {
-    name = "puca";
-    url = "tcp://puca:8123";
-    conditions = [ "[CONNECTED] == true" ];
-    # Its auto-upgrade reboot, before gatus's global window.
-    maintenanceWindows = [
-      {
-        start = "05:00";
-        duration = "70m";
-      }
-    ];
+  flake.monitoringChecks = {
+    puca-host = {
+      name = "puca";
+      url = "tcp://puca:8123";
+      conditions = [ "[CONNECTED] == true" ];
+      maintenanceWindows = rebootWindow;
+    };
+    home-assistant.maintenanceWindows = rebootWindow;
   };
 
   nixosHosts.puca = { };
@@ -23,6 +29,8 @@
     github-nix-access
     grub-boot
     home-assistant
+    nginx
+    podman
     server-users
   ];
 }

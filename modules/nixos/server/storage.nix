@@ -20,12 +20,6 @@ _: {
           default = "/storage/matrix";
           description = "Root for Matrix homeserver state.";
         };
-
-        home-assistant = lib.mkOption {
-          type = lib.types.path;
-          default = "/home/driver/storage/homeassistant";
-          description = "Directory holding Home Assistant config.";
-        };
       };
     };
 }

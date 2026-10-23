@@ -7,6 +7,7 @@
     agenix
     alerts
     alerts-secret
+    disk-alerts
     determinate-nix
     login-alerts
     network
