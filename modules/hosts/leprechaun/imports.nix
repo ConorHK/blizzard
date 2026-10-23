@@ -33,6 +33,8 @@
       freshrss
       gatus-watch
       glance
+      grafana
+      grafana-secrets
       github-nix-access
       github-runner
       hister

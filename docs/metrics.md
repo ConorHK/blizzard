@@ -83,6 +83,29 @@ line. Resolved alerts send at priority 3.
 
 The `prometheus` VM check runs the whole chain into a fake ntfy.
 
+## Grafana
+
+[`grafana.nix`](../modules/nixos/server/metrics/grafana.nix) serves
+https://grafana.goosebox.org from leprechaun, behind nginx, with a gatus
+check on `/api/health`.
+
+- Anyone on the tailnet views dashboards without logging in.
+- Editing needs the `admin` login. The password is the generated
+  `grafana-admin-password` secret; read it with `agenix edit`.
+- The Prometheus datasource and the Overview dashboard are provisioned from
+  Nix. UI edits to Overview are refused, so change the panels in
+  `grafana.nix`. Dashboards you create in the UI persist in Grafana's
+  database.
+- Plugins come from `pkgs.grafanaPlugins` through `declarativePlugins`.
+  Grafana 13 no longer bundles the Prometheus datasource, and would
+  otherwise fetch it from grafana.com at startup.
+
+Overview has a `host` picker and panels for CPU, memory, disk, pressure
+stalls, network, OOM kills, and the top 10 services by memory and CPU.
+
+The `grafana` VM check proves anonymous viewing, refused anonymous edits,
+the admin login, and that every Overview query runs against Prometheus.
+
 ## Blind spots
 
 - leprechaun down means no metric alerts at all. gatus still pages for
