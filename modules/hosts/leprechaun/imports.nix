@@ -61,6 +61,7 @@
       readmeabook
       satisfactory
       server-users
+      sluagh-proxy
       smartd
       syncthing-server
       systemd-boot

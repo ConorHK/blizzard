@@ -176,13 +176,18 @@ let
           "tcp:22000"
         ];
       }
-      # TEMP leprechaun sees prowlarr.
+      # leprechaun's nginx proxies sluagh's apps.
       {
-        src = [ "100.91.205.65" ];
-        dst = [ "tag:server" ];
-        ip = [
-          "tcp:443"
-          "tcp:9696"
+        src = [ addresses.leprechaun ];
+        dst = [ addresses.sluagh ];
+        ip = tcp [
+          8096
+          8080
+          8989
+          7878
+          9696
+          6767
+          2468
         ];
       }
       {

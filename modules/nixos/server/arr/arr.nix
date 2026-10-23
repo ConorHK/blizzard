@@ -62,7 +62,7 @@ let
     };
   };
 
-  # Server's compose still owns these names.
+  # sluagh's compose still owns these names.
   onServer = [
     "sonarr"
     "radarr"

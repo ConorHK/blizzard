@@ -7,8 +7,6 @@ in
   perSystem =
     { lib, pkgs, ... }:
     let
-      server = "100.66.244.36";
-
       a = value: {
         type = "A";
         inherit value;
@@ -34,7 +32,7 @@ in
         vhostRecords
         // {
           "" = [
-            (a server)
+            (a hosts.leprechaun)
             {
               type = "MX";
               values = [
@@ -56,7 +54,7 @@ in
               ];
             }
           ];
-          "*" = a server;
+          "*" = a hosts.leprechaun;
           "*.lep" = a hosts.leprechaun;
           # octoDNS rejects unescaped semicolons.
           _dmarc = {
