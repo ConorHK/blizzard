@@ -95,7 +95,7 @@
               assert any("phone: no snapshots" in m for m in messages), messages
 
           with subtest("the backup captures phone files, not syncthing markers"):
-              machine.succeed(f"echo seedvault > {DIR}/chunk && chown syncthing {DIR}/chunk && chmod 600 {DIR}/chunk")
+              machine.succeed(f"echo export > {DIR}/chunk && chown syncthing {DIR}/chunk && chmod 600 {DIR}/chunk")
               machine.succeed("systemctl start restic-backups-phone.service")
               listing = machine.succeed(f"{ENV} restic ls latest")
               assert f"{DIR}/chunk" in listing, listing
@@ -104,10 +104,14 @@
           with subtest("freshness stays quiet when files and snapshot are new"):
               assert freshness() == [], posts()
 
+          with subtest("freshness stays quiet for a 13 day gap"):
+              machine.succeed(f"touch -d '13 days ago' {DIR}/chunk")
+              assert freshness() == [], posts()
+
           with subtest("freshness alerts when the phone stops sending"):
-              machine.succeed(f"touch -d '3 days ago' {DIR}/chunk")
+              machine.succeed(f"touch -d '15 days ago' {DIR}/chunk")
               messages = freshness()
-              assert messages == [f"No new files in {DIR} for 72h"], messages
+              assert messages == [f"No new files in {DIR} for 360h"], messages
 
           with subtest("a failed backup pages"):
               before = len(posts())

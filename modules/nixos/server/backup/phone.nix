@@ -1,5 +1,5 @@
 _: {
-  # Seedvault dumps on the phone reach this host by syncthing.
+  # App exports on the phone reach this host by syncthing.
   flake.modules.nixos.backup-phone =
     { config, lib, ... }:
     let
@@ -33,8 +33,10 @@ _: {
           # Clear of the 03:00 host backup.
           schedule = "01:30";
           paths = [ dir ];
-          # Syncthing keeps the phone's mtimes, so this dates Seedvault's last write.
+          # Syncthing keeps the phone's mtimes, so this dates the last export.
           freshPaths = [ dir ];
+          # Some apps export only by hand.
+          freshMaxAge = 14 * 24;
           exclude = [ "${dir}/.stfolder" ];
         };
       };

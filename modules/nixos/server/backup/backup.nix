@@ -57,7 +57,13 @@ _: {
             freshPaths = lib.mkOption {
               type = lib.types.listOf lib.types.str;
               default = [ ];
-              description = "Directories whose newest file must stay under 48h old.";
+              description = "Directories whose newest file must stay under freshMaxAge.";
+            };
+
+            freshMaxAge = lib.mkOption {
+              type = lib.types.ints.positive;
+              default = 48;
+              description = "Hours a freshPaths directory may go without a new file.";
             };
 
             zfsDatasets = lib.mkOption {
@@ -274,7 +280,7 @@ _: {
                     | sort -n | tail -n 1)
                   if [ -z "$newest" ]; then
                     alert "No files in $dir"
-                  elif [ $(( now - ''${newest%.*} )) -gt 172800 ]; then
+                  elif [ $(( now - ''${newest%.*} )) -gt ${toString (job.freshMaxAge * 3600)} ]; then
                     alert "No new files in $dir for $(( (now - ''${newest%.*}) / 3600 ))h"
                   fi
                 done

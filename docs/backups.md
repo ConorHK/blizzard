@@ -29,7 +29,7 @@ Every job `<name>` gets:
 - `restic-backups-<name>`: the backup; a failure pages "Backup failed".
 - `restic-freshness-<name>`, daily at 10:00. Alerts on a snapshot over
   26h old, a file in `dumpPaths` over 26h old, or a `freshPaths`
-  directory with no new file in 48h.
+  directory with no new file in `freshMaxAge` hours (default 48).
 - `restic-restore-drill-<name>`, Sundays at 12:00. Restores sample files
   and databases and compares them with disk.
 - `restic-zfs-snapshot-<name>`, when `zfsDatasets` is set. Snapshots are
@@ -74,17 +74,18 @@ cannot be restored, even with the bucket intact.
 ## Phone
 
 ```
-phone (Seedvault) -> syncthing folder phone-backup -> restic 01:30 -> B2
+phone app exports -> syncthing folder phone-backup -> restic 01:30 -> B2
 ```
 
 - `backup-phone` fails to build without syncthing. leprechaun passes
   the job its secrets.
 - leprechaun holds the folder receive-only; the phone sets it Send Only,
   so nothing flows back.
-- The folder is a `freshPaths` entry. Syncthing keeps the phone's mtimes,
-  so a stalled Seedvault shows up after 48h.
+- Apps export into their own subfolder, for example `signal/`.
+- The folder is a `freshPaths` entry with a 2 week window, since some
+  apps export only by hand. Syncthing keeps the phone's mtimes.
 
-Restore needs the restic password, then the Seedvault recovery code.
+Restore needs the restic password, then each app's own backup passphrase.
 
 ## puca
 
