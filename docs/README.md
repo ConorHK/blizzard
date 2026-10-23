@@ -9,6 +9,7 @@ see [AGENTS.md](../AGENTS.md).
 | [deploy.md](deploy.md) | CI, the `deployed` branch, staggered auto-upgrades |
 | [container-smoke.md](container-smoke.md) | Testing Renovate image bumps on cloned data |
 | [secrets.md](secrets.md) | agenix-rekey, the YubiKey, adding secrets and hosts |
+| [tailnet.md](tailnet.md) | The Tailscale policy in Nix, `acl-sync`, derived grants |
 | [monitoring.md](monitoring.md) | `monitoringChecks`, the coverage rule, maintenance windows |
 | [metrics.md](metrics.md) | Prometheus, exporters, resource alerts through ntfy |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |

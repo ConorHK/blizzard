@@ -18,6 +18,7 @@
           inputs'.home-manager.packages.default
           pkgs.age-plugin-yubikey
           pkgs.age-plugin-fido2-hmac
+          config.packages.acl-sync
           config.packages.dns-sync
 
           (script "rebuild" ''
