@@ -66,6 +66,12 @@ _: {
               description = "Hours a freshPaths directory may go without a new file.";
             };
 
+            freshness = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Alert daily when this job goes stale.";
+            };
+
             zfsDatasets = lib.mkOption {
               type = lib.types.attrsOf lib.types.str;
               default = { };
@@ -243,7 +249,7 @@ _: {
               '';
             };
 
-            "restic-freshness-${name}" = {
+            "restic-freshness-${name}" = lib.mkIf job.freshness {
               description = "Alert if restic job ${name} goes stale";
               # The watchdog itself must not fail silently.
               unitConfig.OnFailure = "alert-failure@restic-freshness-${name}.service";
@@ -416,7 +422,7 @@ _: {
             # that never triggers (host off at backup time, systemd wedged) produces
             # no backup and no alert. This reads the real repo daily, so it catches
             # silent non-runs and empty backups alike.
-            "restic-freshness-${name}" = {
+            "restic-freshness-${name}" = lib.mkIf job.freshness {
               wantedBy = [ "timers.target" ];
               timerConfig = {
                 OnCalendar = "10:00";

@@ -6,6 +6,10 @@
 
   flake.modules.nixos."nixosConfigurations/dullahan" = {
     imports = with config.flake.modules.nixos; [
+      backup
+      backup-b2
+      backup-home
+      backup-secrets
       battery
       bitbang
       cachix

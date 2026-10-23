@@ -9,6 +9,7 @@ modules/nixos/server/backup/
   b2.nix        backend: bucket -> B2 S3 URL
   secrets.nix   shared ntfy topic
   phone.nix     the phone job, fed by syncthing
+  home.nix      desktop home directories
 ```
 
 A server imports `backup`, `backup-secrets` and one backend module,
@@ -18,6 +19,7 @@ then passes each job its secrets.
 |-----|-------|--------|------|
 | `service-data` | every server | `restic-backup-<host>` | 03:00 |
 | `phone` | leprechaun, via `backup-phone` | `restic-backup-phone` | 01:30 |
+| `home` | abhartach, dullahan, via `backup-home` | `restic-backup-<host>` | 03:00 or next boot |
 
 Service modules add their paths to `jobs.service-data`, so a host backs up
 whatever its services declare. A job with no paths gets no units.
@@ -27,7 +29,7 @@ whatever its services declare. A job with no paths gets no units.
 Every job `<name>` gets:
 
 - `restic-backups-<name>`: the backup; a failure pages "Backup failed".
-- `restic-freshness-<name>`, daily at 10:00. Alerts on a snapshot over
+- `restic-freshness-<name>`, daily at 10:00, unless `freshness = false`. Alerts on a snapshot over
   26h old, a file in `dumpPaths` over 26h old, or a `freshPaths`
   directory with no new file in `freshMaxAge` hours (default 48).
 - `restic-restore-drill-<name>`, Sundays at 12:00. Restores sample files
@@ -86,6 +88,14 @@ phone app exports -> syncthing folder phone-backup -> restic 01:30 -> B2
   apps export only by hand. Syncthing keeps the phone's mtimes.
 
 Restore needs the restic password, then each app's own backup passphrase.
+
+## Desktops
+
+`backup-home` backs up `~/.ssh`, `~/.gnupg`, `~/docs`, `~/media`
+(not `media/games`) and `~/backup`. Drop anything else worth keeping in
+`~/backup`. The timer is Persistent, so a run missed while the machine
+was off happens at next boot. There is no freshness alert, since desktops
+sit off for days; the failure alert and restore drill still run.
 
 ## puca
 
