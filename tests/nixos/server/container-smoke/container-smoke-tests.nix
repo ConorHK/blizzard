@@ -84,6 +84,10 @@
             blizzard.containerSmoke = {
               requester = "ci";
               emptyPaths.web = [ "/www/secret" ];
+              createPaths.media = [
+                "/data/app/downloads"
+                "/www/secret/made"
+              ];
               skip = [ "online" ];
             };
 
@@ -108,6 +112,20 @@
                     unitConfig.Requires = "db.service";
                   };
               crash = container [ "false" ];
+              # Needs dirs a blanked volume lacks.
+              media =
+                lib.recursiveUpdate
+                  (container [
+                    "sh"
+                    "-c"
+                    "test -d /data/app/downloads && test -d /www/secret/made && touch /data/app/downloads/x && exec sleep 600"
+                  ])
+                  {
+                    containerConfig.volumes = [
+                      "/storage/media:/data"
+                      "/storage/data/web:/www"
+                    ];
+                  };
               # Would fail; skipped instead.
               online = container [ "false" ];
               # Answers one connection, then restarts.
@@ -201,6 +219,12 @@
                 assert smoke("mixed", ["online", "crash"]) != 0, result("mixed")
                 assert result("mixed")["online"]["status"] == "pass", result("mixed")
                 assert result("mixed")["crash"]["status"] == "fail", result("mixed")
+
+            with subtest("created paths exist only inside the run"):
+                assert smoke("create", ["media"]) == 0, result("create")
+                assert result("create")["media"]["status"] == "pass", result("create")
+                machine.fail("test -e /storage/media/app")
+                machine.fail("test -e /storage/data/web/secret/made")
 
             with subtest("a crashing target fails"):
                 assert smoke("bad", ["crash"]) != 0

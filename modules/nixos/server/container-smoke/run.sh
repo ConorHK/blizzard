@@ -102,9 +102,11 @@ host_path() {
 }
 
 volume_args() {
-  local name=$1 json host target ro path source suffix
+  local name=$1 json host target ro path source suffix wanted best i
+  local mounts=() sources=()
   json=$(entry "$name")
   mapfile -t empty < <(jq -r '.emptyPaths[]' <<<"$json")
+  mapfile -t create < <(jq -r '.createPaths[]' <<<"$json")
   while IFS=$'\t' read -r host target ro; do
     path=$(host_path "$host")
     for blanked in "${empty[@]}"; do
@@ -113,13 +115,34 @@ volume_args() {
     suffix=""
     [[ $ro == true ]] && suffix=:ro
     echo "--volume=$path:$target$suffix"
+    mounts+=("$target")
+    sources+=("$path")
     for blanked in "${empty[@]}"; do
       if [[ $blanked == "$target"/* ]]; then
-        source=$path${blanked#"$target"}
-        echo "--volume=$(blank "$source"):$blanked"
+        source=$(blank "$path${blanked#"$target"}")
+        echo "--volume=$source:$blanked"
+        mounts+=("$blanked")
+        sources+=("$source")
       fi
     done
   done < <(jq -r '.volumes[] | [.host, .target, .readOnly] | @tsv' <<<"$json")
+
+  # Made in the innermost mount, never on production.
+  for wanted in "${create[@]}"; do
+    best=-1
+    for i in "${!mounts[@]}"; do
+      if [[ $wanted == "${mounts[i]}"/* ]] &&
+        { ((best < 0)) || ((${#mounts[i]} > ${#mounts[best]})); }; then
+        best=$i
+      fi
+    done
+    if ((best < 0)) || [[ ${sources[best]} != "$work"/* ]]; then
+      echo "createPaths: $wanted is not under a smoke mount" >&2
+      return 1
+    fi
+    source=${sources[best]}${wanted#"${mounts[best]}"}
+    install -d -o "$(stat -c %u "${sources[best]}")" -g "$(stat -c %g "${sources[best]}")" "$source"
+  done
 }
 
 # Members: targets and their requirement closure.

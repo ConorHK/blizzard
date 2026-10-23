@@ -66,6 +66,7 @@ let
           shmSize = c.shmSize or null;
           noNewPrivileges = c.noNewPrivileges or false;
           emptyPaths = containerSmoke.emptyPaths.${name} or [ ];
+          createPaths = containerSmoke.createPaths.${name} or [ ];
           skip = lib.elem name containerSmoke.skip;
         };
     in
@@ -154,6 +155,12 @@ in
             type = lib.types.attrsOf (lib.types.listOf lib.types.str);
             default = { };
             description = "Container paths left empty in smoke tests, per container.";
+          };
+
+          createPaths = lib.mkOption {
+            type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+            default = { };
+            description = "Container paths created empty in smoke tests, per container.";
           };
 
           skip = lib.mkOption {

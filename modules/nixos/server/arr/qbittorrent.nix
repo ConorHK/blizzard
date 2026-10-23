@@ -33,8 +33,16 @@ in
         quiDir = "${data}/qui";
         slskdDir = "${data}/slskd";
         mamDir = "${data}/mam";
+        # slskd refuses to start without them.
+        slskdDirs = {
+          SLSKD_DOWNLOADS_DIR = "/data/slskd/downloads";
+          SLSKD_INCOMPLETE_DIR = "/data/slskd/incomplete";
+        };
       in
       {
+        # Smoke runs blank the media volume.
+        blizzard.containerSmoke.createPaths.slskd = lib.attrValues slskdDirs;
+
         age.secrets = {
           gluetun = {
             rekeyFile = ./secrets/gluetun.age;
@@ -109,10 +117,8 @@ in
                 ];
                 # Soulseek and web UI credentials, API key.
                 environmentFiles = [ config.age.secrets.slskd.path ];
-                environments = {
+                environments = slskdDirs // {
                   SLSKD_SLSK_LISTEN_PORT = toString slskdListenPort;
-                  SLSKD_DOWNLOADS_DIR = "/data/slskd/downloads";
-                  SLSKD_INCOMPLETE_DIR = "/data/slskd/incomplete";
                   SLSKD_SHARED_DIR = "/data/music";
                   SLSKD_NO_HTTPS = "true";
                   SLSKD_UMASK = "0002";

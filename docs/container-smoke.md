@@ -56,6 +56,10 @@ that unit and nothing else.
   onto the clone, so writes never reach production.
 - Blanks every other volume, plus each container's `emptyPaths`. Store
   paths and `/etc/localtime` mount as they are.
+- Creates each container's `createPaths` inside its smoke mount, for apps
+  that refuse to start without a directory on a blanked volume, such as
+  slskd's download dirs on media. A path outside a blank or the clone is
+  refused, so production is never written.
 - Groups targets that share a `Requires`/`BindsTo` closure. Each group
   runs in its own pod, one after another, with no network and a cap of
   `containerSmoke.memory` (4g). Pod members share `127.0.0.1`, so two
