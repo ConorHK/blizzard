@@ -73,22 +73,9 @@ let
         users = [ "autogroup:nonroot" ];
         action = "accept";
       }
-      # TEMP abs migration.
-      {
-        src = [ "tag:server" ];
-        dst = [ "tag:server" ];
-        users = [ "mustang" ];
-        action = "accept";
-      }
     ];
 
     grants = [
-      # TEMP abs migration: leprechaun to venus.
-      {
-        src = [ "100.91.205.65" ];
-        dst = [ "100.66.244.36" ];
-        ip = [ "tcp:22" ];
-      }
       {
         src = [ "tag:client" ];
         dst = [ "tag:server" ];
