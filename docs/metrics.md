@@ -87,5 +87,6 @@ The `prometheus` VM check runs the whole chain into a fake ntfy.
 
 - leprechaun down means no metric alerts at all. gatus still pages for
   the host itself.
-- Prometheus listens on 127.0.0.1:9090 only. Browse it with
-  `ssh -L 9090:127.0.0.1:9090 leprechaun`.
+- Prometheus listens on the tailnet address only, at
+  http://100.91.205.65:9090. sshd forbids port forwarding, so no tunnel
+  works. Alertmanager stays on 127.0.0.1.

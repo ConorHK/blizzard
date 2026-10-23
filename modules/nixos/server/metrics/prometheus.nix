@@ -86,7 +86,8 @@ in
       config = {
         services.prometheus = {
           enable = true;
-          listenAddress = "127.0.0.1";
+          # Tailnet only; sshd forbids tunnels.
+          listenAddress = if exporters.address != null then exporters.address else "127.0.0.1";
           port = 9090;
           retentionTime = "30d";
           globalConfig = {
