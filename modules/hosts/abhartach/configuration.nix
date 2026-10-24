@@ -47,6 +47,9 @@
       networking.hostName = "abhartach";
       networking.ipv4.address = "192.168.0.38";
 
+      # venus advertises our LAN range; keep LAN local.
+      services.tailscale.extraSetFlags = [ "--accept-routes=false" ];
+
       security.sudo.wheelNeedsPassword = false;
 
       # LACT rewrites its config at runtime, so seed a writable copy each
