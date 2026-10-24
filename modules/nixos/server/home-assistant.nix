@@ -20,7 +20,7 @@ in
       # Rootful: host network, USB radio and dbus.
       virtualisation.quadlet.containers.homeassistant.containerConfig = {
         # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-        image = "ghcr.io/home-assistant/home-assistant:2026.10.2";
+        image = "ghcr.io/home-assistant/home-assistant:2026.10.3";
         volumes = [
           "${dataDir}:/config"
           "/etc/localtime:/etc/localtime:ro"
