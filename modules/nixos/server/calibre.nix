@@ -55,7 +55,7 @@ in
 
             shelfmark.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/calibrain/shelfmark
-              image = "ghcr.io/calibrain/shelfmark:v1.5.0";
+              image = "ghcr.io/calibrain/shelfmark:v1.5.1";
               publishPorts = [ "127.0.0.1:${toString portShelfmark}:${toString portShelfmark}" ];
               volumes = [
                 "${shelfmarkDir}:/config"
