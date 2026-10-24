@@ -38,7 +38,7 @@ in
       # # pull the dump out of the repo (as the containers user, which owns the repo creds)
       # asc restic -r <repo> restore latest --include /storage/data/dawarich/dumps --target /tmp/restore
 
-      # asc systemctl --user stop dawarich-app dawarich-sidekiq
+      # asc systemctl --user stop dawarich-app
       # gunzip < /tmp/restore/storage/data/dawarich/dumps/dawarich.sql.gz \
       # | sed "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" \
       # | asc podman exec -i dawarich-db psql --username=postgres
@@ -46,7 +46,7 @@ in
       # # re-align the password (dump carries the old one), then start:
       # APP_PW=$(sudo sed -n 's/^DATABASE_PASSWORD=//p' /run/agenix/dawarich-secrets)
       # asc podman exec -i dawarich-db psql -U postgres -c "ALTER ROLE postgres PASSWORD '${APP_PW}';"
-      # asc systemctl --user start dawarich-app dawarich-sidekiq
+      # asc systemctl --user start dawarich-app
 
       dbDump = pkgs.writeShellApplication {
         name = "dawarich-db-dump";
@@ -121,36 +121,19 @@ in
               environmentFiles = [ config.age.secrets.dawarich-secrets.path ];
               environments = appEnv // {
                 MIN_MINUTES_SPENT_IN_CITY = "60";
+                SIDEKIQ_EMBEDDED = "true";
+                # Each web worker spawns its own job threads.
+                WEB_CONCURRENCY = "0";
+                BACKGROUND_PROCESSING_CONCURRENCY = "2";
               };
               networks = [ "dawarich.network" ];
               noNewPrivileges = true;
+              # Let embedded jobs finish on shutdown.
+              stopTimeout = 60;
             };
             unitConfig = {
               After = "dawarich-db.service dawarich-redis.service";
               Requires = "dawarich-db.service dawarich-redis.service";
-            };
-          };
-
-          dawarich-sidekiq = {
-            containerConfig = {
-              inherit image;
-              entrypoint = "sidekiq-entrypoint.sh";
-              exec = "sidekiq";
-              volumes = [
-                "${dataDir}/public:/var/app/public"
-                "${dataDir}/watched:/var/app/tmp/imports/watched"
-                "${dataDir}/storage:/var/app/storage"
-              ];
-              environmentFiles = [ config.age.secrets.dawarich-secrets.path ];
-              environments = appEnv // {
-                BACKGROUND_PROCESSING_CONCURRENCY = "10";
-              };
-              networks = [ "dawarich.network" ];
-              noNewPrivileges = true;
-            };
-            unitConfig = {
-              After = "dawarich-db.service dawarich-redis.service dawarich-app.service";
-              Requires = "dawarich-db.service dawarich-redis.service dawarich-app.service";
             };
           };
         };
