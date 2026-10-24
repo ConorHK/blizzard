@@ -110,7 +110,7 @@ in
             slskd = {
               containerConfig = {
                 # renovate: datasource=docker depName=docker.io/slskd/slskd
-                image = "docker.io/slskd/slskd:0.26.1";
+                image = "docker.io/slskd/slskd:0.26.2";
                 volumes = [
                   "${slskdDir}:/app"
                   "${media}:/data"
