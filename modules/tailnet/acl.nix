@@ -224,6 +224,18 @@ let
         dst = [ "100.92.172.125" ];
         ip = [ "tcp:22" ];
       }
+      # wg gateway: phone https to puca and bananach.
+      {
+        src = [ addresses.leprechaun ];
+        dst = [
+          addresses.puca
+          addresses.bananach
+        ];
+        ip = tcp [
+          80
+          443
+        ];
+      }
       # immich-public-proxy to immich on venus.
       {
         src = [ "100.91.205.65" ];
@@ -269,6 +281,14 @@ let
         src = "puca";
         proto = "tcp";
         accept = [ "leprechaun:10300" ];
+      }
+      {
+        src = "leprechaun";
+        proto = "tcp";
+        accept = [
+          "puca:443"
+          "bananach:443"
+        ];
       }
     ]
     ++ scrapeTests;
