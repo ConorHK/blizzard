@@ -60,6 +60,7 @@
       quadlet
       readmeabook
       satisfactory
+      seerr
       server-users
       sluagh-proxy
       smartd
