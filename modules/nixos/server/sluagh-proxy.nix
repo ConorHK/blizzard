@@ -38,7 +38,6 @@ let
   };
 
   domain = name: "${name}.goosebox.org";
-  aliased = lib.filterAttrs (_: app: app ? alias) apps;
 in
 {
   flake = {
@@ -51,15 +50,13 @@ in
     ) apps;
 
     modules.nixos.sluagh-proxy = {
-      blizzard.nginx.redirects = lib.mapAttrs' (
-        name: app: lib.nameValuePair (domain app.alias) (domain name)
-      ) aliased;
-
       services.nginx.virtualHosts = lib.mapAttrs' (
         name: app:
         lib.nameValuePair (domain name) {
           enableACME = true;
           forceSSL = true;
+          # Redirects make API clients drop auth.
+          serverAliases = lib.optional (app ? alias) (domain app.alias);
           locations."/" = {
             proxyPass = "http://${upstream}:${toString app.port}";
             proxyWebsockets = true;
