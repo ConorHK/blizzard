@@ -68,7 +68,7 @@ class Authenticator:
 
     def _open(self, opener, req):
         try:
-            return opener.open(req, timeout=30)
+            return opener.open(req, timeout=self.cfg.retry.request_timeout_seconds)
         except urllib.error.HTTPError as exc:
             if transient_status(exc.code):
                 raise TransientAuthError(f"{req.full_url} -> {exc.code}") from exc

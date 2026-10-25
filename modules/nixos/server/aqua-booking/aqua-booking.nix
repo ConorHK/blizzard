@@ -58,6 +58,7 @@ _: {
             baseSeconds
             maxBackoffSeconds
             maxRetryAfterSeconds
+            requestTimeoutSeconds
             ;
         };
         stateDir = "/var/lib/aqua-booking";
@@ -174,6 +175,11 @@ _: {
             type = lib.types.numbers.nonnegative;
             default = 30;
             description = "Cap on an honoured server Retry-After, so a bogus value cannot stall the run.";
+          };
+          requestTimeoutSeconds = lib.mkOption {
+            type = lib.types.numbers.positive;
+            default = 8;
+            description = "Per-request timeout. Short, so a request stalled by the 07:00 herd is abandoned and retried fresh.";
           };
         };
         secretsFile = lib.mkOption {

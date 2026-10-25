@@ -134,6 +134,7 @@ class Retry:
     base_seconds: float
     max_backoff_seconds: float
     max_retry_after_seconds: float
+    request_timeout_seconds: float
 
 
 @dataclass(frozen=True)
@@ -176,6 +177,7 @@ class Config:
                 base_seconds=float(raw["retry"]["baseSeconds"]),
                 max_backoff_seconds=float(raw["retry"]["maxBackoffSeconds"]),
                 max_retry_after_seconds=float(raw["retry"]["maxRetryAfterSeconds"]),
+                request_timeout_seconds=float(raw["retry"]["requestTimeoutSeconds"]),
             ),
             state_dir=Path(raw["stateDir"]),
         )

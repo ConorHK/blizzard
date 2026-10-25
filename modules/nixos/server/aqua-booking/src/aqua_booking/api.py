@@ -80,7 +80,7 @@ class BookingApi:
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(url, data=data, headers=self._headers(), method=method)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=self.cfg.retry.request_timeout_seconds) as resp:
                 return json.loads(resp.read())
         except urllib.error.HTTPError as exc:
             detail = f"{method} {path} -> {exc.code}: {exc.read()[:300]!r}"
