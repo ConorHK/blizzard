@@ -372,8 +372,8 @@ _: {
                 while IFS= read -r f; do
                   case "$f" in
                     *.sql.gz)
-                      # pg_dump writes this footer last.
-                      if restic dump "$id" "$f" | gzip -dc | tail -n 5 | grep -q 'dump complete'; then
+                      # pg_dump and mariadb-dump write this footer last.
+                      if restic dump "$id" "$f" | gzip -dc | tail -n 5 | grep -qi 'dump complete'; then
                         dbs=$((dbs + 1))
                       else
                         corrupt+=("$f")

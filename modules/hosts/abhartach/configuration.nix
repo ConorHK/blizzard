@@ -21,6 +21,9 @@
           fan_control_enabled = false;
           power_cap = 255.0;
           voltage_offset = -30;
+          # VRAM clock switching flickers the 144Hz LG.
+          performance_level = "manual";
+          power_states.memory_clock = [ 3 ];
         };
       };
     in
@@ -58,6 +61,7 @@
       system.activationScripts.lactConfig.text = ''
         install -Dm644 ${lactConfig} /etc/lact/config.yaml
       '';
+      systemd.services.lactd.restartTriggers = [ lactConfig ];
 
       system = {
         stateVersion = "25.05";
