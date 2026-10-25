@@ -48,7 +48,11 @@ in
         programs.pi = {
           settings.packages = [ "${pi-claude-bridge}" ];
           claudeBridge.settings = {
-            provider.pathToClaudeCodeExecutable = lib.getExe pkgs.claude-code;
+            provider = {
+              pathToClaudeCodeExecutable = lib.getExe pkgs.claude-code;
+              # Unlocks 1M context on Opus.
+              plan = lib.mkDefault "max";
+            };
             askClaude.enabled = lib.mkDefault false;
           };
           # Hermes cannot reach bridge models in-process.
