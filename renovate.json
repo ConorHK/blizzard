@@ -56,7 +56,8 @@
         "modules/home/core/cli/ai/pi/npm/package.json"
       ],
       "rangeStrategy": "pin",
-      "groupName": "pi extensions"
+      "groupName": "pi extensions",
+      "separateMajorMinor": false
     }
   ]
 }
