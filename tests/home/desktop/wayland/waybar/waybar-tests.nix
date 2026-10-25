@@ -28,15 +28,30 @@
         ) hostSet;
 
       packages = nixos: map (user: "${user.programs.waybar.package}") (waybarUsers nixos);
+
+      check-backups = pkgs.writeShellApplication {
+        name = "check-backups";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.jq
+          pkgs.systemd
+        ];
+        text = builtins.readFile ../../../../../modules/home/desktop/wayland/waybar/check-backups.sh;
+      };
     in
     {
-      checks =
-        mkChecks hosts "dispatch" ./check-dispatch.sh [ pkgs.binutils ] packages
-        // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (
-          nixos: map (user: "${user.xdg.configFile."waybar/config".source}") (waybarUsers nixos)
-        )
-        // mkChecks hyprlandHosts "lua-api" ./check-lua-api.sh [ pkgs.binutils ] (
-          nixos: [ "${nixos.config.programs.hyprland.package}/bin/Hyprland" ] ++ packages nixos
-        );
+      checks = {
+        waybar-backups = pkgs.runCommand "waybar-backups" { nativeBuildInputs = [ pkgs.jq ]; } ''
+          ${pkgs.writeShellScript "check-backups-tests" (builtins.readFile ./check-backups-tests.sh)} ${lib.getExe check-backups}
+          touch $out
+        '';
+      }
+      // mkChecks hosts "dispatch" ./check-dispatch.sh [ pkgs.binutils ] packages
+      // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (
+        nixos: map (user: "${user.xdg.configFile."waybar/config".source}") (waybarUsers nixos)
+      )
+      // mkChecks hyprlandHosts "lua-api" ./check-lua-api.sh [ pkgs.binutils ] (
+        nixos: [ "${nixos.config.programs.hyprland.package}/bin/Hyprland" ] ++ packages nixos
+      );
     };
 }

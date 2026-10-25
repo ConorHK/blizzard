@@ -69,6 +69,7 @@
               "network"
               "custom/separator"
               "systemd-failed-units"
+              "custom/backup"
               "custom/system-up-to-date"
             ];
             "hyprland/workspaces" = {
@@ -175,6 +176,27 @@
                 system = true;
                 user = true;
                 on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe check-failing-units}";
+              };
+            "custom/backup" =
+              let
+                check-backups = pkgs.writeShellApplication {
+                  name = "check-backups";
+                  runtimeInputs = [
+                    pkgs.coreutils
+                    pkgs.jq
+                    pkgs.systemd
+                  ];
+                  text = builtins.readFile ./check-backups.sh;
+                };
+              in
+              {
+                format = "{}";
+                exec = "${lib.getExe check-backups} /var/lib/restic-status";
+                # Hosts without backups hide the module.
+                exec-if = "test -d /var/lib/restic-status";
+                interval = 60;
+                tooltip = true;
+                return-type = "json";
               };
             "custom/separator" = {
               format = "﹏﹏﹏";

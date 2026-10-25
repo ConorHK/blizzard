@@ -36,6 +36,7 @@ tooltip label {
 #bluetooth,
 #network,
 #systemd-failed-units,
+#custom-backup,
 #custom-system-up-to-date {
     padding: 0 5px;
 }
@@ -44,12 +45,14 @@ tooltip label {
 #battery.critical,
 #network.disconnected,
 #systemd-failed-units.degraded,
+#custom-backup.error,
 #custom-system-up-to-date.error {
     color: @base08;
 }
 
 /* Worth a glance, not urgent. */
 #battery.warning,
+#custom-backup.stale,
 #custom-system-up-to-date.needs-update,
 #custom-system-up-to-date.sync-issue {
     color: @base09;
