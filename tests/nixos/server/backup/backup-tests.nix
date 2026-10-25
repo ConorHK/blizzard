@@ -98,6 +98,10 @@
               snapshots = as_containers("snapshots --json")
               assert '"paths"' in snapshots, snapshots
 
+          with subtest("a successful backup stamps its status file"):
+              stamp = int(machine.succeed("cat /var/lib/restic-status/service-data.backup"))
+              assert abs(stamp - int(machine.succeed("date +%s"))) < 300, stamp
+
           with subtest("paused containers are stopped and started again"):
               machine.succeed("test -f /tmp/dummy-was-stopped")
               machine.wait_for_unit("dummy.service", user="containers")
@@ -113,6 +117,8 @@
               assert "2 databases intact" in journal, journal
               assert "null byte" not in journal, journal
               assert len(posts()) == before, posts()
+              machine.succeed("test -f /var/lib/restic-status/service-data.drill")
+              machine.succeed("test ! -s /var/lib/restic-status/service-data.drill")
 
           with subtest("the restore drill skips files written just before the snapshot"):
               # Containers restart after the ZFS snapshot, before restic stamps its time.
@@ -131,6 +137,8 @@
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
               assert "1 restored files differ" in alert["message"], alert
+              status = machine.succeed("cat /var/lib/restic-status/service-data.drill")
+              assert "1 restored files differ" in status, status
 
           with subtest("the restore drill alerts on corrupt databases"):
               machine.succeed("head -c 4096 /var/dumps/app.db > /var/dumps/broken.db && head -c 20000 /dev/urandom >> /var/dumps/broken.db")

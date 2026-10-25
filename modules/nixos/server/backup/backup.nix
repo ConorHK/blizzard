@@ -11,6 +11,9 @@ _: {
       host = config.networking.hostName;
       jobs = lib.filterAttrs (_: job: job.paths != [ ] || job.dumpPaths != [ ]) cfg.jobs;
 
+      # Read by the waybar backup module.
+      statusDir = "/var/lib/restic-status";
+
       zfs = lib.getExe' config.boot.zfs.package "zfs";
       alertSend = lib.getExe config.blizzard.alerts.send;
 
@@ -211,6 +214,10 @@ _: {
                 Nice = 19;
                 # Read owner-only service data, no writes.
                 AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+                # "+": root, whatever the job user.
+                ExecStartPost = "+${pkgs.writeShellScript "restic-status-${name}" ''
+                  ${pkgs.coreutils}/bin/date +%s > ${statusDir}/${name}.backup
+                ''}";
                 # Restic reads the snapshot at live paths.
                 BindReadOnlyPaths = lib.mapAttrsToList (_: mp: "${snapRoot}${mp}:${mp}") job.zfsDatasets;
               };
@@ -329,7 +336,10 @@ _: {
               };
               script = ''
                 set -uo pipefail
+                problems=$(mktemp)
+                trap 'install -m 644 "$problems" ${statusDir}/${name}.drill' EXIT
                 alert() {
+                  echo "$1" >>"$problems"
                   ${alertSend} "Restore drill failed" "${name}: $1" 4 warning
                 }
                 snap=$(restic snapshots --json --latest 1 | jq -c 'max_by(.time) // empty' || true)
@@ -464,23 +474,27 @@ _: {
 
         services.restic.backups = lib.mkMerge (map (job: job.services.restic.backups) built);
 
-        systemd.services = lib.mkMerge (
-          [
-            {
-              "restic-backups-notify-failure@" = {
-                description = "Notify restic backup failure via ntfy";
-                serviceConfig = {
-                  Type = "oneshot";
-                  Environment = "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}";
-                  ExecStart = "${alertSend} 'Backup failed' 'restic backup %i failed, check journalctl -u restic-backups-%i' 4 warning";
-                };
-              };
-            }
-          ]
-          ++ map (job: job.systemd.services) built
-        );
+        systemd = {
+          tmpfiles.rules = [ "d ${statusDir} 0755 root root -" ];
 
-        systemd.timers = lib.mkMerge (map (job: job.systemd.timers) built);
+          services = lib.mkMerge (
+            [
+              {
+                "restic-backups-notify-failure@" = {
+                  description = "Notify restic backup failure via ntfy";
+                  serviceConfig = {
+                    Type = "oneshot";
+                    Environment = "ALERT_TOPIC_FILE=${cfg.ntfyTopicFile}";
+                    ExecStart = "${alertSend} 'Backup failed' 'restic backup %i failed, check journalctl -u restic-backups-%i' 4 warning";
+                  };
+                };
+              }
+            ]
+            ++ map (job: job.systemd.services) built
+          );
+
+          timers = lib.mkMerge (map (job: job.systemd.timers) built);
+        };
       };
     };
 }
