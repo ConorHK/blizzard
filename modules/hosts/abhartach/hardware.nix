@@ -19,7 +19,10 @@
           # hibernate settings
           "resume_offset=533760"
           "acpi_osi=\"!Windows 2015\"" # see https://bbs.archlinux.org/viewtopic.php?pid=2227023
+          # Gigabyte ACPI claims the IT8689E ports
+          "it87.ignore_resource_conflict=1"
         ];
+        kernelModules = [ "it87" ];
         resumeDevice = "/dev/disk/by-label/nixos";
 
         supportedFilesystems = lib.mkForce [ "btrfs" ];
