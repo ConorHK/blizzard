@@ -23,7 +23,7 @@ in
 
       home-manager.users.containers.virtualisation.quadlet.containers.tunarr.containerConfig = {
         # renovate: datasource=docker depName=docker.io/chrisbenincasa/tunarr
-        image = "docker.io/chrisbenincasa/tunarr:2026.10.3";
+        image = "docker.io/chrisbenincasa/tunarr:2026.10.4";
         publishPorts = [ "127.0.0.1:${toString port}:8000" ];
         volumes = [
           "${dataDir}:/config/tunarr"
