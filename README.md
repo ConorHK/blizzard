@@ -13,7 +13,7 @@
 | Module | Services | Ports | Reverse proxy |
 |--------|----------|-------|---------------|
 | `actual-budget` | actual-server | 5006 | budget.goosebox.org |
-| `aqua-booking` | aqua-booking (timer, 07:00 Europe/London) | - | - |
+| `aqua-booking` | aqua-booking (timer 06:58, books at 07:00 Europe/London) | - | - |
 | `audiobookshelf` | audiobookshelf | 13378 | audiobookshelf.goosebox.org |
 | `calibre` | calibre-web, shelfmark | 8183, 8084 | calibre.goosebox.org, shelfmark.goosebox.org |
 | `changedetection` | changedetection.io, sockpuppetbrowser | 5000 | changedetection.goosebox.org |

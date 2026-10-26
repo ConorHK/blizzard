@@ -6,6 +6,9 @@ has not propagated to the feed yet are retried with decorrelated jitter; a
 booking POST that errored is only ever retried after re-checking my_booking, so
 a lost response can never turn into a double booking.
 
+The feed slows to a crawl at release, so a run started early looks each class
+up first and meets the herd with only the booking POST.
+
 A day can hold several classes. They share one sign-in, one feed per sweep and
 one budget, but each is resolved on its own: a class that never appears, or that
 fails outright, costs the others nothing.
@@ -16,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time as systime
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -28,6 +32,10 @@ from .notify import notify
 from .retry import RetryPolicy, RetrySettings, call_with_retry
 from .store import Store
 
+# Their clock may lag ours.
+_RELEASE_SLACK = timedelta(seconds=1)
+_OPEN_GRACE = timedelta(seconds=60)
+
 
 @dataclass
 class _Target:
@@ -39,6 +47,8 @@ class _Target:
     posted: bool = False
     # The last booking POST that failed transiently, if it has not been resolved.
     error: TransientApiError | None = None
+    # Found in the feed before release.
+    early: GymClass | None = None
 
 
 def _find_match(classes, entry, tz, target_date) -> GymClass | None:
@@ -171,29 +181,66 @@ def main() -> int:
     secrets = load_secrets(args.secrets)
     cfg = Config.load(args.config, secrets)
     tz = ZoneInfo(cfg.timezone)
-    policy = RetryPolicy(
+
+    auth = Authenticator(cfg, Credentials.from_secrets(secrets))
+    if args.login_only:
+        call_with_retry(_policy(cfg, cfg.retry.budget_seconds), auth.access_token, (TransientAuthError,))
+        log.info("auth ok")
+        return 0
+
+    store = Store(cfg.state_dir)
+    code = _acquire(args, cfg, tz, auth, store)
+    if not args.dry_run and code == 0:
+        store.record_run()
+    return code
+
+
+def _policy(cfg, budget_seconds) -> RetryPolicy:
+    return RetryPolicy(
         RetrySettings(
-            cfg.retry.budget_seconds,
+            budget_seconds,
             cfg.retry.base_seconds,
             cfg.retry.max_backoff_seconds,
             cfg.retry.max_retry_after_seconds,
         )
     )
 
-    auth = Authenticator(cfg, Credentials.from_secrets(secrets))
-    if args.login_only:
-        call_with_retry(policy, auth.access_token, (TransientAuthError,))
-        log.info("auth ok")
-        return 0
 
-    store = Store(cfg.state_dir)
-    code = _acquire(args, cfg, tz, policy, auth, store)
-    if not args.dry_run and code == 0:
-        store.record_run()
-    return code
+def _prefetch(api, targets, tz, target_date, day_start, day_end, policy) -> None:
+    """Find each target before release, so 07:00 costs one POST."""
+    while True:
+        try:
+            classes = api.bookable_items(day_start.isoformat(), day_end.isoformat())
+            break
+        except TransientApiError as exc:
+            log.warning("pre-release discovery failed transiently (%s)", exc)
+            if not policy.wait(exc.retry_after):
+                return
+    for target in targets:
+        target.early = _find_match(classes, target.entry, tz, target_date)
+        log.info(
+            "pre-release: %s %s",
+            target.label,
+            f"found sfid={target.early.sfid}" if target.early else "not in the feed yet",
+        )
 
 
-def _acquire(args, cfg, tz, policy, auth, store) -> int:
+def _attempt(args, target, match, store, api, tz, release) -> tuple[bool, bool]:
+    """Settle one target. Returns (unresolved, failed)."""
+    try:
+        return _settle(args, target, match, store, api), False
+    except ApiError:
+        if datetime.now(tz) < release + _OPEN_GRACE:
+            # Our clock may run ahead of theirs: an early refusal is retried.
+            target.posted = True
+            log.warning("booking %s refused just after release; retrying", target.label, exc_info=True)
+            return True, False
+        # One class refused outright; the rest of the day still gets a go.
+        log.exception("booking %s failed", target.label)
+        return False, True
+
+
+def _acquire(args, cfg, tz, auth, store, connect=BookingApi, sleep=systime.sleep) -> int:
     now = datetime.now(tz)
     target_date = (now + timedelta(days=cfg.release_horizon_days)).date()
     weekday = target_date.strftime("%A").lower()
@@ -214,9 +261,13 @@ def _acquire(args, cfg, tz, policy, auth, store) -> int:
         ", ".join(f"{t.entry.class_name} at {t.entry.time}" for t in targets),
     )
 
+    release = datetime.combine(now.date(), cfg.release_time, tz)
+    early = now < release
+    policy = _policy(cfg, cfg.retry.budget_seconds)
+
     token = call_with_retry(policy, auth.access_token, (TransientAuthError,))
     log.debug("signed in (%.0fs budget left)", policy.time_left())
-    api = BookingApi(cfg, token)
+    api = connect(cfg, token)
     day_start = datetime.combine(target_date, time(0, 0), tz)
     day_end = datetime.combine(target_date, time(23, 59, 59), tz)
 
@@ -225,9 +276,30 @@ def _acquire(args, cfg, tz, policy, auth, store) -> int:
 
     pending = targets
     failed = False
-    attempt = 0
 
-    while True:
+    if early:
+        until_release = (release - datetime.now(tz)).total_seconds()
+        _prefetch(api, targets, tz, target_date, day_start, day_end, _policy(cfg, until_release))
+        if not args.dry_run:
+            wait = (release + _RELEASE_SLACK - datetime.now(tz)).total_seconds()
+            log.info("waiting %.1fs for the release", max(wait, 0))
+            if wait > 0:
+                sleep(wait)
+        # The full budget starts at release.
+        policy = _policy(cfg, cfg.retry.budget_seconds)
+        unresolved = []
+        for target in pending:
+            if target.early is None:
+                unresolved.append(target)
+                continue
+            again, refused = _attempt(args, target, target.early, store, api, tz, release)
+            failed = failed or refused
+            if again:
+                unresolved.append(target)
+        pending = unresolved
+
+    attempt = 0
+    while pending:
         attempt += 1
         try:
             classes = api.bookable_items(day_start.isoformat(), day_end.isoformat())
@@ -246,30 +318,25 @@ def _acquire(args, cfg, tz, policy, auth, store) -> int:
         unresolved = []
         for target in pending:
             match = _find_match(classes, target.entry, tz, target_date)
-            try:
-                if _settle(args, target, match, store, api):
-                    unresolved.append(target)
-            except ApiError:
-                # One class refused outright; the rest of the day still gets a go.
-                log.exception("booking %s failed", target.label)
-                failed = True
+            again, refused = _attempt(args, target, match, store, api, tz, release)
+            failed = failed or refused
+            if again:
+                unresolved.append(target)
         pending = unresolved
-        if not pending:
+
+        if pending and not _wait_for_retry(policy, pending):
+            for target in pending:
+                failed = _give_up(args, target, weekday, target_date, cfg.gym_name) or failed
             break
 
-        hints = [
-            t.error.retry_after
-            for t in pending
-            if t.error is not None and t.error.retry_after is not None
-        ]
-        if policy.wait(max(hints) if hints else None):
-            log.info(
-                "%d target(s) unresolved; retrying (%.0fs left)", len(pending), policy.time_left()
-            )
-            continue
-
-        for target in pending:
-            failed = _give_up(args, target, weekday, target_date, cfg.gym_name) or failed
-        break
-
     return 1 if failed else 0
+
+
+def _wait_for_retry(policy, pending) -> bool:
+    hints = [
+        t.error.retry_after for t in pending if t.error is not None and t.error.retry_after is not None
+    ]
+    if not policy.wait(max(hints) if hints else None):
+        return False
+    log.info("%d target(s) unresolved; retrying (%.0fs left)", len(pending), policy.time_left())
+    return True

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from datetime import time
 from pathlib import Path
 
 WEEKDAYS = (
@@ -143,6 +144,7 @@ class Config:
     gym_name: str
     timezone: str
     release_horizon_days: int
+    release_time: time
     schedule: dict[str, tuple[ScheduledClass, ...]]
     api: Api
     auth: Auth
@@ -158,6 +160,7 @@ class Config:
             schedule=schedule_with_default(secrets["schedule"], raw["className"]),
             timezone=raw["timezone"],
             release_horizon_days=raw["releaseHorizonDays"],
+            release_time=time.fromisoformat(raw["releaseTime"]),
             api=Api(
                 base=raw["api"]["base"].rstrip("/") + "/",
                 subscription_key=raw["api"]["subscriptionKey"],

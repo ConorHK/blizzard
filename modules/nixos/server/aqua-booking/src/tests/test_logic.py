@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import tempfile
 import unittest
@@ -9,15 +10,20 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from aqua_booking.api import GymClass, waitlist_position
+from aqua_booking.api import ApiError, GymClass, waitlist_position
 from aqua_booking.config import (
+    WEEKDAYS,
+    Api,
+    Auth,
+    Config,
     ConfigError,
+    Retry,
     ScheduledClass,
     load_secrets,
     schedule_with_default,
 )
 from aqua_booking.retry import RetryPolicy, RetrySettings
-from aqua_booking.run import _find_match
+from aqua_booking.run import _acquire, _find_match
 from aqua_booking.store import Store
 
 LONDON = ZoneInfo("Europe/London")
@@ -284,7 +290,7 @@ class StorePrune(unittest.TestCase):
         self.assertTrue(self.store.heartbeat.exists())
 
 
-class Retry(unittest.TestCase):
+class RetryBudget(unittest.TestCase):
     def _policy(self, budget=10.0, base=1.0, max_backoff=5.0, max_retry_after=30.0):
         self.clock = [0.0]
         self.slept = []
@@ -320,6 +326,102 @@ class Retry(unittest.TestCase):
         for _ in range(20):
             policy.wait()
         self.assertTrue(all(delay <= 5.0 for delay in self.slept), self.slept)
+
+
+
+def _config(state_dir: Path, release: datetime) -> Config:
+    return Config(
+        facility_id="F1",
+        gym_name="Crawley",
+        timezone="UTC",
+        release_horizon_days=1,
+        release_time=release.time(),
+        schedule={day: (ScheduledClass("12:00", "Aqua Aerobics"),) for day in WEEKDAYS},
+        api=Api("http://stub/", "key", "agent", "http://origin"),
+        auth=Auth("http://stub/", "t", "p", "c", "s", "r"),
+        retry=Retry(1.0, 0.01, 0.01, 0.01, 1.0),
+        state_dir=state_dir,
+    )
+
+
+class _Auth:
+    def access_token(self):
+        return "TOKEN"
+
+
+class _Api:
+    """Serves one feed and records every call."""
+
+    def __init__(self, feeds, refusals=0):
+        self.feeds = list(feeds)
+        self.refusals = refusals
+        self.calls = []
+
+    def bookable_items(self, from_iso, to_iso):
+        self.calls.append("GET")
+        return self.feeds.pop(0) if len(self.feeds) > 1 else self.feeds[0]
+
+    def book(self, sfid):
+        self.calls.append("POST")
+        if self.refusals:
+            self.refusals -= 1
+            raise ApiError("POST bookings/gym/ -> 400: not open")
+        return {"my_booking": {"status": "Booked"}}
+
+
+class PreRelease(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.store = Store(Path(self.tmp.name))
+        self.slept = []
+        now = datetime.now(timezone.utc)
+        self.target = (now + timedelta(days=1)).date().isoformat()
+        self.release = now + timedelta(seconds=30)
+
+    def _run(self, api, release=None, dry_run=False):
+        cfg = _config(Path(self.tmp.name), release or self.release)
+        args = argparse.Namespace(dry_run=dry_run)
+        return _acquire(
+            args, cfg, timezone.utc, _Auth(), self.store,
+            connect=lambda cfg, token: api, sleep=self.slept.append,
+        )
+
+    def _feed(self, my_booking=None):
+        return [_cls(f"{self.target}T12:00:00+00:00", sfid="S1", my_booking=my_booking)]
+
+    def test_release_costs_only_the_post(self):
+        api = _Api([self._feed()])
+        self.assertEqual(self._run(api), 0)
+        self.assertEqual(api.calls, ["GET", "POST"])
+        self.assertEqual(len(self.slept), 1)
+        self.assertGreater(self.slept[0], 25)
+        self.assertTrue(self.store.was_booked("S1"))
+
+    def test_a_class_missing_before_release_is_swept_after(self):
+        api = _Api([[], self._feed()])
+        self.assertEqual(self._run(api), 0)
+        self.assertEqual(api.calls, ["GET", "GET", "POST"])
+        self.assertTrue(self.store.was_booked("S1"))
+
+    def test_an_early_refusal_is_retried(self):
+        api = _Api([self._feed()], refusals=1)
+        self.assertEqual(self._run(api), 0)
+        self.assertEqual(api.calls, ["GET", "POST", "GET", "POST"])
+        self.assertTrue(self.store.was_booked("S1"))
+
+    def test_a_late_refusal_fails_the_run(self):
+        api = _Api([self._feed()], refusals=1)
+        late = datetime.now(timezone.utc) - timedelta(minutes=5)
+        self.assertEqual(self._run(api, release=late), 1)
+        self.assertEqual(api.calls, ["GET", "POST"])
+        self.assertEqual(self.slept, [])
+
+    def test_a_dry_run_does_not_wait_for_release(self):
+        api = _Api([self._feed()])
+        self.assertEqual(self._run(api, dry_run=True), 0)
+        self.assertEqual(api.calls, ["GET"])
+        self.assertEqual(self.slept, [])
 
 
 if __name__ == "__main__":

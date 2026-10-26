@@ -9,6 +9,14 @@ _: {
     let
       cfg = config.blizzard.aqua-booking;
 
+      # Start early enough to sign in and find each class first.
+      startTime =
+        let
+          parts = map lib.toIntBase10 (lib.splitString ":" cfg.releaseTime);
+          minutes = lib.mod (builtins.elemAt parts 0 * 60 + builtins.elemAt parts 1 - 2 + 1440) 1440;
+        in
+        lib.fixedWidthNumber 2 (minutes / 60) + ":" + lib.fixedWidthNumber 2 (lib.mod minutes 60);
+
       app = pkgs.python3.pkgs.buildPythonApplication {
         pname = "aqua-booking";
         version = "0.1.0";
@@ -38,6 +46,7 @@ _: {
           className
           timezone
           releaseHorizonDays
+          releaseTime
           ;
         api = {
           inherit (cfg) subscriptionKey userAgent;
@@ -128,7 +137,12 @@ _: {
         releaseHorizonDays = lib.mkOption {
           type = lib.types.ints.positive;
           default = 8;
-          description = "Days ahead a class opens at 07:00.";
+          description = "Days ahead a class opens at releaseTime.";
+        };
+        releaseTime = lib.mkOption {
+          type = lib.types.strMatching "([01][0-9]|2[0-3]):[0-5][0-9]";
+          default = "07:00";
+          description = "Local time classes open for booking. The run starts two minutes before.";
         };
         successTopicFile = lib.mkOption {
           type = lib.types.path;
@@ -178,8 +192,8 @@ _: {
           };
           requestTimeoutSeconds = lib.mkOption {
             type = lib.types.numbers.positive;
-            default = 8;
-            description = "Per-request timeout. Short, so a request stalled by the 07:00 herd is abandoned and retried fresh.";
+            default = 15;
+            description = "Per-request timeout. The API takes over 8s to answer at release, so shorter cuts off answers.";
           };
         };
         secretsFile = lib.mkOption {
@@ -273,13 +287,11 @@ _: {
 
           timers = {
             aqua-booking = {
-              description = "Fire the gym booking run just after the 07:00 release";
+              description = "Start the gym booking run before the release";
               wantedBy = [ "timers.target" ];
               timerConfig = {
-                OnCalendar = "*-*-* 07:00:05 Europe/London";
-                # Jitter the hit off the exact release instant; AccuracySec must be
-                # sub-minute or systemd quantizes the randomization away.
-                RandomizedDelaySec = "6s";
+                # The app itself waits for the release instant.
+                OnCalendar = "*-*-* ${startTime}:00 ${cfg.timezone}";
                 AccuracySec = "1s";
                 # A late catch-up can still take a seat or a waitlist slot; nothing can't.
                 Persistent = true;
