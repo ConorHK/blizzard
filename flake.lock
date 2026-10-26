@@ -1082,11 +1082,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790583708,
-        "narHash": "sha256-7shTcoL3873dr5sSDLirsRWHcI7nSOB24yY1azONkvo=",
+        "lastModified": 1792753173,
+        "narHash": "sha256-qZWH9X+xieUoJlpv7GJK3u1uu6Xmz33W4LOgjCM+aJg=",
         "owner": "adriankarlen",
         "repo": "textfox",
-        "rev": "c0def42d23b08be2d38f55d2ff2795d33674fc10",
+        "rev": "79f83918e21b4f310b7de811ae12757eab6a561d",
         "type": "github"
       },
       "original": {
