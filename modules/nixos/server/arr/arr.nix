@@ -189,6 +189,8 @@ in
                 UN_SONARR_0_PATHS_0 = "/data/torrents";
                 UN_RADARR_0_URL = "http://radarr:7878";
                 UN_RADARR_0_PATHS_0 = "/data/torrents";
+                # Keeps the v1 web UI off the arr network.
+                UN_WEBSERVER_LISTEN_ADDR = "127.0.0.1:5656";
               };
               user = "0:0";
               networks = [ "arr.network" ];
