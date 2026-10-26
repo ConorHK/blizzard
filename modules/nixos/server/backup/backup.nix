@@ -312,6 +312,8 @@ _: {
             "restic-restore-drill-${name}" = {
               description = "Restore samples of restic job ${name} and compare";
               unitConfig.OnFailure = "alert-failure@restic-restore-drill-${name}.service";
+              # Forget can drop the snapshot mid-drill.
+              after = [ "${unit}.service" ];
               path = [
                 pkgs.restic
                 pkgs.jq
