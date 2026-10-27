@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, mkdtempSync, statSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { test } from "node:test";
 import {
@@ -30,6 +30,7 @@ import {
 	parsePromotion,
 	renderIndex,
 	renderWin,
+	scrubUrl,
 	winsFor,
 	withoutBookkeeping,
 } from "./ogham/curate.ts";
@@ -151,17 +152,25 @@ test("sections parse, insert in order, and round trip", () => {
 
 test("curator replies parse defensively", () => {
 	const reply = `Sure:\n\`\`\`json\n{"status": "Two CRs posted.", "next": ["Merge CR-1", 3], "decisions": ["Split it"],
-	"findings": [], "links": [{"url": "https://cr.example/1", "label": "CR 1"}, {"bad": 1}], "log": "posted\nboth",
+	"findings": [], "links": [{"url": "https://cr.example/1", "label": "CR 1"}, {"bad": 1}, {"url": "https://evil.example/x"}], "log": "posted\nboth",
 	"state": "review", "win": {"title": "t", "impact": ""}}\n\`\`\``;
-	const update = parseCuration(reply);
+	const update = parseCuration(reply, ["https://cr.example/1"]);
 	assert.ok(update);
 	assert.deepEqual(update.next, ["Merge CR-1"]);
 	assert.deepEqual(update.links, [{ url: "https://cr.example/1", label: "CR 1" }]);
 	assert.equal(update.log, "posted both");
 	assert.equal(update.state, "review");
 	assert.equal(update.win, undefined);
-	assert.equal(parseCuration("no json here"), undefined);
-	assert.equal(parseCuration('{"state": "done"}')?.state, undefined);
+	assert.equal(parseCuration("no json here", []), undefined);
+	assert.equal(parseCuration('{"state": "done"}', [])?.state, undefined);
+
+	const signed = "https://bucket.example/log.txt?X-Amz-Signature=abc&X-Amz-Credential=def";
+	const scrubbed = parseCuration(
+		`{"findings": ["Log at ${signed}"], "links": [{"url": "${signed}", "label": "log"}]}`,
+		candidateUrls(`fetched ${signed}`, ""),
+	);
+	assert.deepEqual(scrubbed?.findings, ["Log at https://bucket.example/log.txt"]);
+	assert.deepEqual(scrubbed?.links, [{ url: "https://bucket.example/log.txt", label: "log" }]);
 });
 
 test("curation rewrites status and next, appends the rest", () => {
@@ -184,7 +193,16 @@ test("curation rewrites status and next, appends the rest", () => {
 	);
 	const twice = applyCuration(
 		once,
-		{ status: "CR posted.", next: [], decisions: [], findings: [], links: [{ url: "https://cr.example/1", label: "dup" }] },
+		{
+			status: "CR posted.",
+			next: [],
+			decisions: [],
+			findings: [],
+			links: [
+				{ url: "https://cr.example/1", label: "dup" },
+				{ url: "https://cr.example/2", label: "CR [2]" },
+			],
+		},
 		now,
 		"01a15dd2",
 	);
@@ -192,7 +210,7 @@ test("curation rewrites status and next, appends the rest", () => {
 	assert.equal(getSection(note, "Status"), "CR posted.");
 	assert.equal(getSection(note, "Next"), "");
 	assert.equal(getSection(note, "Decisions"), "- 2026-10-20 Use flock");
-	assert.equal(getSection(note, "Links"), "- [CR 1](https://cr.example/1)");
+	assert.equal(getSection(note, "Links"), "- [CR 1](https://cr.example/1)\n- [CR \\[2\\]](https://cr.example/2)");
 	assert.equal(getSection(note, "Log"), "- 2026-10-20 14:05 01a15dd2 fixed sync\n- 2026-10-20 14:05 01a15dd2 win: Sync ships");
 	assert.equal(note.sections.at(-1)?.name, "Workers");
 	assert.equal(firstOpen(once), "Post CR");
@@ -202,6 +220,9 @@ test("urls, clipping, and zg hits", () => {
 	const text = 'see https://cr.example/1, and (https://t.example/A-2). "https://cr.example/1"';
 	assert.deepEqual(candidateUrls(text, ""), ["https://cr.example/1", "https://t.example/A-2"]);
 	assert.deepEqual(candidateUrls(text, "https://cr.example/1"), ["https://t.example/A-2"]);
+	assert.equal(scrubUrl("https://a.example/cb#access_token=t&state=s"), "https://a.example/cb");
+	assert.equal(scrubUrl("https://a.example/p?api_key=k"), "https://a.example/p");
+	assert.equal(scrubUrl("https://a.example/p?region=us-east-1#logsV2:log-groups"), "https://a.example/p?region=us-east-1#logsV2:log-groups");
 	const clipped = clip("a".repeat(100) + "z".repeat(100), 40);
 	assert.ok(clipped.startsWith("a".repeat(10)) && clipped.endsWith("z".repeat(30)));
 	assert.equal(clip("short", 40), "short");
@@ -277,4 +298,5 @@ test("locks serialize writers", async () => {
 		});
 	await Promise.all([slow("a"), slow("b")]);
 	assert.ok(order.join(",") === "a+,a-,b+,b-" || order.join(",") === "b+,b-,a+,a-", order.join(","));
+	assert.equal(statSync(path.join(homedir(), ".cache", "ogham-locks")).mode & 0o777, 0o700);
 });

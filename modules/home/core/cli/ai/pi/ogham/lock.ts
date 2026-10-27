@@ -1,7 +1,7 @@
 // Cross-process lock via atomic mkdir.
 import { createHash } from "node:crypto";
 import { mkdir, rm, stat } from "node:fs/promises";
-import { tmpdir, userInfo } from "node:os";
+import { homedir } from "node:os";
 import * as path from "node:path";
 
 const STALE_MS = 60_000;
@@ -10,9 +10,9 @@ const WAIT_MS = 15_000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
-	// Outside the vault, so sync never commits it.
-	const dir = path.join(tmpdir(), `ogham-locks-${userInfo().username}`);
-	await mkdir(dir, { recursive: true });
+	// Private to the user, and outside the vault so sync never commits it.
+	const dir = path.join(homedir(), ".cache", "ogham-locks");
+	await mkdir(dir, { recursive: true, mode: 0o700 });
 	const lock = path.join(dir, createHash("sha1").update(key).digest("hex"));
 	const deadline = Date.now() + WAIT_MS;
 	for (;;) {
