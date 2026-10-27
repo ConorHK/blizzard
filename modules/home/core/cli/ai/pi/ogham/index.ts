@@ -64,6 +64,7 @@ import {
 const ENTRY = "ogham-task";
 const WINS = "wins.md";
 const INDEX = "index.md";
+const SYNC_ERROR = ".git/ogham-sync-error";
 const MAX_TRANSCRIPT = 60_000;
 const MAX_CONTEXT = 8_000;
 
@@ -472,6 +473,8 @@ export default function (pi: ExtensionAPI) {
 		session = ctx.sessionManager.getSessionId();
 		bound = undefined;
 		related = [];
+		// ogham sync writes it when a rebase conflicts.
+		if (existsSync(abs(SYNC_ERROR))) ctx.ui.notify(`ogham: sync is stuck; resolve ${vault} by hand.`, "warning");
 		const branch = ctx.sessionManager.getBranch();
 		for (let i = branch.length - 1; i >= 0; i--) {
 			const entry = branch[i];
