@@ -7,6 +7,7 @@
           ''
             cp -r ${config.packages.pi-ogham} ogham
             cp ${./pi-ogham-test.ts} ogham.test.ts
+            export HOME=$PWD/home
             node --test ogham.test.ts
             touch $out
           '';

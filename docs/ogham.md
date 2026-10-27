@@ -79,8 +79,13 @@ extension drops `ogham_task` calls, their results, and the `/task <url>`
 prompt, so bookkeeping never reaches the note. Curation runs after the turn
 and never blocks the user; shutdown waits up to 30 seconds for it.
 
+The transcript holds fetched pages and tickets, so the curator is told to
+treat it as data. The extension drops any link the run never showed, and
+cuts the query from URLs that carry credentials (presigned URLs, tokens)
+before it writes anything, since sync pushes every note to the remote.
+
 Every write to a shared file (task note, `wins.md`, `index.md`, topics) holds
-a lock, an atomic `mkdir` under the temp directory, and rereads the file
+a lock, an atomic `mkdir` under `~/.cache/ogham-locks`, and rereads the file
 inside it. The curator applies its reply to that fresh copy, never to the
 note it sent the model, so worker joins during a slow call survive. Writes go
 to a `.tmp` file and rename into place; sync excludes `*.tmp` and
@@ -101,4 +106,5 @@ they are not repeated. `winGuidance` adds the user's own rules.
 `topics/<topic>.md`, reusing existing topics. On bind, the extension indexes
 the repo with `zg` (local embeddings, `.zvec-grep/` kept out of git) and
 searches it for the task's title and goal. The top hits from other tasks and
-topics go into the system prompt with the task note's own sections.
+topics go into the system prompt with the task note's own sections, framed
+as data from past runs, not instructions.
