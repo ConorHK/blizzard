@@ -48,7 +48,7 @@ in
           lib.nameValuePair "readmeabook-${name}" {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/kikootwo/readmeabook
-              image = "ghcr.io/kikootwo/readmeabook:1.2.10";
+              image = "ghcr.io/kikootwo/readmeabook:1.2.11";
               publishPorts = [ "127.0.0.1:${toString i.port}:3030" ];
               volumes = [
                 # Same /data/torrents path as qbittorrent.
