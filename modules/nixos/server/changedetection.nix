@@ -38,7 +38,7 @@ in
           changedetection = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/dgtlmoon/changedetection.io
-              image = "ghcr.io/dgtlmoon/changedetection.io:0.60.9";
+              image = "ghcr.io/dgtlmoon/changedetection.io:0.60.10";
               publishPorts = [ "127.0.0.1:${toString port}:5000" ];
               volumes = [ "${dataDir}:/datastore" ];
               environments = {
