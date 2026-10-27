@@ -101,12 +101,25 @@ test("tasks from links keep the URL", () => {
 
 	assert.equal(findUrl(`${url} the sync`), url);
 	assert.equal(findUrl("fix the sync"), undefined);
+	assert.equal(findUrl(`(see ${url}).`), url);
+	assert.equal(findUrl("https://en.wikipedia.org/wiki/Ogham_(script)"), "https://en.wikipedia.org/wiki/Ogham_(script)");
 	assert.match(titlePrompt(url), /ogham_task with title "<ID>: <title>" and link "https:\/\/tickets\.example\.com\/issues\/ABC-123"/);
 
 	assert.equal(linkSlug(url), "abc-123");
 	assert.equal(linkSlug("https://tickets.example.com/P12345/communication"), "p12345");
 	assert.equal(linkSlug("https://example.com/docs/intro"), undefined);
 	assert.equal(linkSlug("not a url"), undefined);
+	assert.equal(linkSlug("https://code.example.com/reviews/CR-315504661/revisions/1#/diff"), "cr-315504661");
+	assert.equal(linkSlug("https://code.example.com/reviews/CR-315504759/revisions/1"), "cr-315504759");
+	assert.equal(linkSlug("https://t.example.com/V2429106601/communication"), "v2429106601");
+	assert.equal(linkSlug("https://github.com/ConorHK/blizzard/pull/42/commits/9e909e9"), "blizzard-pull-42");
+	assert.equal(linkSlug("https://github.com/ConorHK/other/pull/42/files"), "other-pull-42");
+	assert.equal(linkSlug("https://docs.example.com/api/v2/guide"), undefined);
+	assert.equal(linkSlug("https://jira.example.com/api/v2/issues/ABC-123"), "abc-123");
+	assert.equal(linkSlug("https://github.com/web3/repo/pull/9"), "repo-pull-9");
+	assert.equal(linkSlug("https://s3.example.com/k8/s3/DPS-19022"), "dps-19022");
+	assert.equal(linkSlug("https://code.example.com/packages/Lib-2/reviews/CR-42"), "cr-42");
+	assert.equal(linkSlug("https://example.com/%E0%A4%A"), undefined);
 });
 
 test("worker summaries read back the frontmatter", () => {
@@ -115,6 +128,7 @@ test("worker summaries read back the frontmatter", () => {
 	assert.equal(fields.pane, "w2:p1P");
 	assert.equal(workerSummary(fields), "01a15dd2 orchestrator working pane w2:p1P intercom abc updated 2026-10-20T14:05");
 	assert.deepEqual(readFrontmatter("no frontmatter"), {});
+	assert.deepEqual(readFrontmatter('---\ntitle: "unterminated\nstatus: active\n---\n'), { title: '"unterminated', status: "active" });
 });
 
 test("sections parse, insert in order, and round trip", () => {

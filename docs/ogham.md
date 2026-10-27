@@ -45,8 +45,10 @@ The `ogham_task` tool (or `/task <title>`) binds a session to a task and
 records the binding in the session, so resume restores it. Given a URL,
 `/task` sends the agent a prompt to look up the item's ID and title, since
 only the agent has the tools to read it. The slug comes from the last URL
-path segment that holds a digit, the ticket ID, so it does not depend on the
-fetched title.
+path segment shaped like a ticket ID (`CR-123`, `V2429106601`), so it does
+not depend on the fetched title. Without one, it takes the first bare number
+with the two segments before it (`blizzard-pull-42`), since numbers repeat
+across repos.
 
 An orchestrator session starts workers in herdr panes with
 `OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker
