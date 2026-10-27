@@ -27,7 +27,7 @@ in
 
         containers.jellyfin.containerConfig = {
           # renovate: datasource=docker depName=docker.io/jellyfin/jellyfin
-          image = "docker.io/jellyfin/jellyfin:12.3";
+          image = "docker.io/jellyfin/jellyfin:12.4";
           publishPorts = [ "127.0.0.1:${toString port}:8096" ];
           volumes = [
             "${dataDir}/config:/config"
