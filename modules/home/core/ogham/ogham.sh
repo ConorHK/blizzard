@@ -12,7 +12,7 @@ vault=$2
 remote=${3:-}
 
 # Timers and activation cannot answer prompts.
-export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o LogLevel=ERROR}
+export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeout=10 -o LogLevel=ERROR}
 
 warn() {
   echo "ogham: $*" >&2
@@ -32,13 +32,23 @@ adopt() {
   rm -rf "$tmp"
 }
 
-# Search index is per host; .tmp precedes renames.
+# Appends one line to a .git/info file once.
+add_line() {
+  grep -qxF "$2" "$vault/.git/info/$1" 2>/dev/null \
+    || echo "$2" >>"$vault/.git/info/$1"
+}
+
+# Search and index.md are per host; .tmp precedes renames.
 exclude() {
   [ -d "$vault/.git" ] || return 0
   mkdir -p "$vault/.git/info"
-  for pattern in .zvec-grep/ '*.tmp'; do
-    grep -qxF "$pattern" "$vault/.git/info/exclude" 2>/dev/null \
-      || echo "$pattern" >>"$vault/.git/info/exclude"
+  for pattern in .zvec-grep/ '*.tmp' /index.md; do
+    add_line exclude "$pattern"
+  done
+  git -C "$vault" rm -q --cached --ignore-unmatch -- index.md
+  # Append-only notes merge by keeping both sides.
+  for pattern in /wins.md '/topics/*.md'; do
+    add_line attributes "$pattern merge=union"
   done
 }
 
@@ -70,12 +80,20 @@ sync() {
 
   git remote get-url origin >/dev/null 2>&1 || exit 0
   branch=$(git symbolic-ref --short HEAD)
-  if ! git pull -q --rebase --autostash origin "$branch"; then
-    git rebase --abort 2>/dev/null || true
-    warn "pull failed; resolve $vault by hand"
+  if ! git fetch -q origin "$branch"; then
+    warn "fetch failed; retrying next run"
     exit 1
   fi
-  git push -q origin "$branch"
+  # Pi reads this file and warns the user.
+  stuck=.git/ogham-sync-error
+  if ! git rebase -q --autostash FETCH_HEAD; then
+    git rebase --abort 2>/dev/null || true
+    echo "rebase onto origin/$branch failed; resolve $vault by hand" >"$stuck"
+    warn "$(cat "$stuck")"
+    exit 1
+  fi
+  git push -q origin "HEAD:$branch"
+  rm -f "$stuck"
 }
 
 case $cmd in

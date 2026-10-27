@@ -24,14 +24,26 @@ clone warns and retries on the next switch. Without a remote, it runs
 PATH.
 
 `ogham sync` runs every 5 minutes from a systemd user timer. It commits
-everything, rebases onto the remote, and pushes. A flock keeps runs from
-overlapping. A failed rebase aborts and exits 1, so the repo stays as it was
-until someone fixes it by hand.
+everything, fetches, rebases onto the remote, and pushes. A flock keeps runs
+from overlapping. A failed fetch exits 1 and retries next run. A failed
+rebase aborts, exits 1, and writes `.git/ogham-sync-error`; every new pi
+session warns while it exists, and the next clean sync removes it.
+
+Three rules keep conflicts rare:
+
+- `index.md` is rebuilt on each host from the task notes, so it stays out of
+  git.
+- `wins.md` and `topics/*.md` only grow at the end, so they merge with git's
+  `union` driver, which keeps both sides (`.git/info/attributes`).
+- Worker notes are written by one session only.
+
+Two hosts that edit the same task note within 5 minutes still conflict, and
+a person resolves it.
 
 ## Layout
 
 ```
-index.md                 every task: status, updated, next step
+index.md                 every task: status, updated, next step (local)
 wins.md                  career wins, newest last
 topics/<topic>.md        durable knowledge, dated entries
 projects/<repo>/<slug>/
