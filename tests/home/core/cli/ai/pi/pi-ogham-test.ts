@@ -101,12 +101,25 @@ test("tasks from links keep the URL", () => {
 
 	assert.equal(findUrl(`${url} the sync`), url);
 	assert.equal(findUrl("fix the sync"), undefined);
+	assert.equal(findUrl(`(see ${url}).`), url);
+	assert.equal(findUrl("https://en.wikipedia.org/wiki/Ogham_(script)"), "https://en.wikipedia.org/wiki/Ogham_(script)");
 	assert.match(titlePrompt(url), /ogham_task with title "<ID>: <title>" and link "https:\/\/tickets\.example\.com\/issues\/ABC-123"/);
 
 	assert.equal(linkSlug(url), "abc-123");
-	assert.equal(linkSlug("https://tickets.example.com/P12345/communication"), "p12345");
+	assert.equal(linkSlug("https://help.example.com/tickets/PRB12345/comments"), "prb12345");
 	assert.equal(linkSlug("https://example.com/docs/intro"), undefined);
 	assert.equal(linkSlug("not a url"), undefined);
+	assert.equal(linkSlug("https://review.example.com/changes/RV-1001/patchsets/1#/diff"), "rv-1001");
+	assert.equal(linkSlug("https://review.example.com/changes/RV-1002/patchsets/1"), "rv-1002");
+	assert.equal(linkSlug("https://help.example.com/tickets/INC48213/comments"), "inc48213");
+	assert.equal(linkSlug("https://github.com/ConorHK/blizzard/pull/42/commits/9e909e9"), "blizzard-pull-42");
+	assert.equal(linkSlug("https://github.com/ConorHK/other/pull/42/files"), "other-pull-42");
+	assert.equal(linkSlug("https://docs.example.com/api/v2/guide"), undefined);
+	assert.equal(linkSlug("https://jira.example.com/api/v2/issues/ABC-123"), "abc-123");
+	assert.equal(linkSlug("https://github.com/web3/repo/pull/9"), "repo-pull-9");
+	assert.equal(linkSlug("https://s3.example.com/k8/s3/ACME-42"), "acme-42");
+	assert.equal(linkSlug("https://review.example.com/projects/Lib-2/changes/RV-42"), "rv-42");
+	assert.equal(linkSlug("https://example.com/%E0%A4%A"), undefined);
 });
 
 test("worker summaries read back the frontmatter", () => {
@@ -115,6 +128,7 @@ test("worker summaries read back the frontmatter", () => {
 	assert.equal(fields.pane, "w2:p1P");
 	assert.equal(workerSummary(fields), "01a15dd2 orchestrator working pane w2:p1P intercom abc updated 2026-10-20T14:05");
 	assert.deepEqual(readFrontmatter("no frontmatter"), {});
+	assert.deepEqual(readFrontmatter('---\ntitle: "unterminated\nstatus: active\n---\n'), { title: '"unterminated', status: "active" });
 });
 
 test("sections parse, insert in order, and round trip", () => {
@@ -136,13 +150,13 @@ test("sections parse, insert in order, and round trip", () => {
 });
 
 test("curator replies parse defensively", () => {
-	const reply = `Sure:\n\`\`\`json\n{"status": "Two CRs posted.", "next": ["Merge CR-1", 3], "decisions": ["Split it"],
-	"findings": [], "links": [{"url": "https://cr.example/1", "label": "CR 1"}, {"bad": 1}], "log": "posted\nboth",
+	const reply = `Sure:\n\`\`\`json\n{"status": "Two reviews posted.", "next": ["Merge RV-1", 3], "decisions": ["Split it"],
+	"findings": [], "links": [{"url": "https://review.example/1", "label": "review 1"}, {"bad": 1}], "log": "posted\nboth",
 	"state": "review", "win": {"title": "t", "impact": ""}}\n\`\`\``;
 	const update = parseCuration(reply);
 	assert.ok(update);
-	assert.deepEqual(update.next, ["Merge CR-1"]);
-	assert.deepEqual(update.links, [{ url: "https://cr.example/1", label: "CR 1" }]);
+	assert.deepEqual(update.next, ["Merge RV-1"]);
+	assert.deepEqual(update.links, [{ url: "https://review.example/1", label: "review 1" }]);
 	assert.equal(update.log, "posted both");
 	assert.equal(update.state, "review");
 	assert.equal(update.win, undefined);
@@ -158,10 +172,10 @@ test("curation rewrites status and next, appends the rest", () => {
 		before,
 		{
 			status: "Sync fixed locally.",
-			next: ["Post CR"],
+			next: ["Post review"],
 			decisions: ["Use flock"],
 			findings: ["Activation PATH has no ssh (ogham.sh)"],
-			links: [{ url: "https://cr.example/1", label: "CR 1" }],
+			links: [{ url: "https://review.example/1", label: "review 1" }],
 			log: "fixed sync",
 			win: { title: "Sync ships", summary: "", impact: "Notes reach the hub", evidence: [] },
 		},
@@ -170,24 +184,24 @@ test("curation rewrites status and next, appends the rest", () => {
 	);
 	const twice = applyCuration(
 		once,
-		{ status: "CR posted.", next: [], decisions: [], findings: [], links: [{ url: "https://cr.example/1", label: "dup" }] },
+		{ status: "review posted.", next: [], decisions: [], findings: [], links: [{ url: "https://review.example/1", label: "dup" }] },
 		now,
 		"01a15dd2",
 	);
 	const note = parseNote(twice);
-	assert.equal(getSection(note, "Status"), "CR posted.");
+	assert.equal(getSection(note, "Status"), "review posted.");
 	assert.equal(getSection(note, "Next"), "");
 	assert.equal(getSection(note, "Decisions"), "- 2026-10-20 Use flock");
-	assert.equal(getSection(note, "Links"), "- [CR 1](https://cr.example/1)");
+	assert.equal(getSection(note, "Links"), "- [review 1](https://review.example/1)");
 	assert.equal(getSection(note, "Log"), "- 2026-10-20 14:05 01a15dd2 fixed sync\n- 2026-10-20 14:05 01a15dd2 win: Sync ships");
 	assert.equal(note.sections.at(-1)?.name, "Workers");
-	assert.equal(firstOpen(once), "Post CR");
+	assert.equal(firstOpen(once), "Post review");
 });
 
 test("urls, clipping, and zg hits", () => {
-	const text = 'see https://cr.example/1, and (https://t.example/A-2). "https://cr.example/1"';
-	assert.deepEqual(candidateUrls(text, ""), ["https://cr.example/1", "https://t.example/A-2"]);
-	assert.deepEqual(candidateUrls(text, "https://cr.example/1"), ["https://t.example/A-2"]);
+	const text = 'see https://review.example/1, and (https://t.example/A-2). "https://review.example/1"';
+	assert.deepEqual(candidateUrls(text, ""), ["https://review.example/1", "https://t.example/A-2"]);
+	assert.deepEqual(candidateUrls(text, "https://review.example/1"), ["https://t.example/A-2"]);
 	const clipped = clip("a".repeat(100) + "z".repeat(100), 40);
 	assert.ok(clipped.startsWith("a".repeat(10)) && clipped.endsWith("z".repeat(30)));
 	assert.equal(clip("short", 40), "short");
@@ -199,10 +213,10 @@ test("urls, clipping, and zg hits", () => {
 
 test("wins, topics, and the index", () => {
 	const task = { title: "A-1: Fix sync", file: "projects/blizzard/a-1/a-1.md" };
-	const win = renderWin({ title: "Sync ships", summary: "Notes sync.", impact: "No lost notes", evidence: ["https://cr.example/1"] }, now, task);
+	const win = renderWin({ title: "Sync ships", summary: "Notes sync.", impact: "No lost notes", evidence: ["https://review.example/1"] }, now, task);
 	assert.equal(
 		win,
-		"## 2026-10-20 Sync ships\n\nNotes sync.\n\n- Impact: No lost notes\n- Evidence: https://cr.example/1\n- Task: [A-1: Fix sync](projects/blizzard/a-1/a-1.md)\n",
+		"## 2026-10-20 Sync ships\n\nNotes sync.\n\n- Impact: No lost notes\n- Evidence: https://review.example/1\n- Task: [A-1: Fix sync](projects/blizzard/a-1/a-1.md)\n",
 	);
 	const wins = `# Wins\n\n${win}\n## 2026-10-21 Other\n\n- Impact: x\n- Task: [B](projects/x/b/b.md)\n`;
 	assert.equal(winsFor(wins, task.file), win.trim());

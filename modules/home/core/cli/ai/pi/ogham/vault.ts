@@ -122,20 +122,36 @@ export function renderTask(ref: TaskRef, task: NewTask, now: Date): string {
 	return `${fields}# ${task.title}\n\n${link}## Goal\n\n${task.goal ? `${task.goal}\n\n` : ""}## Status\n\n## Next\n\n## Log\n\n## Workers\n`;
 }
 
-export function findUrl(text: string): string | undefined {
-	return /https?:\/\/\S+/.exec(text)?.[0];
+/** Drops trailing punctuation and unmatched closing brackets. */
+function trimUrl(url: string): string {
+	let trimmed = url.replace(/[.,;:!?'"`>\]]+$/, "");
+	while (trimmed.endsWith(")") && trimmed.split("(").length < trimmed.split(")").length) {
+		trimmed = trimmed.slice(0, -1).replace(/[.,;:!?'"`>\]]+$/, "");
+	}
+	return trimmed;
 }
+
+export function findUrl(text: string): string | undefined {
+	const url = /https?:\/\/\S+/.exec(text)?.[0];
+	return url ? trimUrl(url) : undefined;
+}
+
+// Skips version segments like v2 or python3.
+const TICKET_ID = /^[a-z]+-\d+$|^[a-z]+\d{4,}$/i;
 
 /** Ticket ID from the URL, so retitles reuse it. */
 export function linkSlug(url: string): string | undefined {
 	let segments: string[];
 	try {
-		segments = new URL(url).pathname.split("/").filter(Boolean);
+		segments = new URL(url).pathname.split("/").filter(Boolean).map(decodeURIComponent);
 	} catch {
 		return undefined;
 	}
-	const id = segments.reverse().find((segment) => /\d/.test(segment));
-	return id ? slugify(decodeURIComponent(id)) : undefined;
+	const id = [...segments].reverse().find((segment) => TICKET_ID.test(segment));
+	if (id) return slugify(id);
+	// Bare numbers repeat across repos, so keep their parents.
+	const number = segments.findIndex((segment) => /^\d+$/.test(segment));
+	return number === -1 ? undefined : slugify(segments.slice(Math.max(0, number - 2), number + 1).join("-"));
 }
 
 export const TITLE_PROMPT_START = "Start an ogham task for ";
@@ -180,9 +196,19 @@ export function readFrontmatter(text: string): Record<string, string> {
 		const pair = /^([\w-]+): (.*)$/.exec(line);
 		if (!pair) continue;
 		const value = pair[2];
-		fields[pair[1]] = value.startsWith('"') ? (JSON.parse(value) as string) : value;
+		fields[pair[1]] = value.startsWith('"') ? unquote(value) : value;
 	}
 	return fields;
+}
+
+/** Hand edits can break the quoting; keep the raw text then. */
+function unquote(value: string): string {
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return typeof parsed === "string" ? parsed : value;
+	} catch {
+		return value;
+	}
 }
 
 /** One line per worker note. */
