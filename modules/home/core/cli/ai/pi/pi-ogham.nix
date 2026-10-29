@@ -29,7 +29,7 @@ topLevel: {
             model = "anthropic/claude-haiku-4-5";
             winGuidance = "Tie each win to a team goal.";
           };
-          description = "Contents of ~/.pi/agent/ogham.json: curator model, curate, winGuidance.";
+          description = "Contents of ~/.pi/agent/ogham.json: curator model, curate, winGuidance, askOnStart.";
         };
       };
 

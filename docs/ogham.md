@@ -62,6 +62,13 @@ not depend on the fetched title. Without one, it takes the first bare number
 with the two segments before it (`blizzard-pull-42`), since numbers repeat
 across repos.
 
+With `askOnStart`, a new interactive session asks for its task. It offers
+a new ticket or title, the 7 most recently updated open tasks, and None.
+A new ticket goes through the same path as `/task`. None or Escape leaves
+the session unbound. Resumed and reloaded sessions, sessions with messages,
+workers started with `OGHAM_TASK`, and print, json and rpc modes never ask.
+The dialog does not block startup, so other extensions still load.
+
 An orchestrator session starts workers in herdr panes with
 `OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker
 joins on startup and records its pane and intercom id, so the orchestrator
