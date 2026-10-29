@@ -30,6 +30,7 @@ import {
 	type TaskRow,
 	type Win,
 	linkText,
+	taskChoices,
 	winsFor,
 	withoutBookkeeping,
 } from "./curate.ts";
@@ -85,7 +86,12 @@ interface Settings {
 	curate?: boolean;
 	zg?: string;
 	winGuidance?: string;
+	askOnStart?: boolean;
 }
+
+const NEW_TASK = "New ticket or title";
+const NO_TASK = "None";
+const MAX_CHOICES = 7;
 
 const DESCRIPTION = `Bind this session to an ogham task, a markdown note in the user's notes repo.
 
@@ -172,7 +178,7 @@ export default function (pi: ExtensionAPI) {
 			});
 	}
 
-	async function writeIndex(): Promise<void> {
+	async function taskRows(): Promise<TaskRow[]> {
 		const projects = abs("projects");
 		const rows: TaskRow[] = [];
 		for (const project of existsSync(projects) ? await readdir(projects) : []) {
@@ -191,6 +197,11 @@ export default function (pi: ExtensionAPI) {
 				});
 			}
 		}
+		return rows;
+	}
+
+	async function writeIndex(): Promise<void> {
+		const rows = await taskRows();
 		await withLock(abs(INDEX), () => save(abs(INDEX), renderIndex(rows, existsSync(abs(WINS)))));
 	}
 
@@ -365,6 +376,32 @@ export default function (pi: ExtensionAPI) {
 		return result;
 	}
 
+	/** A URL goes to the agent, which can read its title. */
+	async function startFrom(ctx: ExtensionContext, input: string): Promise<string> {
+		const url = findUrl(input);
+		if (!url) return start(ctx, "worker", { title: input });
+		pi.sendUserMessage(titlePrompt(url), ctx.isIdle() ? undefined : { deliverAs: "followUp" });
+		return `Looking up the title of ${url}.`;
+	}
+
+	async function askForTask(ctx: ExtensionContext): Promise<void> {
+		const choices = taskChoices(await taskRows(), MAX_CHOICES);
+		const choice = await ctx.ui.select("Ogham task for this session?", [
+			NEW_TASK,
+			...choices.map((item) => item.label),
+			NO_TASK,
+		]);
+		// The user may bind with /task while the dialog is open.
+		if (!choice || choice === NO_TASK || bound) return;
+		if (choice === NEW_TASK) {
+			const input = (await ctx.ui.input("Ticket URL or task title", "https://..."))?.trim();
+			if (input && !bound) ctx.ui.notify(await startFrom(ctx, input), "info");
+			return;
+		}
+		const ref = choices.find((item) => item.label === choice)?.ref;
+		if (ref) ctx.ui.notify(await join(ctx, ref, "worker"), "info");
+	}
+
 	async function finish(ctx: ExtensionContext): Promise<string> {
 		if (!bound) throw new Error("No ogham task bound.");
 		const binding = bound;
@@ -442,17 +479,12 @@ export default function (pi: ExtensionAPI) {
 		description: "Show, start, join, or finish the ogham task",
 		handler: async (args, ctx) => {
 			const input = args.trim();
-			const url = findUrl(input);
 			try {
 				let text: string;
 				if (!input) text = await describe();
 				else if (input === "done") text = await finish(ctx);
 				else if (input.startsWith("join ")) text = await join(ctx, input.slice(5), "worker");
-				else if (url) {
-					// Only the agent can read the title.
-					pi.sendUserMessage(titlePrompt(url), ctx.isIdle() ? undefined : { deliverAs: "followUp" });
-					text = `Looking up the title of ${url}.`;
-				} else text = await start(ctx, "worker", { title: input });
+				else text = await startFrom(ctx, input);
 				ctx.ui.notify(text, "info");
 			} catch (error) {
 				ctx.ui.notify((error as Error).message, "error");
@@ -468,7 +500,7 @@ export default function (pi: ExtensionAPI) {
 		}
 	}
 
-	pi.on("session_start", async (_event, ctx) => {
+	pi.on("session_start", async (event, ctx) => {
 		settings = readSettings();
 		session = ctx.sessionManager.getSessionId();
 		bound = undefined;
@@ -484,7 +516,16 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 		const env = process.env.OGHAM_TASK;
-		if (env) await quietly(ctx, () => join(ctx, env, "worker", process.env.OGHAM_PARENT));
+		if (env) {
+			await quietly(ctx, () => join(ctx, env, "worker", process.env.OGHAM_PARENT));
+			return;
+		}
+		const fresh = event.reason === "startup" || event.reason === "new";
+		const empty = !branch.some((entry) => entry.type === "message");
+		// Not awaited: other extensions' session_start waits on ours.
+		if (settings.askOnStart && ctx.mode === "tui" && fresh && empty && existsSync(vault)) {
+			void quietly(ctx, () => askForTask(ctx));
+		}
 	});
 
 	pi.on("before_agent_start", async (event) => {

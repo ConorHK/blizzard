@@ -31,6 +31,7 @@ import {
 	renderIndex,
 	renderWin,
 	scrubUrl,
+	taskChoices,
 	winsFor,
 	withoutBookkeeping,
 } from "./ogham/curate.ts";
@@ -268,6 +269,16 @@ test("wins, topics, and the index", () => {
 	);
 	assert.doesNotMatch(renderIndex(rows, false), /wins\.md/);
 	assert.match(renderIndex(rows, false), /done, 2026-10-19T10:00\n$/);
+
+	const twin = { project: "a", file: "projects/a/z2/z2.md", title: "Z", status: "blocked", updated: "2026-10-17T10:00" };
+	assert.deepEqual(taskChoices([...rows, twin], 3), [
+		{ label: "b: Y", ref: "b/y" },
+		{ label: "a: Z", ref: "a/z" },
+		{ label: "a: Z (a/z2)", ref: "a/z2" },
+	]);
+	assert.equal(taskChoices(rows, 1).length, 1);
+	const long = taskChoices([{ ...twin, title: "t".repeat(80) }], 7)[0].label;
+	assert.equal(long, `a: ${"t".repeat(69)}...`);
 });
 
 test("transcripts drop ogham bookkeeping", () => {

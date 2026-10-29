@@ -27,4 +27,5 @@ and `OGHAM_PARENT=<its intercom id>`; they join on startup. `/task` alone
 lists the workers. Bindings survive resume.
 
 Settings: `model` (`provider/id`), `curate` (false turns the side model off),
-`winGuidance` (extra rules for wins), `zg` (path to zg).
+`winGuidance` (extra rules for wins), `zg` (path to zg), `askOnStart` (true
+asks for a task when a new interactive session starts).

@@ -312,6 +312,21 @@ export interface TaskRow {
 	next?: string;
 }
 
+export function taskChoices(rows: TaskRow[], max: number): { label: string; ref: string }[] {
+	const seen = new Set<string>();
+	return rows
+		.filter((row) => row.status !== "done")
+		.sort((a, b) => b.updated.localeCompare(a.updated))
+		.slice(0, max)
+		.map((row) => {
+			const ref = `${row.project}/${path.posix.basename(path.posix.dirname(row.file))}`;
+			const title = row.title.length > 70 ? `${row.title.slice(0, 69)}...` : row.title;
+			const label = seen.has(`${row.project}: ${title}`) ? `${row.project}: ${title} (${ref})` : `${row.project}: ${title}`;
+			seen.add(label);
+			return { label, ref };
+		});
+}
+
 export function firstOpen(note: string): string | undefined {
 	return /^- \[ \] (.+)$/m.exec(getSection(parseNote(note), "Next"))?.[1];
 }
