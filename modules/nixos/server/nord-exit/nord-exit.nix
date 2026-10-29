@@ -61,7 +61,7 @@ _: {
           tailscale-nord = {
             containerConfig = {
               # renovate: datasource=docker depName=docker.io/tailscale/tailscale
-              image = "docker.io/tailscale/tailscale:v1.104.2";
+              image = "docker.io/tailscale/tailscale:v1.104.4";
               volumes = [ "${stateDir}:/var/lib/tailscale" ];
               # TS_AUTHKEY; interactive login times out.
               environmentFiles = [ config.age.secrets.nord-tailscale.path ];
