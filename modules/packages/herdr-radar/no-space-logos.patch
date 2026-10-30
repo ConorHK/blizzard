@@ -1,0 +1,35 @@
+--- a/lib/managed-config.js
++++ b/lib/managed-config.js
+@@ -551,17 +551,9 @@
+     // (colour today; anything rendered into the label tomorrow).
+     cell('$space_label', state.none),
+   ];
+-  const spaceLogos = [
+-    ...palette.brandVendors.map((vendor) => cell(`$space_logo_${vendor}`, brand[vendor])),
+-    // Same rule as the Agents logo cell: a mark with no hue of its own is
+-    // drawn in ink, not in grey. This token carries a real vendor's mark —
+-    // whoever in the Space has no colour — so greying it says "unimportant"
+-    // about a brand whose only crime is signing in black.
+-    cell('$space_logo_other', ink),
+-  ];
+   // The same ceiling for the Spaces rows. Over it, Herdr rejects the whole
+   // config file, so a generated block that would cross it must never be written.
+-  for (const row of [spaceMarks, spaceLogos]) {
++  for (const row of [spaceMarks]) {
+     if (row.length > ROW_TOKEN_LIMIT) {
+       throw new Error(`Spaces row would carry ${row.length} tokens; Herdr allows ${ROW_TOKEN_LIMIT}`);
+     }
+@@ -594,11 +586,9 @@
+     ),
+     '',
+     '[ui.sidebar.spaces]',
+-    // No blank row between Spaces. `row_gap` is whole terminal rows, and one
+-    // of them is a lot of air beside a two-row entry — the logo row already
+-    // reads as the end of an entry.
++    // No blank row between one-row Spaces.
+     'row_gap = 0',
+-    `rows = [\n  [\n    ${spaceMarks.join(',\n    ')}\n  ],\n  [\n    ${spaceLogos.join(',\n    ')}\n  ]\n]`,
++    `rows = [\n  [\n    ${spaceMarks.join(',\n    ')}\n  ]\n]`,
+     SIDEBAR_END,
+   ].join('\n');
+ }

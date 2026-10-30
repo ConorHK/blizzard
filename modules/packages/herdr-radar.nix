@@ -14,7 +14,11 @@
           hash = "sha256-aFQqPFSNG33Ois2niAwKrQXqNWgNqreO282PdXSzSEw=";
         };
 
-        patches = [ ./herdr-radar/text-skips-font.patch ];
+        patches = [
+          ./herdr-radar/text-skips-font.patch
+          # Agent names under each Space add noise.
+          ./herdr-radar/no-space-logos.patch
+        ];
 
         dontConfigure = true;
         dontBuild = true;
