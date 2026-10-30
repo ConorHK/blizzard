@@ -15,7 +15,7 @@ topLevel: {
         type = with lib.types; attrsOf str;
         default = { };
         example = {
-          HERDR_WEB_ALLOWED_ORIGIN = "https://me-herdr.c.tunnels.lab.aws.dev";
+          HERDR_WEB_ALLOWED_ORIGIN = "https://herdr.example.com";
         };
         description = "Variables for the plugin env file. Secrets belong in .env.";
       };

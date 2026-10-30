@@ -6,7 +6,7 @@ Tracks tasks, knowledge and wins in the ogham notes repo (`~/ogham`, or
 Tell the agent the task, or run `/task <title>`. `/task <url>` asks the
 agent to look up the ticket's ID and title, names the task after them, and
 keeps the URL as `link`. The folder is named after the ID in the URL
-(`dps-19022`), so a retitled ticket keeps its note.
+(`acme-42`), so a retitled ticket keeps its note.
 
 After each agent run, a side model (`model` in `~/.pi/agent/ogham.json`)
 reads the run and rewrites the task note's Status and Next, and appends
