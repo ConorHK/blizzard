@@ -63,7 +63,10 @@ import {
 	addDays,
 	addMeasured,
 	ARTIFACT_KINDS,
+	type ArtifactKind,
+	type ArtifactRules,
 	artifactsOf,
+	compileRules,
 	closeDue,
 	FOLLOW_UP_DAYS,
 	type FollowUp,
@@ -108,6 +111,7 @@ interface Settings {
 	zg?: string;
 	winGuidance?: string;
 	askOnStart?: boolean;
+	artifactRules?: Partial<Record<ArtifactKind, string[]>>;
 }
 
 const NEW_TASK = "New ticket or title";
@@ -135,6 +139,7 @@ export default function (pi: ExtensionAPI) {
 
 	const vault = process.env.OGHAM_VAULT ?? path.join(homedir(), "ogham");
 	let settings: Settings = {};
+	let rules: ArtifactRules = compileRules().rules;
 	let bound: Binding | undefined;
 	let session = "";
 	let related: Hit[] = [];
@@ -272,7 +277,7 @@ export default function (pi: ExtensionAPI) {
 		const task = taskNotePath(binding.ref);
 		const note = (await read(abs(task))) ?? "";
 		const initiative = readFrontmatter(note).initiative || undefined;
-		const artifacts = artifactsOf([...urlsIn(note), ...win.evidence]);
+		const artifacts = artifactsOf([...urlsIn(note), ...win.evidence], rules);
 		const date = stamp(new Date()).slice(0, 10);
 		await mkdir(abs(WINS_DIR), { recursive: true });
 		for (let n = 1; ; n++) {
@@ -288,7 +293,7 @@ export default function (pi: ExtensionAPI) {
 		const urls = urlsIn((await read(abs(task))) ?? "");
 		let changed = false;
 		for (const record of (await winRecords()).filter((item) => item.task === task)) {
-			const merged = mergeArtifacts(record.artifacts, artifactsOf([...urls, ...record.evidence]));
+			const merged = mergeArtifacts(record.artifacts, artifactsOf([...urls, ...record.evidence], rules));
 			if (ARTIFACT_KINDS.every((kind) => merged[kind].length === record.artifacts[kind].length)) continue;
 			const lists = Object.fromEntries(ARTIFACT_KINDS.filter((kind) => merged[kind].length).map((kind) => [kind, merged[kind]]));
 			await edit(abs(record.file), (text) => setFrontmatter(text, lists));
@@ -318,7 +323,7 @@ export default function (pi: ExtensionAPI) {
 				const note = record.task ? ((await read(abs(record.task))) ?? "") : "";
 				const title = /^# (.+)$/m.exec(note)?.[1];
 				const initiative = readFrontmatter(note).initiative || undefined;
-				const artifacts = artifactsOf([...urlsIn(note), ...record.evidence]);
+				const artifacts = artifactsOf([...urlsIn(note), ...record.evidence], rules);
 				await createOnce(abs(record.file), renderWinFile({ ...record, initiative, artifacts }, title));
 			}
 			const records = await winRecords();
@@ -669,6 +674,9 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_start", async (event, ctx) => {
 		settings = readSettings();
+		const compiled = compileRules(settings.artifactRules);
+		rules = compiled.rules;
+		if (compiled.bad.length) ctx.ui.notify(`ogham: bad artifactRules: ${compiled.bad.join(", ")}`, "warning");
 		session = ctx.sessionManager.getSessionId();
 		bound = undefined;
 		related = [];

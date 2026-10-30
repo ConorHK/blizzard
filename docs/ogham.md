@@ -60,7 +60,7 @@ The `ogham_task` tool (or `/task <title>`) binds a session to a task and
 records the binding in the session, so resume restores it. Given a URL,
 `/task` sends the agent a prompt to look up the item's ID and title, since
 only the agent has the tools to read it. The slug comes from the last URL
-path segment shaped like a ticket ID (`CR-123`, `V2429106601`), so it does
+path segment shaped like a ticket ID (`CR-123`, `V1000000001`), so it does
 not depend on the fetched title. Without one, it takes the first bare number
 with the two segments before it (`blizzard-pull-42`), since numbers repeat
 across repos.
@@ -128,20 +128,31 @@ filter:
 | `tickets`, `sims`, `code`, `docs` | artifacts: lists of URLs |
 
 Artifacts come from every URL in the task note plus the win's evidence,
-sorted by host and path:
+sorted by regex rules on the URL. The built-in rules know only public hosts:
+GitHub issues, pull requests, and commits, GitLab merge requests and
+commits, Atlassian issues, and Google Docs. Rules for an employer's internal
+hosts belong in a private flake, in `programs.pi.ogham.settings.artifactRules`:
 
-- `tickets`: t.corp and tt tickets, MCMs, GitHub issues.
-- `sims`: SIM issues and Taskei tasks, one per ID across hosts.
-- `code`: code reviews, commits, GitHub pull requests, GitLab merge requests.
-- `docs`: wiki, Quip, Chorus, docs.hub, Drive, and Google Docs pages.
+```nix
+programs.pi.ogham.settings.artifactRules = {
+  tickets = [ ''^https://tickets\.example\.com/[A-Z]?\d+'' ];
+  sims = [ ''^https://issues\.example\.com/issues/[\w-]+'' ];
+  code = [ ''^https://code\.example\.com/reviews/CR-\d+'' ];
+  docs = [ ''^https://wiki\.example\.com/'' ];
+};
+```
 
-Code browsing links, pipelines, dashboards, and short links are not
-artifacts. URLs are stored in canonical form (`CR-123` without the revision,
-a ticket without `/communication`, a doc without its anchor), so repeats
-collapse. A win's lists grow when a later run adds links to its task, when
-the task closes, and at each session start, which also fills in wins
-recorded before artifacts existed. The curator keeps every artifact URL a run shows
-in the task's Links section for that reason.
+Settings rules run before the built-in ones, and a bad pattern warns at
+session start. For tickets, SIMs, and code, the regex match is the stored
+URL, so a rule that stops before `/revisions/2` or `/communication` collapses
+repeats; docs keep the whole URL without its anchor. SIMs dedupe by their
+last path segment, so one item on two hosts counts once. URLs no rule matches
+(code browsing, pipelines, dashboards, short links) are not artifacts.
+
+A win's lists grow when a later run adds links to its task, when the task
+closes, and at each session start, which also fills in wins recorded before
+artifacts existed. The curator keeps every artifact URL a run shows in the
+task's Links section for that reason.
 
 The body keeps the title, summary, impact, evidence links, and a link back to
 the task. `wins.md` lists every win under its initiative, newest first, with

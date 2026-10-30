@@ -41,6 +41,7 @@ import {
 	artifactCounts,
 	artifactsOf,
 	closeDue,
+	compileRules,
 	impactDue,
 	legacyWins,
 	mergeArtifacts,
@@ -128,15 +129,15 @@ test("tasks from links keep the URL", () => {
 	assert.equal(linkSlug("https://tickets.example.com/P12345/communication"), "p12345");
 	assert.equal(linkSlug("https://example.com/docs/intro"), undefined);
 	assert.equal(linkSlug("not a url"), undefined);
-	assert.equal(linkSlug("https://code.example.com/reviews/CR-315504661/revisions/1#/diff"), "cr-315504661");
-	assert.equal(linkSlug("https://code.example.com/reviews/CR-315504759/revisions/1"), "cr-315504759");
-	assert.equal(linkSlug("https://t.example.com/V2429106601/communication"), "v2429106601");
+	assert.equal(linkSlug("https://code.example.com/reviews/CR-1001/revisions/1#/diff"), "cr-1001");
+	assert.equal(linkSlug("https://code.example.com/reviews/CR-1002/revisions/1"), "cr-1002");
+	assert.equal(linkSlug("https://t.example.com/V1000000001/communication"), "v1000000001");
 	assert.equal(linkSlug("https://github.com/ConorHK/blizzard/pull/42/commits/9e909e9"), "blizzard-pull-42");
 	assert.equal(linkSlug("https://github.com/ConorHK/other/pull/42/files"), "other-pull-42");
 	assert.equal(linkSlug("https://docs.example.com/api/v2/guide"), undefined);
 	assert.equal(linkSlug("https://jira.example.com/api/v2/issues/ABC-123"), "abc-123");
 	assert.equal(linkSlug("https://github.com/web3/repo/pull/9"), "repo-pull-9");
-	assert.equal(linkSlug("https://s3.example.com/k8/s3/DPS-19022"), "dps-19022");
+	assert.equal(linkSlug("https://s3.example.com/k8/s3/ACME-42"), "acme-42");
 	assert.equal(linkSlug("https://code.example.com/packages/Lib-2/reviews/CR-42"), "cr-42");
 	assert.equal(linkSlug("https://example.com/%E0%A4%A"), undefined);
 });
@@ -320,13 +321,13 @@ test("locks serialize writers", async () => {
 });
 
 test("curator reports initiative, done, and win fields", () => {
-	const reply = `{"state": "done", "initiative": "DPS-18081: NDDS  pipeline health", "win": {"title": "RUH restored", "impact": "3 hosts serve",
-	"category": "Reliability", "role": "boss", "metric": "canary failures per 5 min", "before": "20", "after": "0", "scope": "EC2 RUH"}}`;
+	const reply = `{"state": "done", "initiative": "ACME-9: Pipeline  health", "win": {"title": "Region restored", "impact": "3 hosts serve",
+	"category": "Reliability", "role": "boss", "metric": "canary failures per 5 min", "before": "20", "after": "0", "scope": "Region A"}}`;
 	const update = parseCuration(reply, []);
 	assert.equal(update?.state, "done");
-	assert.equal(update?.initiative, "DPS-18081: NDDS pipeline health");
+	assert.equal(update?.initiative, "ACME-9: Pipeline health");
 	assert.deepEqual(update?.win, {
-		title: "RUH restored",
+		title: "Region restored",
 		summary: "",
 		impact: "3 hosts serve",
 		evidence: [],
@@ -335,37 +336,37 @@ test("curator reports initiative, done, and win fields", () => {
 		metric: "canary failures per 5 min",
 		before: "20",
 		after: "0",
-		scope: "EC2 RUH",
+		scope: "Region A",
 	});
 	assert.equal(parseCuration('{"initiative": "  "}', [])?.initiative, undefined);
 });
 
 test("win files round trip and list by initiative", () => {
-	const file = winFile("2026-10-30", "RUH: restored [3/3]");
-	assert.equal(file, "wins/2026-10-30-ruh-restored-3-3.md");
-	assert.equal(winFile("2026-10-30", "RUH", 2), "wins/2026-10-30-ruh-2.md");
+	const file = winFile("2026-10-30", "Region: restored [3/3]");
+	assert.equal(file, "wins/2026-10-30-region-restored-3-3.md");
+	assert.equal(winFile("2026-10-30", "Region", 2), "wins/2026-10-30-region-2.md");
 	const record = {
 		file,
 		date: "2026-10-30",
-		title: "RUH: restored [3/3]",
+		title: "Region: restored [3/3]",
 		summary: "Replacement host serves.",
 		impact: "Clears the pipeline blocker",
 		evidence: ["https://t.example/V1", "https://p.example/2"],
-		task: "projects/ndds/dps-1/dps-1.md",
-		initiative: "DPS-9: Pipeline health",
+		task: "projects/svc/acme-1/acme-1.md",
+		initiative: "ACME-9: Pipeline health",
 		category: "reliability" as const,
 		role: "led" as const,
 		metric: "canary failures per 5 min",
 		before: "20",
 		after: "0",
 		scope: "",
-		artifacts: { ...noArtifacts(), tickets: ["https://t.example/V1"], code: ["https://code.amazon.com/reviews/CR-1", "https://code.amazon.com/reviews/CR-2"] },
+		artifacts: { ...noArtifacts(), tickets: ["https://t.example/V1"], code: ["https://code.example.com/reviews/CR-1", "https://code.example.com/reviews/CR-2"] },
 	};
-	const text = renderWinFile(record, "DPS-1: [NDDS] Unblock");
-	assert.match(text, /^---\ntype: win\ndate: 2026-10-30\ntask: projects\/ndds\/dps-1\/dps-1\.md\ninitiative: "DPS-9: Pipeline health"\n/);
+	const text = renderWinFile(record, "ACME-1: [SVC] Unblock");
+	assert.match(text, /^---\ntype: win\ndate: 2026-10-30\ntask: projects\/svc\/acme-1\/acme-1\.md\ninitiative: "ACME-9: Pipeline health"\n/);
 	assert.doesNotMatch(text, /scope:|sims:|docs:/);
-	assert.match(text, /\ntickets: \["https:\/\/t\.example\/V1"\]\ncode: \["https:\/\/code\.amazon\.com\/reviews\/CR-1","https:\/\/code\.amazon\.com\/reviews\/CR-2"\]\n---\n/);
-	assert.match(text, /\n- Task: \[DPS-1: \\\[NDDS\\\] Unblock\]\(\.\.\/projects\/ndds\/dps-1\/dps-1\.md\)\n$/);
+	assert.match(text, /\ntickets: \["https:\/\/t\.example\/V1"\]\ncode: \["https:\/\/code\.example\.com\/reviews\/CR-1","https:\/\/code\.example\.com\/reviews\/CR-2"\]\n---\n/);
+	assert.match(text, /\n- Task: \[ACME-1: \\\[SVC\\\] Unblock\]\(\.\.\/projects\/svc\/acme-1\/acme-1\.md\)\n$/);
 	assert.deepEqual(parseWinFile(file, text), { ...record, scope: undefined, measured: undefined, result: undefined, impactAfter: undefined });
 	assert.equal(parseWinFile("wins/x.md", "---\ntype: task\n---\n# X\n"), undefined);
 
@@ -382,10 +383,10 @@ test("win files round trip and list by initiative", () => {
 			"",
 			"<!-- ogham builds this from wins/; edits here are lost. -->",
 			"",
-			"## DPS-9: Pipeline health",
+			"## ACME-9: Pipeline health",
 			"",
 			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker (1 ticket, 2 code changes)",
-			"- 2026-10-30 [RUH: restored \\[3/3\\]](wins/2026-10-30-ruh-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0 (1 ticket, 2 code changes)",
+			"- 2026-10-30 [Region: restored \\[3/3\\]](wins/2026-10-30-region-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0 (1 ticket, 2 code changes)",
 			"",
 			"## No initiative",
 			"",
@@ -393,7 +394,7 @@ test("win files round trip and list by initiative", () => {
 			"",
 		].join("\n"),
 	);
-	assert.equal(winsFor([other, record], record.task), "- 2026-09-01 A: Clears the pipeline blocker\n- 2026-10-30 RUH: restored [3/3]: Clears the pipeline blocker");
+	assert.equal(winsFor([other, record], record.task), "- 2026-09-01 A: Clears the pipeline blocker\n- 2026-10-30 Region: restored [3/3]: Clears the pipeline blocker");
 	assert.equal(winsFor([record], "projects/none.md"), "");
 });
 
@@ -401,13 +402,13 @@ test("old wins.md entries migrate", () => {
 	const old = [
 		"# Wins",
 		"",
-		"## 2026-10-30 EC2-RUH ruh60 slot restored",
+		"## 2026-10-30 Region A slot restored",
 		"",
 		"Replacement host serves.",
 		"",
-		"- Impact: Restores RUH capacity to 3 hosts.",
-		"- Evidence: https://t.example/V2396853391, https://a.example/1145519297904",
-		"- Task: [DPS-19023: \\[NDDS\\] Unblock pipeline](projects/networkdevicediscoveryservice/dps-19023/dps-19023.md)",
+		"- Impact: Restores capacity to 3 hosts.",
+		"- Evidence: https://t.example/V1000000002, https://a.example/1001",
+		"- Task: [ACME-7: \\[SVC\\] Unblock pipeline](projects/svc/acme-7/acme-7.md)",
 		"",
 		"## No initiative",
 		"",
@@ -416,13 +417,13 @@ test("old wins.md entries migrate", () => {
 	].join("\n");
 	assert.deepEqual(legacyWins(old), [
 		{
-			file: "wins/2026-10-30-ec2-ruh-ruh60-slot-restored.md",
+			file: "wins/2026-10-30-region-a-slot-restored.md",
 			date: "2026-10-30",
-			title: "EC2-RUH ruh60 slot restored",
+			title: "Region A slot restored",
 			summary: "Replacement host serves.",
-			impact: "Restores RUH capacity to 3 hosts.",
-			evidence: ["https://t.example/V2396853391", "https://a.example/1145519297904"],
-			task: "projects/networkdevicediscoveryservice/dps-19023/dps-19023.md",
+			impact: "Restores capacity to 3 hosts.",
+			evidence: ["https://t.example/V1000000002", "https://a.example/1001"],
+			task: "projects/svc/acme-7/acme-7.md",
 			artifacts: noArtifacts(),
 		},
 	]);
@@ -485,37 +486,65 @@ test("follow-ups ask for impact and closing", () => {
 	);
 });
 
-test("artifacts sort URLs into tickets, SIMs, code, and docs", () => {
-	const found = artifactsOf([
-		"https://code.amazon.com/reviews/CR-315504661/revisions/1#/diff",
-		"https://code.amazon.com/reviews/CR-315504661",
-		"https://code.amazon.com/packages/NetworkDeviceDiscoveryServiceCDK/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
-		"https://code.amazon.com/packages/DCFNSTNOCDK/blobs/8cb43fa1cb8d01c4799478772abf30b9422fa39e",
+test("artifacts sort URLs by configured rules, then public defaults", () => {
+	const { rules, bad } = compileRules({
+		tickets: ["^https://tickets\\.example\\.com/[A-Z]?\\d+", "^https://changes\\.example\\.com/cms/CHG-\\d+"],
+		sims: ["^https://issues\\.example\\.com/issues/[\\w-]+", "^https://tasks\\.example\\.com/tasks/[\\w-]+"],
+		code: ["^https://code\\.example\\.com/(reviews/CR-\\d+|packages/[^/]+/commits/[0-9a-f]{7,40})"],
+		docs: ["^https://wiki\\.example\\.com/", "("],
+	});
+	assert.deepEqual(bad, ["("]);
+	const urls = [
+		"https://code.example.com/reviews/CR-1001/revisions/1#/diff",
+		"https://code.example.com/reviews/CR-1001",
+		"https://code.example.com/packages/Svc/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
+		"https://code.example.com/packages/Svc/blobs/8cb43fa1cb8d01c4799478772abf30b9422fa39e",
 		"https://github.com/ConorHK/blizzard/pull/42/files",
-		"https://t.corp.amazon.com/V2396853391/communication",
-		"https://t.corp.amazon.com/P543719309.",
-		"https://mcm.amazon.com/cms/MCM-123456",
-		"https://taskei.amazon.dev/tasks/DPS-19023",
-		"https://sim.amazon.com/issues/DPS-19023",
-		"https://sim.amazon.com/issues/DPS-19022",
-		"https://w.amazon.com/bin/view/AWSRegionBuilds/RBX/RegionBuildAutomationBlockers/#HWhatconstitutes",
-		"https://chorus.aws.dev/doc/abc123/Design",
-		"https://pipelines.amazon.com/pipelines/NetworkDeviceDiscoveryService",
-		"https://tiny.amazon.com/fas2zu17",
-	]);
+		"https://github.com/ConorHK/blizzard/issues/7",
+		"https://tickets.example.com/V1000000002/communication",
+		"https://tickets.example.com/P1000000003.",
+		"https://changes.example.com/cms/CHG-123456",
+		"https://tasks.example.com/tasks/ACME-7",
+		"https://issues.example.com/issues/ACME-7",
+		"https://issues.example.com/issues/ACME-42",
+		"https://wiki.example.com/view/Svc/Runbook/#Hstep",
+		"https://docs.google.com/document/d/abc123/edit",
+		"https://pipelines.example.com/pipelines/Svc",
+	];
+	const found = artifactsOf(urls, rules);
 	assert.deepEqual(found, {
-		tickets: ["https://t.corp.amazon.com/V2396853391", "https://t.corp.amazon.com/P543719309", "https://mcm.amazon.com/cms/MCM-123456"],
-		sims: ["https://taskei.amazon.dev/tasks/DPS-19023", "https://sim.amazon.com/issues/DPS-19022"],
+		tickets: [
+			"https://github.com/ConorHK/blizzard/issues/7",
+			"https://tickets.example.com/V1000000002",
+			"https://tickets.example.com/P1000000003",
+			"https://changes.example.com/cms/CHG-123456",
+		],
+		sims: ["https://tasks.example.com/tasks/ACME-7", "https://issues.example.com/issues/ACME-42"],
 		code: [
-			"https://code.amazon.com/reviews/CR-315504661",
-			"https://code.amazon.com/packages/NetworkDeviceDiscoveryServiceCDK/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
+			"https://code.example.com/reviews/CR-1001",
+			"https://code.example.com/packages/Svc/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
 			"https://github.com/ConorHK/blizzard/pull/42",
 		],
-		docs: ["https://w.amazon.com/bin/view/AWSRegionBuilds/RBX/RegionBuildAutomationBlockers/", "https://chorus.aws.dev/doc/abc123/Design"],
+		docs: ["https://wiki.example.com/view/Svc/Runbook/", "https://docs.google.com/document/d/abc123/edit"],
 	});
-	const merged = mergeArtifacts({ ...noArtifacts(), code: ["https://code.amazon.com/reviews/CR-1"] }, artifactsOf(["https://code.amazon.com/reviews/CR-1/revisions/2", "https://t.corp.amazon.com/V9"]));
-	assert.deepEqual(merged, { ...noArtifacts(), tickets: ["https://t.corp.amazon.com/V9"], code: ["https://code.amazon.com/reviews/CR-1"] });
-	assert.equal(artifactCounts(found), "3 tickets, 2 SIMs, 3 code changes, 2 docs");
+	// Without settings only public hosts count.
+	assert.deepEqual(artifactsOf(urls), {
+		tickets: ["https://github.com/ConorHK/blizzard/issues/7"],
+		sims: [],
+		code: ["https://github.com/ConorHK/blizzard/pull/42"],
+		docs: ["https://docs.google.com/document/d/abc123/edit"],
+	});
+	const merged = mergeArtifacts(
+		{ ...noArtifacts(), code: ["https://code.example.com/reviews/CR-1"], sims: ["https://tasks.example.com/tasks/ACME-7"] },
+		artifactsOf(["https://code.example.com/reviews/CR-1/revisions/2", "https://tickets.example.com/V9", "https://issues.example.com/issues/ACME-7"], rules),
+	);
+	assert.deepEqual(merged, {
+		tickets: ["https://tickets.example.com/V9"],
+		sims: ["https://tasks.example.com/tasks/ACME-7"],
+		code: ["https://code.example.com/reviews/CR-1"],
+		docs: [],
+	});
+	assert.equal(artifactCounts(found), "4 tickets, 2 SIMs, 3 code changes, 2 docs");
 	assert.equal(artifactCounts(noArtifacts()), "");
 	assert.equal(yamlValue(["a", "b c"]), '["a","b c"]');
 	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);

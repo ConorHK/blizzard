@@ -12,26 +12,48 @@ export const ARTIFACT_KINDS = ["tickets", "sims", "code", "docs"] as const;
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
 export type Artifacts = Record<ArtifactKind, string[]>;
 
-// Each rule's match is the canonical URL, except docs.
-const ARTIFACT_RULES: [ArtifactKind, RegExp][] = [
-	[
-		"code",
-		/^https:\/\/(code\.amazon\.com\/(reviews\/CR-\d+|packages\/[^/]+\/commits\/[0-9a-f]{7,40})|github\.com\/[^/]+\/[^/]+\/(pull\/\d+|commit\/[0-9a-f]{7,40})|gitlab\.[^/]+\/[^#?]+?\/-\/(merge_requests\/\d+|commit\/[0-9a-f]{7,40}))/,
+export type ArtifactRules = [ArtifactKind, RegExp][];
+
+// Public hosts only; org hosts come from settings.
+const DEFAULT_RULES: Record<ArtifactKind, string[]> = {
+	tickets: ["^https://github\\.com/[^/]+/[^/]+/issues/\\d+", "^https://[^/]+\\.atlassian\\.net/browse/[A-Z][A-Z0-9]*-\\d+"],
+	sims: [],
+	code: [
+		"^https://github\\.com/[^/]+/[^/]+/(pull/\\d+|commit/[0-9a-f]{7,40})",
+		"^https://gitlab\\.com/[^#?]+?/-/(merge_requests/\\d+|commit/[0-9a-f]{7,40})",
 	],
-	["tickets", /^https:\/\/(t\.corp\.amazon\.com\/[A-Z]?\d+|tt\.amazon\.com\/\d+|mcm\.amazon\.com\/cms\/MCM-\d+|github\.com\/[^/]+\/[^/]+\/issues\/\d+)/],
-	["sims", /^https:\/\/(sim\.amazon\.com\/issues\/[\w-]+|issues\.amazon\.com\/(issues\/)?[\w-]+|taskei\.amazon\.dev\/tasks\/[\w-]+)/],
-	["docs", /^https:\/\/(w\.amazon\.com\/|quip-amazon\.com\/\w|quip\.com\/\w|chorus\.aws\.dev\/doc\/|docs\.hub\.amazon\.dev\/|drive\.corp\.amazon\.com\/|docs\.google\.com\/)/],
-];
+	docs: ["^https://docs\\.google\\.com/(document|spreadsheets|presentation)/d/"],
+};
+
+/** Settings rules first; bad patterns come back unthrown. */
+export function compileRules(extra: Partial<Record<ArtifactKind, string[]>> = {}): { rules: ArtifactRules; bad: string[] } {
+	const rules: ArtifactRules = [];
+	const bad: string[] = [];
+	for (const source of [extra, DEFAULT_RULES]) {
+		for (const kind of ARTIFACT_KINDS) {
+			for (const pattern of source[kind] ?? []) {
+				try {
+					rules.push([kind, new RegExp(pattern)]);
+				} catch {
+					bad.push(pattern);
+				}
+			}
+		}
+	}
+	return { rules, bad };
+}
+
+const DEFAULTS = compileRules().rules;
 
 export const noArtifacts = (): Artifacts => ({ tickets: [], sims: [], code: [], docs: [] });
 
-/** Tickets, SIMs, code, and docs among the URLs. */
-export function artifactsOf(urls: string[]): Artifacts {
+/** Sorts URLs by rule; a match is the canonical URL, except for docs. */
+export function artifactsOf(urls: string[], rules: ArtifactRules = DEFAULTS): Artifacts {
 	const found = noArtifacts();
 	const seen = new Set<string>();
 	for (const raw of urls) {
 		const url = raw.replace(/[.,;:!?'"`>\]]+$/, "");
-		for (const [kind, rule] of ARTIFACT_RULES) {
+		for (const [kind, rule] of rules) {
 			const match = rule.exec(url);
 			if (!match) continue;
 			const canonical = kind === "docs" ? url.replace(/#.*$/, "") : match[0];
@@ -49,8 +71,18 @@ export function urlsIn(text: string): string[] {
 	return [...text.matchAll(/https?:\/\/[^\s"'<>()[\]`]+/g)].map((match) => match[0]);
 }
 
+/** Union per kind; both sides are already canonical. */
 export function mergeArtifacts(a: Artifacts, b: Artifacts): Artifacts {
-	return artifactsOf(ARTIFACT_KINDS.flatMap((kind) => [...a[kind], ...b[kind]]));
+	const merged = noArtifacts();
+	for (const kind of ARTIFACT_KINDS) {
+		const seen = new Set<string>();
+		for (const url of [...a[kind], ...b[kind]]) {
+			const key = kind === "sims" ? `sim:${url.split("/").at(-1)}` : url;
+			if (!seen.has(key)) merged[kind].push(url);
+			seen.add(key);
+		}
+	}
+	return merged;
 }
 
 export interface Win {
