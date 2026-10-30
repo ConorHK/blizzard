@@ -1,12 +1,57 @@
 // Win records, one file each under wins/.
 import * as path from "node:path";
 import type { TaskRow } from "./curate.ts";
-import { frontmatter, linkText, readFrontmatter, relativeLink, slugify } from "./vault.ts";
+import { frontmatter, linkText, readFrontmatter, readList, relativeLink, slugify } from "./vault.ts";
 
 export const CATEGORIES = ["reliability", "latency", "cost", "toil", "security", "quality", "launch", "other"] as const;
 export type Category = (typeof CATEGORIES)[number];
 export const ROLES = ["led", "contributed"] as const;
 export type WinRole = (typeof ROLES)[number];
+
+export const ARTIFACT_KINDS = ["tickets", "issues", "code", "docs"] as const;
+export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
+export type Artifacts = Record<ArtifactKind, string[]>;
+
+// Each rule's match is the canonical URL, except docs.
+const ARTIFACT_RULES: [ArtifactKind, RegExp][] = [
+	[
+		"code",
+		/^https:\/\/((review\.example\.com\/changes\/RV-\d+|git\.example\.com\/[^/]+\/commit\/[0-9a-f]{7,40})|github\.com\/[^/]+\/[^/]+\/(pull\/\d+|commit\/[0-9a-f]{7,40})|gitlab\.[^/]+\/[^#?]+?\/-\/(merge_requests\/\d+|commit\/[0-9a-f]{7,40}))/,
+	],
+	["tickets", /^https:\/\/(help\.example\.com\/tickets\/[A-Z]+\d+|tt\.example\.com\/\d+|changes\.example\.com\/CHG-\d+|github\.com\/[^/]+\/[^/]+\/issues\/\d+)/],
+	["issues", /^https:\/\/(issues\.example\.com\/issues\/[\w-]+|issues2\.example\.com\/(issues\/)?[\w-]+|tasks\.example\.com\/tasks\/[\w-]+)/],
+	["docs", /^https:\/\/(wiki\.example\.com\/|quip\.example\.com\/\w|quip\.com\/\w|chorus\.example\.com\/doc\/|docs\.example\.com\/|drive\.example\.com\/|docs\.google\.com\/)/],
+];
+
+export const noArtifacts = (): Artifacts => ({ tickets: [], issues: [], code: [], docs: [] });
+
+/** Tickets, issues, code, and docs among the URLs. */
+export function artifactsOf(urls: string[]): Artifacts {
+	const found = noArtifacts();
+	const seen = new Set<string>();
+	for (const raw of urls) {
+		const url = raw.replace(/[.,;:!?'"`>\]]+$/, "");
+		for (const [kind, rule] of ARTIFACT_RULES) {
+			const match = rule.exec(url);
+			if (!match) continue;
+			const canonical = kind === "docs" ? url.replace(/#.*$/, "") : match[0];
+			// One issue can show up on several hosts.
+			const key = kind === "issues" ? `issue:${canonical.split("/").at(-1)}` : canonical;
+			if (!seen.has(key)) found[kind].push(canonical);
+			seen.add(key);
+			break;
+		}
+	}
+	return found;
+}
+
+export function urlsIn(text: string): string[] {
+	return [...text.matchAll(/https?:\/\/[^\s"'<>()[\]`]+/g)].map((match) => match[0]);
+}
+
+export function mergeArtifacts(a: Artifacts, b: Artifacts): Artifacts {
+	return artifactsOf(ARTIFACT_KINDS.flatMap((kind) => [...a[kind], ...b[kind]]));
+}
 
 export interface Win {
 	title: string;
@@ -29,6 +74,7 @@ export interface WinRecord extends Win {
 	measured?: string;
 	result?: string;
 	impactAfter?: string;
+	artifacts: Artifacts;
 }
 
 export const FOLLOW_UP_DAYS = 14;
@@ -55,6 +101,7 @@ export function renderWinFile(record: WinRecord, taskTitle?: string): string {
 		measured: set(record.measured),
 		result: set(record.result),
 		impact_after: set(record.impactAfter),
+		...Object.fromEntries(ARTIFACT_KINDS.map((kind) => [kind, record.artifacts[kind].length ? record.artifacts[kind] : undefined])),
 	});
 	const lines = [`# ${record.title}`, ""];
 	if (record.summary) lines.push(record.summary, "");
@@ -102,6 +149,7 @@ export function parseWinFile(file: string, text: string): WinRecord | undefined 
 		measured: value("measured"),
 		result: value("result"),
 		impactAfter: value("impact_after"),
+		artifacts: Object.fromEntries(ARTIFACT_KINDS.map((kind) => [kind, readList(fields[kind])])) as Artifacts,
 	};
 }
 
@@ -122,16 +170,27 @@ export function legacyWins(text: string): WinRecord[] {
 			impact: line("Impact"),
 			evidence: line("Evidence") ? line("Evidence").split(/,\s*/) : [],
 			task: /^- Task: .*\]\(([^)\s]+)\)$/m.exec(block)?.[1],
+			artifacts: noArtifacts(),
 		});
 	}
 	return records;
+}
+
+const ARTIFACT_NAMES: Record<ArtifactKind, string> = { tickets: "ticket", issues: "issue", code: "code change", docs: "doc" };
+
+export function artifactCounts(artifacts: Artifacts): string {
+	return ARTIFACT_KINDS.filter((kind) => artifacts[kind].length)
+		.map((kind) => `${artifacts[kind].length} ${ARTIFACT_NAMES[kind]}${artifacts[kind].length > 1 ? "s" : ""}`)
+		.join(", ");
 }
 
 function details(record: WinRecord): string {
 	const parts = [record.category, record.role].filter(Boolean).join(", ");
 	const impact = record.impact.length > 120 ? `${record.impact.slice(0, 119)}...` : record.impact;
 	const metric = record.metric && record.after ? `${record.metric}: ${record.before || "?"} -> ${record.after}` : record.result || impact;
-	return [parts, metric].filter(Boolean).join(". ");
+	const counts = artifactCounts(record.artifacts);
+	const text = [parts, metric].filter(Boolean).join(". ");
+	return counts ? `${text} (${counts})`.trim() : text;
 }
 
 /** wins.md: wins grouped by initiative. */

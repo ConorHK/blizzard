@@ -62,17 +62,21 @@ import {
 import {
 	addDays,
 	addMeasured,
+	ARTIFACT_KINDS,
+	artifactsOf,
 	closeDue,
 	FOLLOW_UP_DAYS,
 	type FollowUp,
 	impactDue,
 	legacyWins,
+	mergeArtifacts,
 	parseMeasure,
 	parseWinFile,
 	renderWinFile,
 	renderWinsIndex,
 	type Win,
 	type WinRecord,
+	urlsIn,
 	winFile,
 	winsFor,
 } from "./wins.ts";
@@ -266,15 +270,31 @@ export default function (pi: ExtensionAPI) {
 
 	async function recordWin(win: Win, binding: Binding, extra: Partial<WinRecord> = {}): Promise<void> {
 		const task = taskNotePath(binding.ref);
-		const initiative = readFrontmatter((await read(abs(task))) ?? "").initiative || undefined;
+		const note = (await read(abs(task))) ?? "";
+		const initiative = readFrontmatter(note).initiative || undefined;
+		const artifacts = artifactsOf([...urlsIn(note), ...win.evidence]);
 		const date = stamp(new Date()).slice(0, 10);
 		await mkdir(abs(WINS_DIR), { recursive: true });
 		for (let n = 1; ; n++) {
 			const file = winFile(date, win.title, n);
-			const record: WinRecord = { ...win, ...extra, file, date, task, initiative };
+			const record: WinRecord = { ...win, ...extra, file, date, task, initiative, artifacts };
 			if (await createOnce(abs(file), renderWinFile(record, binding.title))) break;
 		}
 		await writeWins();
+	}
+
+	/** Adds the task's newer artifacts to its wins. */
+	async function refreshWins(task: string): Promise<void> {
+		const urls = urlsIn((await read(abs(task))) ?? "");
+		let changed = false;
+		for (const record of (await winRecords()).filter((item) => item.task === task)) {
+			const merged = mergeArtifacts(record.artifacts, artifactsOf([...urls, ...record.evidence]));
+			if (ARTIFACT_KINDS.every((kind) => merged[kind].length === record.artifacts[kind].length)) continue;
+			const lists = Object.fromEntries(ARTIFACT_KINDS.filter((kind) => merged[kind].length).map((kind) => [kind, merged[kind]]));
+			await edit(abs(record.file), (text) => setFrontmatter(text, lists));
+			changed = true;
+		}
+		if (changed) await writeWins();
 	}
 
 	async function winRecords(): Promise<WinRecord[]> {
@@ -295,9 +315,11 @@ export default function (pi: ExtensionAPI) {
 			const legacy = legacyWins((await read(abs(WINS))) ?? "");
 			if (legacy.length) await mkdir(abs(WINS_DIR), { recursive: true });
 			for (const record of legacy) {
-				const title = record.task ? /^# (.+)$/m.exec((await read(abs(record.task))) ?? "")?.[1] : undefined;
-				const initiative = record.task ? readFrontmatter((await read(abs(record.task))) ?? "").initiative || undefined : undefined;
-				await createOnce(abs(record.file), renderWinFile({ ...record, initiative }, title));
+				const note = record.task ? ((await read(abs(record.task))) ?? "") : "";
+				const title = /^# (.+)$/m.exec(note)?.[1];
+				const initiative = readFrontmatter(note).initiative || undefined;
+				const artifacts = artifactsOf([...urlsIn(note), ...record.evidence]);
+				await createOnce(abs(record.file), renderWinFile({ ...record, initiative, artifacts }, title));
 			}
 			const records = await winRecords();
 			if (records.length || existsSync(abs(WINS))) await save(abs(WINS), renderWinsIndex(records));
@@ -307,6 +329,9 @@ export default function (pi: ExtensionAPI) {
 	async function migrateWins(): Promise<void> {
 		const legacy = legacyWins((await read(abs(WINS))) ?? "");
 		if (legacy.some((record) => !existsSync(abs(record.file)))) await writeWins();
+		// Backfills wins older than artifacts.
+		const tasks = new Set((await winRecords()).flatMap((record) => (record.task ? [record.task] : [])));
+		for (const task of tasks) await refreshWins(task);
 	}
 
 	async function curate(ctx: ExtensionContext, binding: Binding, transcript: string): Promise<void> {
@@ -333,6 +358,7 @@ export default function (pi: ExtensionAPI) {
 			return setFrontmatter(applyCuration(text, update, now, workerId(session)), fields);
 		});
 		if (update.win) await recordWin(update.win, binding);
+		if (update.links.length) await refreshWins(taskNotePath(binding.ref));
 		await writeIndex();
 		refreshIndex();
 	}
@@ -548,6 +574,7 @@ export default function (pi: ExtensionAPI) {
 		}
 		const now = stamp(new Date());
 		await edit(abs(taskNotePath(binding.ref)), (text) => setFrontmatter(text, { status: "done", closed: now, updated: now }));
+		await refreshWins(taskNotePath(binding.ref));
 		await writeIndex();
 		refreshIndex();
 		const moved = promoted.length ? ` Wrote ${promoted.join(", ")}.` : "";

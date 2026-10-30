@@ -9,6 +9,7 @@ import {
 	parseRef,
 	projectFor,
 	readFrontmatter,
+	readList,
 	refFromNote,
 	renderTask,
 	renderWorker,
@@ -37,9 +38,13 @@ import {
 import {
 	addDays,
 	addMeasured,
+	artifactCounts,
+	artifactsOf,
 	closeDue,
 	impactDue,
 	legacyWins,
+	mergeArtifacts,
+	noArtifacts,
 	parseMeasure,
 	parseWinFile,
 	renderWinFile,
@@ -354,10 +359,12 @@ test("win files round trip and list by initiative", () => {
 		before: "20",
 		after: "0",
 		scope: "",
+		artifacts: { ...noArtifacts(), tickets: ["https://t.example/T1"], code: ["https://review.example.com/changes/RV-1", "https://review.example.com/changes/RV-2"] },
 	};
 	const text = renderWinFile(record, "ACME-1: [SVC] Unblock");
 	assert.match(text, /^---\ntype: win\ndate: 2026-10-30\ntask: projects\/svc\/acme-1\/acme-1\.md\ninitiative: "ACME-9: Pipeline health"\n/);
-	assert.doesNotMatch(text, /scope:/);
+	assert.doesNotMatch(text, /scope:|issues:|docs:/);
+	assert.match(text, /\ntickets: \["https:\/\/t\.example\/T1"\]\ncode: \["https:\/\/review\.example\.com\/changes\/RV-1","https:\/\/review\.example\.com\/changes\/RV-2"\]\n---\n/);
 	assert.match(text, /\n- Task: \[ACME-1: \\\[SVC\\\] Unblock\]\(\.\.\/projects\/svc\/acme-1\/acme-1\.md\)\n$/);
 	assert.deepEqual(parseWinFile(file, text), { ...record, scope: undefined, measured: undefined, result: undefined, impactAfter: undefined });
 	assert.equal(parseWinFile("wins/x.md", "---\ntype: task\n---\n# X\n"), undefined);
@@ -366,7 +373,7 @@ test("win files round trip and list by initiative", () => {
 	assert.equal(measured?.measured, "2026-11-14");
 	assert.equal(measured?.impact, "Clears the pipeline blocker");
 
-	const other = { ...record, file: "wins/2026-09-01-a.md", date: "2026-09-01", title: "A", initiative: undefined, category: undefined, role: undefined, metric: undefined, after: undefined, result: "faster" };
+	const other = { ...record, file: "wins/2026-09-01-a.md", date: "2026-09-01", title: "A", initiative: undefined, category: undefined, role: undefined, metric: undefined, after: undefined, result: "faster", artifacts: noArtifacts() };
 	const newer = { ...record, file: "wins/2026-11-01-b.md", date: "2026-11-01", title: "B", metric: undefined, after: undefined };
 	assert.equal(
 		renderWinsIndex([other, record, newer]),
@@ -377,8 +384,8 @@ test("win files round trip and list by initiative", () => {
 			"",
 			"## ACME-9: Pipeline health",
 			"",
-			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker",
-			"- 2026-10-30 [Region: restored \\[3/3\\]](wins/2026-10-30-region-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0",
+			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker (1 ticket, 2 code changes)",
+			"- 2026-10-30 [Region: restored \\[3/3\\]](wins/2026-10-30-region-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0 (1 ticket, 2 code changes)",
 			"",
 			"## No initiative",
 			"",
@@ -416,6 +423,7 @@ test("old wins.md entries migrate", () => {
 			impact: "Restores capacity to 3 hosts.",
 			evidence: ["https://t.example/INC1002", "https://a.example/1001"],
 			task: "projects/svc/acme-7/acme-7.md",
+			artifacts: noArtifacts(),
 		},
 	]);
 	assert.deepEqual(legacyWins(renderWinsIndex([])), []);
@@ -475,4 +483,42 @@ test("follow-ups ask for impact and closing", () => {
 			["close", "Close: p: D", "projects/p/d/d.md"],
 		],
 	);
+});
+
+test("artifacts sort URLs into tickets, issues, code, and docs", () => {
+	const found = artifactsOf([
+		"https://review.example.com/changes/RV-1001/patchsets/1#/diff",
+		"https://review.example.com/changes/RV-1001",
+		"https://git.example.com/svc/commit/0a09f57660f287d4a837e8ccba14155736b82dc7",
+		"https://git.example.com/svc/blob/8cb43fa1cb8d01c4799478772abf30b9422fa39e",
+		"https://github.com/ConorHK/blizzard/pull/42/files",
+		"https://help.example.com/tickets/INC1002/comments",
+		"https://help.example.com/tickets/PRB1003.",
+		"https://changes.example.com/CHG-123456",
+		"https://tasks.example.com/tasks/ACME-7",
+		"https://issues.example.com/issues/ACME-7",
+		"https://issues.example.com/issues/ACME-42",
+		"https://wiki.example.com/view/Svc/Runbook/#step",
+		"https://chorus.example.com/doc/abc123/Design",
+		"https://pipelines.example.com/pipelines/Svc",
+		"https://short.example.com/abc",
+	]);
+	assert.deepEqual(found, {
+		tickets: ["https://help.example.com/tickets/INC1002", "https://help.example.com/tickets/PRB1003", "https://changes.example.com/CHG-123456"],
+		issues: ["https://tasks.example.com/tasks/ACME-7", "https://issues.example.com/issues/ACME-42"],
+		code: [
+			"https://review.example.com/changes/RV-1001",
+			"https://git.example.com/svc/commit/0a09f57660f287d4a837e8ccba14155736b82dc7",
+			"https://github.com/ConorHK/blizzard/pull/42",
+		],
+		docs: ["https://wiki.example.com/view/Svc/Runbook/", "https://chorus.example.com/doc/abc123/Design"],
+	});
+	const merged = mergeArtifacts({ ...noArtifacts(), code: ["https://review.example.com/changes/RV-1"] }, artifactsOf(["https://review.example.com/changes/RV-1/patchsets/2", "https://help.example.com/tickets/INC9"]));
+	assert.deepEqual(merged, { ...noArtifacts(), tickets: ["https://help.example.com/tickets/INC9"], code: ["https://review.example.com/changes/RV-1"] });
+	assert.equal(artifactCounts(found), "3 tickets, 2 issues, 3 code changes, 2 docs");
+	assert.equal(artifactCounts(noArtifacts()), "");
+	assert.equal(yamlValue(["a", "b c"]), '["a","b c"]');
+	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);
+	assert.deepEqual(readList("[broken"), []);
+	assert.deepEqual(readList(undefined), []);
 });
