@@ -180,7 +180,7 @@ in
 
             unpackerr.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/unpackerr/unpackerr
-              image = "ghcr.io/unpackerr/unpackerr:v1.0.0";
+              image = "ghcr.io/unpackerr/unpackerr:v1.0.1";
               volumes = [ "${media}/torrents:/data/torrents" ];
               environmentFiles = [ apiKeys ];
               environments = {
