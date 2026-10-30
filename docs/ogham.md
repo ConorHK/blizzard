@@ -125,9 +125,27 @@ filter:
 | `scope` | services, regions, hosts, teams, or customers covered |
 | `measured`, `result` | when the user added the measured result, and their words |
 | `impact_after` | snooze date for the impact prompt, or `never` |
+| `tickets`, `sims`, `code`, `docs` | artifacts: lists of URLs |
+
+Artifacts come from every URL in the task note plus the win's evidence,
+sorted by host and path:
+
+- `tickets`: t.corp and tt tickets, MCMs, GitHub issues.
+- `sims`: SIM issues and Taskei tasks, one per ID across hosts.
+- `code`: code reviews, commits, GitHub pull requests, GitLab merge requests.
+- `docs`: wiki, Quip, Chorus, docs.hub, Drive, and Google Docs pages.
+
+Code browsing links, pipelines, dashboards, and short links are not
+artifacts. URLs are stored in canonical form (`CR-123` without the revision,
+a ticket without `/communication`, a doc without its anchor), so repeats
+collapse. A win's lists grow when a later run adds links to its task, when
+the task closes, and at each session start, which also fills in wins
+recorded before artifacts existed. The curator keeps every artifact URL a run shows
+in the task's Links section for that reason.
 
 The body keeps the title, summary, impact, evidence links, and a link back to
-the task. `wins.md` lists every win under its initiative, newest first.
+the task. `wins.md` lists every win under its initiative, newest first, with
+its artifact counts.
 
 A task's initiative is its parent epic, program, or goal, as `<ID>: <name>`.
 The curator sets `initiative` in the task's frontmatter the first time a run

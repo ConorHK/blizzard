@@ -14,7 +14,8 @@ Decisions, Findings, Links and a Log line. Hand edits to Status and Next last
 only until the next run; hand edits elsewhere stay. When a run reaches a milestone
 with value outside the team, such as a merged change, a deploy, or a
 resolved ticket, it writes a win to `wins/<date>-<title>.md`, with fields
-for initiative, category, role, metric, before, after, and scope.
+for initiative, category, role, metric, before, after, scope, and the
+tickets, SIMs, code changes, and docs involved.
 `wins.md` lists wins by initiative, and `index.md` lists every task with its
 status and next step.
 

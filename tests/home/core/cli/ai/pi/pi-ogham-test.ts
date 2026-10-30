@@ -9,6 +9,7 @@ import {
 	parseRef,
 	projectFor,
 	readFrontmatter,
+	readList,
 	refFromNote,
 	renderTask,
 	renderWorker,
@@ -37,9 +38,13 @@ import {
 import {
 	addDays,
 	addMeasured,
+	artifactCounts,
+	artifactsOf,
 	closeDue,
 	impactDue,
 	legacyWins,
+	mergeArtifacts,
+	noArtifacts,
 	parseMeasure,
 	parseWinFile,
 	renderWinFile,
@@ -354,10 +359,12 @@ test("win files round trip and list by initiative", () => {
 		before: "20",
 		after: "0",
 		scope: "",
+		artifacts: { ...noArtifacts(), tickets: ["https://t.example/V1"], code: ["https://code.amazon.com/reviews/CR-1", "https://code.amazon.com/reviews/CR-2"] },
 	};
 	const text = renderWinFile(record, "DPS-1: [NDDS] Unblock");
 	assert.match(text, /^---\ntype: win\ndate: 2026-10-30\ntask: projects\/ndds\/dps-1\/dps-1\.md\ninitiative: "DPS-9: Pipeline health"\n/);
-	assert.doesNotMatch(text, /scope:/);
+	assert.doesNotMatch(text, /scope:|sims:|docs:/);
+	assert.match(text, /\ntickets: \["https:\/\/t\.example\/V1"\]\ncode: \["https:\/\/code\.amazon\.com\/reviews\/CR-1","https:\/\/code\.amazon\.com\/reviews\/CR-2"\]\n---\n/);
 	assert.match(text, /\n- Task: \[DPS-1: \\\[NDDS\\\] Unblock\]\(\.\.\/projects\/ndds\/dps-1\/dps-1\.md\)\n$/);
 	assert.deepEqual(parseWinFile(file, text), { ...record, scope: undefined, measured: undefined, result: undefined, impactAfter: undefined });
 	assert.equal(parseWinFile("wins/x.md", "---\ntype: task\n---\n# X\n"), undefined);
@@ -366,7 +373,7 @@ test("win files round trip and list by initiative", () => {
 	assert.equal(measured?.measured, "2026-11-14");
 	assert.equal(measured?.impact, "Clears the pipeline blocker");
 
-	const other = { ...record, file: "wins/2026-09-01-a.md", date: "2026-09-01", title: "A", initiative: undefined, category: undefined, role: undefined, metric: undefined, after: undefined, result: "faster" };
+	const other = { ...record, file: "wins/2026-09-01-a.md", date: "2026-09-01", title: "A", initiative: undefined, category: undefined, role: undefined, metric: undefined, after: undefined, result: "faster", artifacts: noArtifacts() };
 	const newer = { ...record, file: "wins/2026-11-01-b.md", date: "2026-11-01", title: "B", metric: undefined, after: undefined };
 	assert.equal(
 		renderWinsIndex([other, record, newer]),
@@ -377,8 +384,8 @@ test("win files round trip and list by initiative", () => {
 			"",
 			"## DPS-9: Pipeline health",
 			"",
-			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker",
-			"- 2026-10-30 [RUH: restored \\[3/3\\]](wins/2026-10-30-ruh-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0",
+			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker (1 ticket, 2 code changes)",
+			"- 2026-10-30 [RUH: restored \\[3/3\\]](wins/2026-10-30-ruh-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0 (1 ticket, 2 code changes)",
 			"",
 			"## No initiative",
 			"",
@@ -416,6 +423,7 @@ test("old wins.md entries migrate", () => {
 			impact: "Restores RUH capacity to 3 hosts.",
 			evidence: ["https://t.example/V2396853391", "https://a.example/1145519297904"],
 			task: "projects/networkdevicediscoveryservice/dps-19023/dps-19023.md",
+			artifacts: noArtifacts(),
 		},
 	]);
 	assert.deepEqual(legacyWins(renderWinsIndex([])), []);
@@ -475,4 +483,42 @@ test("follow-ups ask for impact and closing", () => {
 			["close", "Close: p: D", "projects/p/d/d.md"],
 		],
 	);
+});
+
+test("artifacts sort URLs into tickets, SIMs, code, and docs", () => {
+	const found = artifactsOf([
+		"https://code.amazon.com/reviews/CR-315504661/revisions/1#/diff",
+		"https://code.amazon.com/reviews/CR-315504661",
+		"https://code.amazon.com/packages/NetworkDeviceDiscoveryServiceCDK/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
+		"https://code.amazon.com/packages/DCFNSTNOCDK/blobs/8cb43fa1cb8d01c4799478772abf30b9422fa39e",
+		"https://github.com/ConorHK/blizzard/pull/42/files",
+		"https://t.corp.amazon.com/V2396853391/communication",
+		"https://t.corp.amazon.com/P543719309.",
+		"https://mcm.amazon.com/cms/MCM-123456",
+		"https://taskei.amazon.dev/tasks/DPS-19023",
+		"https://sim.amazon.com/issues/DPS-19023",
+		"https://sim.amazon.com/issues/DPS-19022",
+		"https://w.amazon.com/bin/view/AWSRegionBuilds/RBX/RegionBuildAutomationBlockers/#HWhatconstitutes",
+		"https://chorus.aws.dev/doc/abc123/Design",
+		"https://pipelines.amazon.com/pipelines/NetworkDeviceDiscoveryService",
+		"https://tiny.amazon.com/fas2zu17",
+	]);
+	assert.deepEqual(found, {
+		tickets: ["https://t.corp.amazon.com/V2396853391", "https://t.corp.amazon.com/P543719309", "https://mcm.amazon.com/cms/MCM-123456"],
+		sims: ["https://taskei.amazon.dev/tasks/DPS-19023", "https://sim.amazon.com/issues/DPS-19022"],
+		code: [
+			"https://code.amazon.com/reviews/CR-315504661",
+			"https://code.amazon.com/packages/NetworkDeviceDiscoveryServiceCDK/commits/0a09f57660f287d4a837e8ccba14155736b82dc7",
+			"https://github.com/ConorHK/blizzard/pull/42",
+		],
+		docs: ["https://w.amazon.com/bin/view/AWSRegionBuilds/RBX/RegionBuildAutomationBlockers/", "https://chorus.aws.dev/doc/abc123/Design"],
+	});
+	const merged = mergeArtifacts({ ...noArtifacts(), code: ["https://code.amazon.com/reviews/CR-1"] }, artifactsOf(["https://code.amazon.com/reviews/CR-1/revisions/2", "https://t.corp.amazon.com/V9"]));
+	assert.deepEqual(merged, { ...noArtifacts(), tickets: ["https://t.corp.amazon.com/V9"], code: ["https://code.amazon.com/reviews/CR-1"] });
+	assert.equal(artifactCounts(found), "3 tickets, 2 SIMs, 3 code changes, 2 docs");
+	assert.equal(artifactCounts(noArtifacts()), "");
+	assert.equal(yamlValue(["a", "b c"]), '["a","b c"]');
+	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);
+	assert.deepEqual(readList("[broken"), []);
+	assert.deepEqual(readList(undefined), []);
 });

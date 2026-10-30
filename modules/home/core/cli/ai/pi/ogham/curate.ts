@@ -59,7 +59,7 @@ Rules:
 - Ignore ogham bookkeeping: binding the task, join commands, worker status, and this note itself. They are never findings, status, or log.
 - status replaces the old one. next replaces the old list: keep items still open, drop finished ones, add new ones.
 - decisions, findings, and links hold only new entries not already in the note. Findings are facts worth knowing next time: root causes, where code lives, commands that work, gotchas.
-- links: pick only from the candidate URLs, and only ones worth returning to.
+- links: pick only from the candidate URLs. Always keep tickets, SIMs, code reviews, commits, and docs this task touched, since wins list them as artifacts; add other URLs only when worth returning to.
 - log is empty when the run changed nothing.
 - state is blocked when waiting on someone else, review when work awaits review or deploy, done when the goal is met and nothing in next stays open.
 - initiative: the larger project this task is part of, such as a parent epic, program, or goal, as "<ID>: <name>" when the note or transcript names it. Empty otherwise.

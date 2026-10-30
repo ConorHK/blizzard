@@ -89,21 +89,33 @@ export function stamp(date: Date): string {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function yamlValue(value: string): string {
+export function yamlValue(value: string | string[]): string {
+	// JSON arrays are YAML flow lists.
+	if (Array.isArray(value)) return JSON.stringify(value);
 	if (/^[A-Za-z][A-Za-z0-9_./-]*$/.test(value) && !/^(true|false|null|yes|no|on|off)$/i.test(value)) return value;
 	if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(value)) return value;
 	return JSON.stringify(value);
 }
 
-export function frontmatter(fields: Record<string, string | undefined>): string {
+export function readList(value: string | undefined): string[] {
+	if (!value?.startsWith("[")) return [];
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+	} catch {
+		return [];
+	}
+}
+
+export function frontmatter(fields: Record<string, string | string[] | undefined>): string {
 	const lines = Object.entries(fields)
-		.filter((entry): entry is [string, string] => entry[1] !== undefined)
+		.filter((entry): entry is [string, string | string[]] => entry[1] !== undefined)
 		.map(([key, value]) => `${key}: ${yamlValue(value)}`);
 	return `---\n${lines.join("\n")}\n---\n`;
 }
 
 /** Sets flat frontmatter keys, keeping the rest. */
-export function setFrontmatter(text: string, updates: Record<string, string>): string {
+export function setFrontmatter(text: string, updates: Record<string, string | string[]>): string {
 	const match = /^---\n([\s\S]*?)\n---\n/.exec(text);
 	if (!match) return frontmatter(updates) + text;
 	const lines = match[1].split("\n");
