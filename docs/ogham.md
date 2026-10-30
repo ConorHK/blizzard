@@ -128,20 +128,31 @@ filter:
 | `tickets`, `issues`, `code`, `docs` | artifacts: lists of URLs |
 
 Artifacts come from every URL in the task note plus the win's evidence,
-sorted by host and path:
+sorted by regex rules on the URL. The built-in rules know only public hosts:
+GitHub issues, pull requests, and commits, GitLab merge requests and
+commits, Atlassian issues, and Google Docs. Rules for an employer's internal
+hosts belong in a private flake, in `programs.pi.ogham.settings.artifactRules`:
 
-- `tickets`: ticket trackers, change records, GitHub issues.
-- `issues`: issue and task trackers, one per ID across hosts.
-- `code`: code reviews, commits, GitHub pull requests, GitLab merge requests.
-- `docs`: wiki and document pages.
+```nix
+programs.pi.ogham.settings.artifactRules = {
+  tickets = [ ''^https://help\.example\.com/tickets/[A-Z]+\d+'' ];
+  issues = [ ''^https://issues\.example\.com/issues/[\w-]+'' ];
+  code = [ ''^https://code\.example\.com/reviews/review-\d+'' ];
+  docs = [ ''^https://wiki\.example\.com/'' ];
+};
+```
 
-Code browsing links, pipelines, dashboards, and short links are not
-artifacts. URLs are stored in canonical form (`RV-123` without the revision,
-a ticket without `/comments`, a doc without its anchor), so repeats
-collapse. A win's lists grow when a later run adds links to its task, when
-the task closes, and at each session start, which also fills in wins
-recorded before artifacts existed. The curator keeps every artifact URL a run shows
-in the task's Links section for that reason.
+Settings rules run before the built-in ones, and a bad pattern warns at
+session start. For tickets, issues, and code, the regex match is the stored
+URL, so a rule that stops before `/patchsets/2` or `/comments` collapses
+repeats; docs keep the whole URL without its anchor. issues dedupe by their
+last path segment, so one item on two hosts counts once. URLs no rule matches
+(code browsing, pipelines, dashboards, short links) are not artifacts.
+
+A win's lists grow when a later run adds links to its task, when the task
+closes, and at each session start, which also fills in wins recorded before
+artifacts existed. The curator keeps every artifact URL a run shows in the
+task's Links section for that reason.
 
 The body keeps the title, summary, impact, evidence links, and a link back to
 the task. `wins.md` lists every win under its initiative, newest first, with

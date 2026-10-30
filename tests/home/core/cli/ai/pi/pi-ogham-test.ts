@@ -41,6 +41,7 @@ import {
 	artifactCounts,
 	artifactsOf,
 	closeDue,
+	compileRules,
 	impactDue,
 	legacyWins,
 	mergeArtifacts,
@@ -485,13 +486,21 @@ test("follow-ups ask for impact and closing", () => {
 	);
 });
 
-test("artifacts sort URLs into tickets, issues, code, and docs", () => {
-	const found = artifactsOf([
+test("artifacts sort URLs by configured rules, then public defaults", () => {
+	const { rules, bad } = compileRules({
+		tickets: ["^https://help\\.example\\.com/tickets/[A-Z]+\\d+", "^https://changes\\.example\\.com/CHG-\\d+"],
+		issues: ["^https://issues\\.example\\.com/issues/[\\w-]+", "^https://tasks\\.example\\.com/tasks/[\\w-]+"],
+		code: ["^https://(review\\.example\\.com/changes/RV-\\d+|git\\.example\\.com/[^/]+/commit/[0-9a-f]{7,40})"],
+		docs: ["^https://wiki\\.example\\.com/", "("],
+	});
+	assert.deepEqual(bad, ["("]);
+	const urls = [
 		"https://review.example.com/changes/RV-1001/patchsets/1#/diff",
 		"https://review.example.com/changes/RV-1001",
 		"https://git.example.com/svc/commit/0a09f57660f287d4a837e8ccba14155736b82dc7",
 		"https://git.example.com/svc/blob/8cb43fa1cb8d01c4799478772abf30b9422fa39e",
 		"https://github.com/ConorHK/blizzard/pull/42/files",
+		"https://github.com/ConorHK/blizzard/issues/7",
 		"https://help.example.com/tickets/INC1002/comments",
 		"https://help.example.com/tickets/PRB1003.",
 		"https://changes.example.com/CHG-123456",
@@ -499,23 +508,43 @@ test("artifacts sort URLs into tickets, issues, code, and docs", () => {
 		"https://issues.example.com/issues/ACME-7",
 		"https://issues.example.com/issues/ACME-42",
 		"https://wiki.example.com/view/Svc/Runbook/#step",
-		"https://chorus.example.com/doc/abc123/Design",
+		"https://docs.google.com/document/d/abc123/edit",
 		"https://pipelines.example.com/pipelines/Svc",
-		"https://short.example.com/abc",
-	]);
+	];
+	const found = artifactsOf(urls, rules);
 	assert.deepEqual(found, {
-		tickets: ["https://help.example.com/tickets/INC1002", "https://help.example.com/tickets/PRB1003", "https://changes.example.com/CHG-123456"],
+		tickets: [
+			"https://github.com/ConorHK/blizzard/issues/7",
+			"https://help.example.com/tickets/INC1002",
+			"https://help.example.com/tickets/PRB1003",
+			"https://changes.example.com/CHG-123456",
+		],
 		issues: ["https://tasks.example.com/tasks/ACME-7", "https://issues.example.com/issues/ACME-42"],
 		code: [
 			"https://review.example.com/changes/RV-1001",
 			"https://git.example.com/svc/commit/0a09f57660f287d4a837e8ccba14155736b82dc7",
 			"https://github.com/ConorHK/blizzard/pull/42",
 		],
-		docs: ["https://wiki.example.com/view/Svc/Runbook/", "https://chorus.example.com/doc/abc123/Design"],
+		docs: ["https://wiki.example.com/view/Svc/Runbook/", "https://docs.google.com/document/d/abc123/edit"],
 	});
-	const merged = mergeArtifacts({ ...noArtifacts(), code: ["https://review.example.com/changes/RV-1"] }, artifactsOf(["https://review.example.com/changes/RV-1/patchsets/2", "https://help.example.com/tickets/INC9"]));
-	assert.deepEqual(merged, { ...noArtifacts(), tickets: ["https://help.example.com/tickets/INC9"], code: ["https://review.example.com/changes/RV-1"] });
-	assert.equal(artifactCounts(found), "3 tickets, 2 issues, 3 code changes, 2 docs");
+	// Without settings only public hosts count.
+	assert.deepEqual(artifactsOf(urls), {
+		tickets: ["https://github.com/ConorHK/blizzard/issues/7"],
+		issues: [],
+		code: ["https://github.com/ConorHK/blizzard/pull/42"],
+		docs: ["https://docs.google.com/document/d/abc123/edit"],
+	});
+	const merged = mergeArtifacts(
+		{ ...noArtifacts(), code: ["https://review.example.com/changes/RV-1"], issues: ["https://tasks.example.com/tasks/ACME-7"] },
+		artifactsOf(["https://review.example.com/changes/RV-1/patchsets/2", "https://help.example.com/tickets/INC9", "https://issues.example.com/issues/ACME-7"], rules),
+	);
+	assert.deepEqual(merged, {
+		tickets: ["https://help.example.com/tickets/INC9"],
+		issues: ["https://tasks.example.com/tasks/ACME-7"],
+		code: ["https://review.example.com/changes/RV-1"],
+		docs: [],
+	});
+	assert.equal(artifactCounts(found), "4 tickets, 2 issues, 3 code changes, 2 docs");
 	assert.equal(artifactCounts(noArtifacts()), "");
 	assert.equal(yamlValue(["a", "b c"]), '["a","b c"]');
 	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);
