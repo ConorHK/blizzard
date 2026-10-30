@@ -1,14 +1,10 @@
 // Side-model prompts and how replies apply.
 import * as path from "node:path";
 import { appendLines, getSection, type Note, parseNote, renderNote, setSection } from "./note.ts";
-import { TITLE_PROMPT_START } from "./vault.ts";
+import { linkText, TITLE_PROMPT_START } from "./vault.ts";
+import { CATEGORIES, ROLES, type Win } from "./wins.ts";
 
-export interface Win {
-	title: string;
-	summary: string;
-	impact: string;
-	evidence: string[];
-}
+export { linkText, relativeLink } from "./vault.ts";
 
 export interface Curation {
 	status?: string;
@@ -17,7 +13,8 @@ export interface Curation {
 	findings: string[];
 	links: { url: string; label: string }[];
 	log?: string;
-	state?: "active" | "blocked" | "review";
+	state?: "active" | "blocked" | "review" | "done";
+	initiative?: string;
 	win?: Win;
 }
 
@@ -35,7 +32,11 @@ export interface Promotion {
 
 const WIN_RULES = `A win is a result with value someone outside the team would recognize: a change merged or deployed, an incident or ticket resolved, a measurable gain in speed, cost, reliability, or toil, a launch, or a doc or tool others adopted.
 Local progress is not a win: drafts, passing local tests, investigations without an outcome, posted but unmerged reviews.
-Write wins for a performance review: what changed, who benefits, and by how much when the transcript says. Cite evidence (review, ticket, pipeline, or metric URLs) from the transcript only. Never invent numbers.`;
+Write wins for a performance review: what changed, who benefits, and by how much when the transcript says. Cite evidence (review, ticket, pipeline, or metric URLs) from the transcript only. Never invent numbers.
+metric, before, and after come only from numbers in the transcript; leave them empty otherwise, since the user is asked for them later.
+category is the main kind of gain. role is led when this engineer drove the change, contributed when they helped others' work. scope says what the win covers: services, regions, hosts, teams, or customers.`;
+
+const WIN_FIELDS = `{"title", "summary", "impact", "evidence": [...], "category": "${CATEGORIES.join(" | ")}", "role": "${ROLES.join(" | ")}", "metric": "what was measured", "before": "value before", "after": "value after", "scope": "..."}`;
 
 export const CURATE_SYSTEM = `You keep a task note current for a software engineer. You get the note and the transcript of the latest agent run on the task.
 
@@ -47,7 +48,8 @@ Reply with one JSON object and nothing else:
   "findings": ["new durable fact, with its source path or URL"],
   "links": [{"url": "...", "label": "short label"}],
   "log": "one line on what this run changed, or empty",
-  "state": "active | blocked | review",
+  "state": "active | blocked | review | done",
+  "initiative": "",
   "win": null
 }
 
@@ -59,8 +61,9 @@ Rules:
 - decisions, findings, and links hold only new entries not already in the note. Findings are facts worth knowing next time: root causes, where code lives, commands that work, gotchas.
 - links: pick only from the candidate URLs, and only ones worth returning to.
 - log is empty when the run changed nothing.
-- state is blocked when waiting on someone else, review when work awaits review or deploy.
-- win: set {"title", "summary", "impact", "evidence": [...]} only when this run reached a milestone that counts as a win, and it is not in the wins already recorded.
+- state is blocked when waiting on someone else, review when work awaits review or deploy, done when the goal is met and nothing in next stays open.
+- initiative: the larger project this task is part of, such as a parent epic, program, or goal, as "<ID>: <name>" when the note or transcript names it. Empty otherwise.
+- win: set ${WIN_FIELDS} only when this run reached a milestone that counts as a win, and it is not in the wins already recorded.
 ${WIN_RULES}`;
 
 export const PROMOTE_SYSTEM = `A task just closed. Move its durable knowledge into topic notes, and record its win.
@@ -77,7 +80,7 @@ Rules:
 - Entries are findings and decisions useful beyond this task. Keep sources.
 - Keep only facts that stay true after the task ends: how a system works, where code lives, root causes, commands, gotchas.
 - Skip open work, status, next steps, ticket relationships (which epic a task belongs to), and ogham bookkeeping. An empty topics list is fine.
-- win: set {"title", "summary", "impact", "evidence": [...]} when the task as a whole delivered a win not already recorded.
+- win: set ${WIN_FIELDS} when the task as a whole delivered a win not already recorded.
 ${WIN_RULES}`;
 
 export function curateInput(note: string, transcript: string, candidates: string[], wins: string): string {
@@ -187,8 +190,6 @@ function jsonObject(text: string): Record<string, unknown> | undefined {
 
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
 
-export const linkText = (text: string) => text.replace(/[[\]]/g, "\\$&");
-
 function strings(value: unknown): string[] {
 	return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").map(oneLine).filter(Boolean) : [];
 }
@@ -198,7 +199,19 @@ function parseWin(value: unknown): Win | undefined {
 	const win = value as Record<string, unknown>;
 	const text = (key: string) => (typeof win[key] === "string" ? oneLine(win[key] as string) : "");
 	if (!text("title") || !text("impact")) return undefined;
-	return { title: text("title"), summary: text("summary"), impact: text("impact"), evidence: strings(win.evidence) };
+	const optional = (key: string) => text(key) || undefined;
+	return {
+		title: text("title"),
+		summary: text("summary"),
+		impact: text("impact"),
+		evidence: strings(win.evidence),
+		category: CATEGORIES.find((item) => item === text("category").toLowerCase()),
+		role: ROLES.find((item) => item === text("role").toLowerCase()),
+		metric: optional("metric"),
+		before: optional("before"),
+		after: optional("after"),
+		scope: optional("scope"),
+	};
 }
 
 /** Keeps only links the run showed; strips credentials everywhere. */
@@ -212,6 +225,7 @@ export function parseCuration(text: string, allowed: readonly string[]): Curatio
 				.filter((link) => allowed.includes(link.url))
 		: [];
 	const state = typeof value.state === "string" ? value.state.trim() : "";
+	const initiative = typeof value.initiative === "string" ? oneLine(value.initiative).slice(0, 120) : "";
 	return {
 		status: typeof value.status === "string" ? value.status.trim() : undefined,
 		next: Array.isArray(value.next) ? strings(value.next) : undefined,
@@ -219,7 +233,8 @@ export function parseCuration(text: string, allowed: readonly string[]): Curatio
 		findings: strings(value.findings),
 		links,
 		log: typeof value.log === "string" ? oneLine(value.log) : undefined,
-		state: state === "active" || state === "blocked" || state === "review" ? state : undefined,
+		state: state === "active" || state === "blocked" || state === "review" || state === "done" ? state : undefined,
+		initiative: initiative || undefined,
 		win: parseWin(value.win),
 	};
 }
@@ -273,24 +288,6 @@ export function applyCuration(text: string, update: Curation, now: Date, worker:
 	return renderNote(note);
 }
 
-export function renderWin(win: Win, now: Date, task: { title: string; file: string }): string {
-	const lines = [`## ${minute(now).slice(0, 10)} ${win.title}`, ""];
-	if (win.summary) lines.push(win.summary, "");
-	lines.push(`- Impact: ${win.impact}`);
-	if (win.evidence.length) lines.push(`- Evidence: ${win.evidence.join(", ")}`);
-	lines.push(`- Task: [${linkText(task.title)}](${task.file})`, "");
-	return lines.join("\n");
-}
-
-/** Recorded wins that link to the task. */
-export function winsFor(wins: string, file: string): string {
-	return wins
-		.split(/^(?=## )/m)
-		.filter((entry) => entry.includes(`](${file})`))
-		.join("")
-		.trim();
-}
-
 export function appendTopic(existing: string | undefined, topic: TopicUpdate, now: Date, taskLink: string): string {
 	const day = minute(now).slice(0, 10);
 	const entries = topic.entries.map((entry) => `- ${entry} (${taskLink})`).join("\n");
@@ -310,6 +307,11 @@ export interface TaskRow {
 	status: string;
 	updated: string;
 	next?: string;
+	closed?: string;
+	resolved?: string;
+	initiative?: string;
+	closeAfter?: string;
+	impactAfter?: string;
 }
 
 export function taskChoices(rows: TaskRow[], max: number): { label: string; ref: string }[] {
@@ -353,8 +355,4 @@ export function renderIndex(rows: TaskRow[], hasWins: boolean): string {
 	}
 	if (hasWins) parts.push("Wins: [wins.md](wins.md)", "");
 	return parts.join("\n").replace(/\n+$/, "\n");
-}
-
-export function relativeLink(from: string, to: string): string {
-	return path.posix.relative(path.posix.dirname(from), to);
 }

@@ -13,8 +13,14 @@ reads the run and rewrites the task note's Status and Next, and appends
 Decisions, Findings, Links and a Log line. Hand edits to Status and Next last
 only until the next run; hand edits elsewhere stay. When a run reaches a milestone
 with value outside the team, such as a merged change, a deploy, or a
-resolved ticket, it adds a win to `wins.md`. `index.md` lists every task
-with its status and next step.
+resolved ticket, it writes a win to `wins/<date>-<title>.md`, with fields
+for initiative, category, role, metric, before, after, and scope.
+`wins.md` lists wins by initiative, and `index.md` lists every task with its
+status and next step.
+
+With `askOnStart`, the start prompt also asks for the measured impact of
+wins and shipped tasks older than 14 days, and offers to close tasks that
+look finished or have not changed in 21 days.
 
 While bound, the system prompt carries the task note and related notes that
 `zg` finds across the repo. `/task done` closes the task, moves its durable

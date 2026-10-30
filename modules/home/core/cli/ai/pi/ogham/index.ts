@@ -26,12 +26,9 @@ import {
 	promoteInput,
 	relativeLink,
 	renderIndex,
-	renderWin,
 	type TaskRow,
-	type Win,
 	linkText,
 	taskChoices,
-	winsFor,
 	withoutBookkeeping,
 } from "./curate.ts";
 import { type Hit, reindex, search } from "./knowledge.ts";
@@ -46,6 +43,7 @@ import {
 	projectFor,
 	projectName,
 	readFrontmatter,
+	refFromNote,
 	renderTask,
 	renderWorker,
 	type Role,
@@ -61,13 +59,32 @@ import {
 	workerNotePath,
 	workerSummary,
 } from "./vault.ts";
+import {
+	addDays,
+	addMeasured,
+	closeDue,
+	FOLLOW_UP_DAYS,
+	type FollowUp,
+	impactDue,
+	legacyWins,
+	parseMeasure,
+	parseWinFile,
+	renderWinFile,
+	renderWinsIndex,
+	type Win,
+	type WinRecord,
+	winFile,
+	winsFor,
+} from "./wins.ts";
 
 const ENTRY = "ogham-task";
 const WINS = "wins.md";
+const WINS_DIR = "wins";
 const INDEX = "index.md";
 const SYNC_ERROR = ".git/ogham-sync-error";
 const MAX_TRANSCRIPT = 60_000;
 const MAX_CONTEXT = 8_000;
+const MAX_FOLLOW_UPS = 3;
 
 interface Binding {
 	ref: TaskRef;
@@ -91,6 +108,7 @@ interface Settings {
 
 const NEW_TASK = "New ticket or title";
 const NO_TASK = "None";
+const CLOSE_IT = "Close it";
 const MAX_CHOICES = 7;
 
 const DESCRIPTION = `Bind this session to an ogham task, a markdown note in the user's notes repo.
@@ -187,6 +205,7 @@ export default function (pi: ExtensionAPI) {
 				const text = await read(abs(file));
 				if (!text) continue;
 				const fields = readFrontmatter(text);
+				const value = (key: string) => fields[key] || undefined;
 				rows.push({
 					project,
 					file,
@@ -194,6 +213,11 @@ export default function (pi: ExtensionAPI) {
 					status: fields.status ?? "active",
 					updated: fields.updated ?? fields.created ?? "",
 					next: firstOpen(text),
+					closed: value("closed"),
+					resolved: value("resolved"),
+					initiative: value("initiative"),
+					closeAfter: value("close_after"),
+					impactAfter: value("impact_after"),
 				});
 			}
 		}
@@ -240,28 +264,72 @@ export default function (pi: ExtensionAPI) {
 			.join("\n");
 	}
 
-	async function recordWin(win: Win, binding: Binding): Promise<void> {
-		const file = taskNotePath(binding.ref);
-		const entry = renderWin(win, new Date(), { title: binding.title, file });
+	async function recordWin(win: Win, binding: Binding, extra: Partial<WinRecord> = {}): Promise<void> {
+		const task = taskNotePath(binding.ref);
+		const initiative = readFrontmatter((await read(abs(task))) ?? "").initiative || undefined;
+		const date = stamp(new Date()).slice(0, 10);
+		await mkdir(abs(WINS_DIR), { recursive: true });
+		for (let n = 1; ; n++) {
+			const file = winFile(date, win.title, n);
+			const record: WinRecord = { ...win, ...extra, file, date, task, initiative };
+			if (await createOnce(abs(file), renderWinFile(record, binding.title))) break;
+		}
+		await writeWins();
+	}
+
+	async function winRecords(): Promise<WinRecord[]> {
+		const dir = abs(WINS_DIR);
+		const names = existsSync(dir) ? (await readdir(dir)).filter((name) => name.endsWith(".md")).sort() : [];
+		const records: WinRecord[] = [];
+		for (const name of names) {
+			const file = path.posix.join(WINS_DIR, name);
+			const record = parseWinFile(file, (await read(abs(file))) ?? "");
+			if (record) records.push(record);
+		}
+		return records;
+	}
+
+	/** Imports old-format entries, then rebuilds wins.md. */
+	async function writeWins(): Promise<void> {
 		await withLock(abs(WINS), async () => {
-			const existing = (await read(abs(WINS))) ?? "# Wins\n\n";
-			await save(abs(WINS), `${existing.replace(/\n*$/, "")}\n\n${entry}`);
+			const legacy = legacyWins((await read(abs(WINS))) ?? "");
+			if (legacy.length) await mkdir(abs(WINS_DIR), { recursive: true });
+			for (const record of legacy) {
+				const title = record.task ? /^# (.+)$/m.exec((await read(abs(record.task))) ?? "")?.[1] : undefined;
+				const initiative = record.task ? readFrontmatter((await read(abs(record.task))) ?? "").initiative || undefined : undefined;
+				await createOnce(abs(record.file), renderWinFile({ ...record, initiative }, title));
+			}
+			const records = await winRecords();
+			if (records.length || existsSync(abs(WINS))) await save(abs(WINS), renderWinsIndex(records));
 		});
+	}
+
+	async function migrateWins(): Promise<void> {
+		const legacy = legacyWins((await read(abs(WINS))) ?? "");
+		if (legacy.some((record) => !existsSync(abs(record.file)))) await writeWins();
 	}
 
 	async function curate(ctx: ExtensionContext, binding: Binding, transcript: string): Promise<void> {
 		const file = abs(taskNotePath(binding.ref));
 		const note = await read(file);
 		if (!note) return;
-		const wins = winsFor((await read(abs(WINS))) ?? "", taskNotePath(binding.ref));
+		const wins = winsFor(await winRecords(), taskNotePath(binding.ref));
 		const candidates = candidateUrls(transcript, note);
 		const reply = await ask(ctx, CURATE_SYSTEM, curateInput(note, clip(transcript, MAX_TRANSCRIPT), candidates, wins));
 		const update = parseCuration(reply, candidates);
 		if (!update) throw new Error("curator reply was not JSON");
 		const now = new Date();
 		await edit(file, (text) => {
+			const current = readFrontmatter(text);
 			const fields: Record<string, string> = { updated: stamp(now) };
-			if (update.state && readFrontmatter(text).status !== "done") fields.status = update.state;
+			// A person confirms done through the close prompt.
+			if (current.status !== "done" && update.state === "done") {
+				if (!current.resolved) fields.resolved = stamp(now).slice(0, 10);
+			} else if (current.status !== "done" && update.state) {
+				fields.status = update.state;
+				if (current.resolved) fields.resolved = "";
+			}
+			if (update.initiative && !current.initiative) fields.initiative = update.initiative;
 			return setFrontmatter(applyCuration(text, update, now, workerId(session)), fields);
 		});
 		if (update.win) await recordWin(update.win, binding);
@@ -283,7 +351,7 @@ export default function (pi: ExtensionAPI) {
 	async function promote(ctx: ExtensionContext, binding: Binding): Promise<string[]> {
 		const file = taskNotePath(binding.ref);
 		const note = (await read(abs(file))) ?? "";
-		const wins = winsFor((await read(abs(WINS))) ?? "", file);
+		const wins = winsFor(await winRecords(), file);
 		const reply = await ask(ctx, PROMOTE_SYSTEM, promoteInput(clip(note, MAX_TRANSCRIPT), await topicList(), wins));
 		const promotion = parsePromotion(reply);
 		if (!promotion) throw new Error("promotion reply was not JSON");
@@ -305,7 +373,7 @@ export default function (pi: ExtensionAPI) {
 			if (promotion.win) lines.push(`- ${stamp(now).replace("T", " ")} ${workerId(session)} win: ${promotion.win.title}`);
 			await edit(abs(file), (text) => renderNote(appendLines(parseNote(text), "Log", lines)));
 		}
-		return [...names.map((name) => `topics/${name}.md`), ...(promotion.win ? [WINS] : [])];
+		return [...names.map((name) => `topics/${name}.md`), ...(promotion.win ? [WINS_DIR] : [])];
 	}
 
 	async function findRelated(binding: Binding): Promise<void> {
@@ -385,28 +453,92 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	async function askForTask(ctx: ExtensionContext): Promise<void> {
-		const choices = taskChoices(await taskRows(), MAX_CHOICES);
-		const choice = await ctx.ui.select("Ogham task for this session?", [
-			NEW_TASK,
-			...choices.map((item) => item.label),
-			NO_TASK,
-		]);
-		// The user may bind with /task while the dialog is open.
-		if (!choice || choice === NO_TASK || bound) return;
-		if (choice === NEW_TASK) {
-			const input = (await ctx.ui.input("Ticket URL or task title", "https://..."))?.trim();
-			if (input && !bound) ctx.ui.notify(await startFrom(ctx, input), "info");
-			return;
+		const handled = new Set<string>();
+		for (;;) {
+			const today = stamp(new Date()).slice(0, 10);
+			const rows = (await taskRows()).filter((row) => !handled.has(row.file));
+			const wins = (await winRecords()).filter((win) => !handled.has(win.file));
+			const due = [...impactDue(wins, rows, today, MAX_FOLLOW_UPS), ...closeDue(rows, today, MAX_FOLLOW_UPS)];
+			// true ends the prompt; follow-ups loop back.
+			const entries: { label: string; run: () => Promise<boolean> }[] = [
+				{
+					label: NEW_TASK,
+					run: async () => {
+						const input = (await ctx.ui.input("Ticket URL or task title", "https://..."))?.trim();
+						if (input && !bound) ctx.ui.notify(await startFrom(ctx, input), "info");
+						return true;
+					},
+				},
+				...taskChoices(rows, MAX_CHOICES).map((item) => ({
+					label: item.label,
+					run: async () => {
+						ctx.ui.notify(await join(ctx, item.ref, "worker"), "info");
+						return true;
+					},
+				})),
+				...due.map((item) => ({
+					label: item.label,
+					run: async () => {
+						handled.add(item.file);
+						await followUp(ctx, item);
+						return false;
+					},
+				})),
+				{ label: NO_TASK, run: async () => true },
+			];
+			const seen = new Set<string>();
+			for (const entry of entries) {
+				let label = entry.label;
+				for (let n = 2; seen.has(label); n++) label = `${entry.label} (${n})`;
+				entry.label = label;
+				seen.add(label);
+			}
+			const choice = await ctx.ui.select("Ogham task for this session?", entries.map((entry) => entry.label));
+			// The user may bind with /task while the dialog is open.
+			if (!choice || bound) return;
+			const entry = entries.find((item) => item.label === choice);
+			if (!entry || (await entry.run())) return;
 		}
-		const ref = choices.find((item) => item.label === choice)?.ref;
-		if (ref) ctx.ui.notify(await join(ctx, ref, "worker"), "info");
 	}
 
-	async function finish(ctx: ExtensionContext): Promise<string> {
-		if (!bound) throw new Error("No ogham task bound.");
-		const binding = bound;
-		await pending;
-		showStatus(ctx, "promoting");
+	async function followUp(ctx: ExtensionContext, item: FollowUp): Promise<void> {
+		const today = stamp(new Date()).slice(0, 10);
+		const later = addDays(today, FOLLOW_UP_DAYS);
+		const ref = refFromNote(item.file);
+		if (item.kind === "close") {
+			const answer = await ctx.ui.select(`Close "${item.title}"?`, [CLOSE_IT, `Not yet, ask in ${FOLLOW_UP_DAYS} days`]);
+			if (answer === CLOSE_IT && ref) {
+				const binding: Binding = { ref, title: item.title, role: "worker" };
+				pending = pending.then(() => quietly(ctx, async () => ctx.ui.notify(await closeTask(ctx, binding), "info")));
+			} else if (answer) {
+				await edit(abs(item.file), (text) => setFrontmatter(text, { close_after: later }));
+			}
+			return;
+		}
+		const answer = (await ctx.ui.input(`Measured impact of "${item.title}"`, "metric: before -> after, or none"))?.trim();
+		if (!answer || /^none$/i.test(answer)) {
+			await edit(abs(item.file), (text) => setFrontmatter(text, { impact_after: answer ? "never" : later }));
+			return;
+		}
+		const measure = parseMeasure(answer) ?? {};
+		if (item.kind === "impact-win") {
+			const fields = { measured: today, result: answer, ...measure };
+			await edit(abs(item.file), (text) => addMeasured(setFrontmatter(text, fields), today, answer));
+			await writeWins();
+			return;
+		}
+		if (!ref) return;
+		const note = (await read(abs(item.file))) ?? "";
+		const link = readFrontmatter(note).link;
+		const summary = getSection(parseNote(note), "Status");
+		const win: Win = { title: item.title, summary, impact: answer, evidence: link ? [link] : [], ...measure };
+		await recordWin(win, { ref, title: item.title, role: "worker" }, { measured: today, result: answer });
+		const line = `- ${stamp(new Date()).replace("T", " ")} ${workerId(session)} win: ${item.title}`;
+		await edit(abs(item.file), (text) => renderNote(appendLines(parseNote(text), "Log", [line])));
+	}
+
+	/** Promotes knowledge and marks the task done. */
+	async function closeTask(ctx: ExtensionContext, binding: Binding): Promise<string> {
 		let promoted: string[] = [];
 		let failure = "";
 		try {
@@ -414,17 +546,25 @@ export default function (pi: ExtensionAPI) {
 		} catch (error) {
 			failure = ` Promotion failed: ${(error as Error).message}.`;
 		}
-		await edit(abs(taskNotePath(binding.ref)), (text) =>
-			setFrontmatter(text, { status: "done", closed: stamp(new Date()), updated: stamp(new Date()) }),
-		);
-		await updateWorker("done");
+		const now = stamp(new Date());
+		await edit(abs(taskNotePath(binding.ref)), (text) => setFrontmatter(text, { status: "done", closed: now, updated: now }));
 		await writeIndex();
 		refreshIndex();
+		const moved = promoted.length ? ` Wrote ${promoted.join(", ")}.` : "";
+		return `Closed ${formatRef(binding.ref)}.${moved}${failure}`;
+	}
+
+	async function finish(ctx: ExtensionContext): Promise<string> {
+		if (!bound) throw new Error("No ogham task bound.");
+		const binding = bound;
+		await pending;
+		showStatus(ctx, "promoting");
+		const text = await closeTask(ctx, binding);
+		await updateWorker("done");
 		bound = undefined;
 		pi.appendEntry(ENTRY, null);
 		showStatus(ctx);
-		const moved = promoted.length ? ` Wrote ${promoted.join(", ")}.` : "";
-		return `Closed ${formatRef(binding.ref)}.${moved}${failure}`;
+		return text;
 	}
 
 	function joinHint(ref: string): string {
@@ -507,6 +647,8 @@ export default function (pi: ExtensionAPI) {
 		related = [];
 		// ogham sync writes it when a rebase conflicts.
 		if (existsSync(abs(SYNC_ERROR))) ctx.ui.notify(`ogham: sync is stuck; resolve ${vault} by hand.`, "warning");
+		// Not awaited: other extensions' session_start waits on ours.
+		const migrating = existsSync(vault) ? quietly(ctx, () => migrateWins()) : Promise.resolve();
 		const branch = ctx.sessionManager.getBranch();
 		for (let i = branch.length - 1; i >= 0; i--) {
 			const entry = branch[i];
@@ -522,9 +664,8 @@ export default function (pi: ExtensionAPI) {
 		}
 		const fresh = event.reason === "startup" || event.reason === "new";
 		const empty = !branch.some((entry) => entry.type === "message");
-		// Not awaited: other extensions' session_start waits on ours.
 		if (settings.askOnStart && ctx.mode === "tui" && fresh && empty && existsSync(vault)) {
-			void quietly(ctx, () => askForTask(ctx));
+			void migrating.then(() => quietly(ctx, () => askForTask(ctx)));
 		}
 	});
 
