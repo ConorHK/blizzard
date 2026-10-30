@@ -9,6 +9,7 @@ import {
 	parseRef,
 	projectFor,
 	readFrontmatter,
+	refFromNote,
 	renderTask,
 	renderWorker,
 	setFrontmatter,
@@ -29,12 +30,23 @@ import {
 	parseCuration,
 	parsePromotion,
 	renderIndex,
-	renderWin,
 	scrubUrl,
 	taskChoices,
-	winsFor,
 	withoutBookkeeping,
 } from "./ogham/curate.ts";
+import {
+	addDays,
+	addMeasured,
+	closeDue,
+	impactDue,
+	legacyWins,
+	parseMeasure,
+	parseWinFile,
+	renderWinFile,
+	renderWinsIndex,
+	winFile,
+	winsFor,
+} from "./ogham/wins.ts";
 import { parseHits } from "./ogham/knowledge.ts";
 import { withLock } from "./ogham/lock.ts";
 import { appendLines, getSection, parseNote, renderNote, setSection } from "./ogham/note.ts";
@@ -163,7 +175,7 @@ test("curator replies parse defensively", () => {
 	assert.equal(update.state, "review");
 	assert.equal(update.win, undefined);
 	assert.equal(parseCuration("no json here", []), undefined);
-	assert.equal(parseCuration('{"state": "done"}', [])?.state, undefined);
+	assert.equal(parseCuration('{"state": "finished"}', [])?.state, undefined);
 
 	const signed = "https://bucket.example/log.txt?X-Amz-Signature=abc&X-Amz-Credential=def";
 	const scrubbed = parseCuration(
@@ -234,16 +246,6 @@ test("urls, clipping, and zg hits", () => {
 });
 
 test("wins, topics, and the index", () => {
-	const task = { title: "A-1: Fix sync", file: "projects/blizzard/a-1/a-1.md" };
-	const win = renderWin({ title: "Sync ships", summary: "Notes sync.", impact: "No lost notes", evidence: ["https://cr.example/1"] }, now, task);
-	assert.equal(
-		win,
-		"## 2026-10-20 Sync ships\n\nNotes sync.\n\n- Impact: No lost notes\n- Evidence: https://cr.example/1\n- Task: [A-1: Fix sync](projects/blizzard/a-1/a-1.md)\n",
-	);
-	const wins = `# Wins\n\n${win}\n## 2026-10-21 Other\n\n- Impact: x\n- Task: [B](projects/x/b/b.md)\n`;
-	assert.equal(winsFor(wins, task.file), win.trim());
-	assert.equal(winsFor(wins, "projects/none.md"), "");
-
 	const topic = { slug: "sync", title: "Sync", summary: "How notes sync.", entries: ["flock guards runs"] };
 	const created = appendTopic(undefined, topic, now, "[A-1](../projects/blizzard/a-1/a-1.md)");
 	assert.equal(created, "---\ntype: topic\n---\n# Sync\n\nHow notes sync.\n\n## 2026-10-20\n\n- flock guards runs ([A-1](../projects/blizzard/a-1/a-1.md))\n");
@@ -310,4 +312,167 @@ test("locks serialize writers", async () => {
 	await Promise.all([slow("a"), slow("b")]);
 	assert.ok(order.join(",") === "a+,a-,b+,b-" || order.join(",") === "b+,b-,a+,a-", order.join(","));
 	assert.equal(statSync(path.join(homedir(), ".cache", "ogham-locks")).mode & 0o777, 0o700);
+});
+
+test("curator reports initiative, done, and win fields", () => {
+	const reply = `{"state": "done", "initiative": "DPS-18081: NDDS  pipeline health", "win": {"title": "RUH restored", "impact": "3 hosts serve",
+	"category": "Reliability", "role": "boss", "metric": "canary failures per 5 min", "before": "20", "after": "0", "scope": "EC2 RUH"}}`;
+	const update = parseCuration(reply, []);
+	assert.equal(update?.state, "done");
+	assert.equal(update?.initiative, "DPS-18081: NDDS pipeline health");
+	assert.deepEqual(update?.win, {
+		title: "RUH restored",
+		summary: "",
+		impact: "3 hosts serve",
+		evidence: [],
+		category: "reliability",
+		role: undefined,
+		metric: "canary failures per 5 min",
+		before: "20",
+		after: "0",
+		scope: "EC2 RUH",
+	});
+	assert.equal(parseCuration('{"initiative": "  "}', [])?.initiative, undefined);
+});
+
+test("win files round trip and list by initiative", () => {
+	const file = winFile("2026-10-30", "RUH: restored [3/3]");
+	assert.equal(file, "wins/2026-10-30-ruh-restored-3-3.md");
+	assert.equal(winFile("2026-10-30", "RUH", 2), "wins/2026-10-30-ruh-2.md");
+	const record = {
+		file,
+		date: "2026-10-30",
+		title: "RUH: restored [3/3]",
+		summary: "Replacement host serves.",
+		impact: "Clears the pipeline blocker",
+		evidence: ["https://t.example/V1", "https://p.example/2"],
+		task: "projects/ndds/dps-1/dps-1.md",
+		initiative: "DPS-9: Pipeline health",
+		category: "reliability" as const,
+		role: "led" as const,
+		metric: "canary failures per 5 min",
+		before: "20",
+		after: "0",
+		scope: "",
+	};
+	const text = renderWinFile(record, "DPS-1: [NDDS] Unblock");
+	assert.match(text, /^---\ntype: win\ndate: 2026-10-30\ntask: projects\/ndds\/dps-1\/dps-1\.md\ninitiative: "DPS-9: Pipeline health"\n/);
+	assert.doesNotMatch(text, /scope:/);
+	assert.match(text, /\n- Task: \[DPS-1: \\\[NDDS\\\] Unblock\]\(\.\.\/projects\/ndds\/dps-1\/dps-1\.md\)\n$/);
+	assert.deepEqual(parseWinFile(file, text), { ...record, scope: undefined, measured: undefined, result: undefined, impactAfter: undefined });
+	assert.equal(parseWinFile("wins/x.md", "---\ntype: task\n---\n# X\n"), undefined);
+
+	const measured = parseWinFile(file, addMeasured(setFrontmatter(text, { measured: "2026-11-14", result: "pages: 5 -> 1" }), "2026-11-14", "pages: 5 -> 1"));
+	assert.equal(measured?.measured, "2026-11-14");
+	assert.equal(measured?.impact, "Clears the pipeline blocker");
+
+	const other = { ...record, file: "wins/2026-09-01-a.md", date: "2026-09-01", title: "A", initiative: undefined, category: undefined, role: undefined, metric: undefined, after: undefined, result: "faster" };
+	const newer = { ...record, file: "wins/2026-11-01-b.md", date: "2026-11-01", title: "B", metric: undefined, after: undefined };
+	assert.equal(
+		renderWinsIndex([other, record, newer]),
+		[
+			"# Wins",
+			"",
+			"<!-- ogham builds this from wins/; edits here are lost. -->",
+			"",
+			"## DPS-9: Pipeline health",
+			"",
+			"- 2026-11-01 [B](wins/2026-11-01-b.md): reliability, led. Clears the pipeline blocker",
+			"- 2026-10-30 [RUH: restored \\[3/3\\]](wins/2026-10-30-ruh-restored-3-3.md): reliability, led. canary failures per 5 min: 20 -> 0",
+			"",
+			"## No initiative",
+			"",
+			"- 2026-09-01 [A](wins/2026-09-01-a.md): faster",
+			"",
+		].join("\n"),
+	);
+	assert.equal(winsFor([other, record], record.task), "- 2026-09-01 A: Clears the pipeline blocker\n- 2026-10-30 RUH: restored [3/3]: Clears the pipeline blocker");
+	assert.equal(winsFor([record], "projects/none.md"), "");
+});
+
+test("old wins.md entries migrate", () => {
+	const old = [
+		"# Wins",
+		"",
+		"## 2026-10-30 EC2-RUH ruh60 slot restored",
+		"",
+		"Replacement host serves.",
+		"",
+		"- Impact: Restores RUH capacity to 3 hosts.",
+		"- Evidence: https://t.example/V2396853391, https://a.example/1145519297904",
+		"- Task: [DPS-19023: \\[NDDS\\] Unblock pipeline](projects/networkdevicediscoveryservice/dps-19023/dps-19023.md)",
+		"",
+		"## No initiative",
+		"",
+		"- 2026-09-01 [A](wins/2026-09-01-a.md): faster",
+		"",
+	].join("\n");
+	assert.deepEqual(legacyWins(old), [
+		{
+			file: "wins/2026-10-30-ec2-ruh-ruh60-slot-restored.md",
+			date: "2026-10-30",
+			title: "EC2-RUH ruh60 slot restored",
+			summary: "Replacement host serves.",
+			impact: "Restores RUH capacity to 3 hosts.",
+			evidence: ["https://t.example/V2396853391", "https://a.example/1145519297904"],
+			task: "projects/networkdevicediscoveryservice/dps-19023/dps-19023.md",
+		},
+	]);
+	assert.deepEqual(legacyWins(renderWinsIndex([])), []);
+});
+
+test("measures, days, and note paths", () => {
+	assert.deepEqual(parseMeasure(" time to deploy: 3 h -> 40 min "), { metric: "time to deploy", before: "3 h", after: "40 min" });
+	assert.equal(parseMeasure("about half the pages"), undefined);
+	assert.equal(addDays("2026-10-30", 14), "2026-11-13");
+	assert.equal(addDays("2026-12-25", 7), "2027-01-01");
+	assert.deepEqual(refFromNote("projects/blizzard/dps-1/dps-1.md"), { project: "blizzard", slug: "dps-1" });
+	assert.equal(refFromNote("projects/blizzard/dps-1/workers/x.md"), undefined);
+});
+
+test("follow-ups ask for impact and closing", () => {
+	const today = "2026-11-20";
+	const task = (slug: string, status: string, updated: string, more = {}) => ({
+		project: "p",
+		file: `projects/p/${slug}/${slug}.md`,
+		title: slug.toUpperCase(),
+		status,
+		updated,
+		...more,
+	});
+	const win = (name: string, date: string, more = {}) => ({ file: `wins/${name}.md`, date, title: name, summary: "", impact: "i", evidence: [], ...more });
+	const wins = [
+		win("old", "2026-10-30", { task: "projects/p/a/a.md" }),
+		win("fresh", "2026-11-10"),
+		win("measured", "2026-10-01", { measured: "2026-10-20" }),
+		win("numbers", "2026-10-01", { metric: "m", after: "1" }),
+		win("snoozed", "2026-10-01", { impactAfter: "2026-11-25" }),
+		win("never", "2026-10-01", { impactAfter: "never" }),
+		win("woke", "2026-10-02", { impactAfter: "2026-11-20" }),
+	];
+	const tasks = [
+		task("a", "done", "2026-10-30T10:00", { closed: "2026-10-30T10:00" }),
+		task("b", "review", "2026-11-01T10:00"),
+		task("c", "done", "2026-11-15T10:00", { closed: "2026-11-15T10:00" }),
+		task("d", "active", "2026-10-01T10:00"),
+		task("e", "active", "2026-11-19T10:00", { resolved: "2026-11-19" }),
+		task("f", "active", "2026-10-01T10:00", { closeAfter: "2026-12-01" }),
+		task("g", "blocked", "2026-11-18T10:00"),
+	];
+	assert.deepEqual(
+		impactDue(wins, tasks, today, 5).map((item) => [item.kind, item.label]),
+		[
+			["impact-win", "Impact: woke"],
+			["impact-win", "Impact: old"],
+			["impact-task", "Impact: p: B"],
+		],
+	);
+	assert.equal(impactDue(wins, tasks, today, 1).length, 1);
+	assert.deepEqual(
+		closeDue(tasks, today, 5).map((item) => [item.kind, item.label, item.file]),
+		[
+			["close", "Close: p: E", "projects/p/e/e.md"],
+			["close", "Close: p: D", "projects/p/d/d.md"],
+		],
+	);
 });

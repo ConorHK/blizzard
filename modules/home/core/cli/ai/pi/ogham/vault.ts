@@ -21,6 +21,12 @@ export interface WorkerInfo {
 	now: Date;
 }
 
+export const linkText = (text: string) => text.replace(/[[\]]/g, "\\$&");
+
+export function relativeLink(from: string, to: string): string {
+	return path.posix.relative(path.posix.dirname(from), to);
+}
+
 export function slugify(text: string): string {
 	const slug = text
 		.toLowerCase()
@@ -63,6 +69,12 @@ export function taskNotePath(ref: TaskRef): string {
 	return path.posix.join(taskDir(ref), `${ref.slug}.md`);
 }
 
+/** Inverse of taskNotePath. */
+export function refFromNote(file: string): TaskRef | undefined {
+	const match = /^projects\/([^/]+)\/([^/]+)\/\2\.md$/.exec(file);
+	return match ? { project: match[1], slug: match[2] } : undefined;
+}
+
 export function workerId(session: string): string {
 	return session.slice(0, 8);
 }
@@ -83,7 +95,7 @@ export function yamlValue(value: string): string {
 	return JSON.stringify(value);
 }
 
-function frontmatter(fields: Record<string, string | undefined>): string {
+export function frontmatter(fields: Record<string, string | undefined>): string {
 	const lines = Object.entries(fields)
 		.filter((entry): entry is [string, string] => entry[1] !== undefined)
 		.map(([key, value]) => `${key}: ${yamlValue(value)}`);

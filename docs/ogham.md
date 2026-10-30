@@ -31,10 +31,12 @@ session warns while it exists, and the next clean sync removes it.
 
 Three rules keep conflicts rare:
 
-- `index.md` is rebuilt on each host from the task notes, so it stays out of
-  git.
-- `wins.md` and `topics/*.md` only grow at the end, so they merge with git's
-  `union` driver, which keeps both sides (`.git/info/attributes`).
+- `index.md` and `wins.md` are rebuilt on each host from the notes, so they
+  stay out of git. A `wins.md` in the old single-file format stays synced
+  until pi migrates it, which adds a marker line that sync looks for.
+- Each win is its own file, and `topics/*.md` only grow at the end, so topics
+  merge with git's `union` driver, which keeps both sides
+  (`.git/info/attributes`).
 - Worker notes are written by one session only.
 
 Two hosts that edit the same task note within 5 minutes still conflict, and
@@ -44,7 +46,8 @@ a person resolves it.
 
 ```
 index.md                 every task: status, updated, next step (local)
-wins.md                  career wins, newest last
+wins.md                  every win, grouped by initiative (local)
+wins/<date>-<title>.md   one win: fields in frontmatter, story in the body
 topics/<topic>.md        durable knowledge, dated entries
 projects/<repo>/<slug>/
   <slug>.md              Goal, Status, Next, Decisions, Findings, Links, Log, Workers
@@ -63,7 +66,8 @@ with the two segments before it (`blizzard-pull-42`), since numbers repeat
 across repos.
 
 With `askOnStart`, a new interactive session asks for its task. It offers
-a new ticket or title, the 7 most recently updated open tasks, and None.
+a new ticket or title, the 7 most recently updated open tasks, any
+follow-ups (see below), and None.
 A new ticket goes through the same path as `/task`. None or Escape leaves
 the session unbound. Resumed and reloaded sessions, sessions with messages,
 workers started with `OGHAM_TASK`, and print, json and rpc modes never ask.
@@ -106,6 +110,47 @@ Local progress is not a win. The curator records a win when a run reaches
 such a milestone; `/task done` records the task's overall win if none is
 recorded. The prompt includes the wins already recorded for the task, so
 they are not repeated. `winGuidance` adds the user's own rules.
+
+Wins are the career-review dataset, so each one is a file whose frontmatter
+holds fields that a query (for example Obsidian Dataview) can group and
+filter:
+
+| Field | Meaning |
+|---|---|
+| `date`, `task` | when, and the task note it came from |
+| `initiative` | the larger project, copied from the task |
+| `category` | reliability, latency, cost, toil, security, quality, launch, other |
+| `role` | led or contributed |
+| `metric`, `before`, `after` | the measured change, only from real numbers |
+| `scope` | services, regions, hosts, teams, or customers covered |
+| `measured`, `result` | when the user added the measured result, and their words |
+| `impact_after` | snooze date for the impact prompt, or `never` |
+
+The body keeps the title, summary, impact, evidence links, and a link back to
+the task. `wins.md` lists every win under its initiative, newest first.
+
+A task's initiative is its parent epic, program, or goal, as `<ID>: <name>`.
+The curator sets `initiative` in the task's frontmatter the first time a run
+names it, and never overwrites it, so a hand edit wins.
+
+## Follow-ups
+
+Impact usually shows up weeks after a change ships, and the curator never
+invents numbers. With `askOnStart`, the start prompt also lists up to 3 of
+each:
+
+- `Impact:` a win older than 14 days with no `after` or `measured`, or a task
+  in review or done for 14 days with no win. The answer, ideally
+  `metric: before -> after`, goes into the win's fields; for a task, it
+  creates the win. Escape asks again in 14 days; `none` stops asking.
+- `Close:` an open task the curator marked `resolved` (its goal is met and
+  nothing in Next stays open), or one not updated in 21 days. "Close it" runs
+  the same close as `/task done` in the background; "Not yet" asks again in
+  14 days (`close_after`). A later run that reports work in progress clears
+  `resolved`.
+
+After a follow-up the prompt shows again, so the session can still pick its
+task.
 
 ## Knowledge
 

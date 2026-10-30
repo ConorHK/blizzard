@@ -38,7 +38,7 @@ add_line() {
     || echo "$2" >>"$vault/.git/info/$1"
 }
 
-# Search and index.md are per host; .tmp precedes renames.
+# Search, index.md and wins.md are per host; .tmp precedes renames.
 exclude() {
   [ -d "$vault/.git" ] || return 0
   mkdir -p "$vault/.git/info"
@@ -46,6 +46,11 @@ exclude() {
     add_line exclude "$pattern"
   done
   git -C "$vault" rm -q --cached --ignore-unmatch -- index.md
+  # Old wins.md stays synced until pi migrates it.
+  if grep -qF 'ogham builds this from wins/' "$vault/wins.md" 2>/dev/null; then
+    add_line exclude /wins.md
+    git -C "$vault" rm -q --cached --ignore-unmatch -- wins.md
+  fi
   # Append-only notes merge by keeping both sides.
   for pattern in /wins.md '/topics/*.md'; do
     add_line attributes "$pattern merge=union"

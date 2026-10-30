@@ -80,7 +80,7 @@
             test "$(cat desk/b.md)" = laptop
             test "$(cat laptop/a.md)" = desk
 
-            # Both hosts append a win; union merge keeps both.
+            # An unmigrated wins.md still syncs and merges by union.
             echo '# Wins' >desk/wins.md
             ${ogham} sync desk
             ${ogham} sync laptop
@@ -92,6 +92,31 @@
             grep -qx laptop-win laptop/wins.md
             ${ogham} sync desk
             test "$(wc -l <desk/wins.md)" = 3
+
+            # Rebuilt wins.md turns local; wins/ files sync.
+            mkdir desk/wins
+            echo win >desk/wins/2026-10-30-a.md
+            printf '# Wins\n\n<!-- ogham builds this from wins/; edits here are lost. -->\n' >desk/wins.md
+            ${ogham} sync desk
+            if git -C hub.git cat-file -e mainline:wins.md; then exit 1; fi
+            grep -qx /wins.md desk/.git/info/exclude
+            if grep -qx /wins.md laptop/.git/info/exclude; then exit 1; fi
+            git -C hub.git cat-file -e mainline:wins/2026-10-30-a.md
+            grep -q 'ogham builds' desk/wins.md
+            ${ogham} sync laptop
+            test "$(cat laptop/wins/2026-10-30-a.md)" = win
+
+            # Topics merge by keeping both sides.
+            mkdir -p desk/topics
+            echo '# T' >desk/topics/t.md
+            ${ogham} sync desk
+            ${ogham} sync laptop
+            echo desk-fact >>desk/topics/t.md
+            echo laptop-fact >>laptop/topics/t.md
+            ${ogham} sync desk
+            ${ogham} sync laptop
+            grep -qx desk-fact laptop/topics/t.md
+            grep -qx laptop-fact laptop/topics/t.md
 
             # A real conflict stops sync and leaves a marker.
             echo desk2 >desk/a.md
