@@ -138,7 +138,7 @@ in
             mam-updater = {
               containerConfig = {
                 # renovate: datasource=docker depName=docker.io/alpine/curl
-                image = "docker.io/alpine/curl:8.22.0";
+                image = "docker.io/alpine/curl:8.23.0";
                 entrypoint = "/bin/sh";
                 exec = "/update.sh";
                 volumes = [
