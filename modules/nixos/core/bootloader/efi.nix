@@ -8,9 +8,6 @@
         efivar
         fwupd
       ];
-      boot = {
-        initrd.systemd.enable = true;
-        loader.efi.canTouchEfiVariables = true;
-      };
+      boot.loader.efi.canTouchEfiVariables = true;
     };
 }
