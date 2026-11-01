@@ -12,10 +12,11 @@ in
         inherit value;
       };
 
-      # Every nginx vhost points at its host.
+      # Every nginx vhost and alias points at its host.
       vhostRecords = lib.concatMapAttrs (
         host: nixos:
         lib.pipe nixos.config.services.nginx.virtualHosts [
+          (lib.concatMapAttrs (name: vhost: lib.genAttrs ([ name ] ++ vhost.serverAliases) (_: null)))
           lib.attrNames
           (lib.filter (lib.hasSuffix ".goosebox.org"))
           (map (
