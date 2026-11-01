@@ -32,6 +32,9 @@
     pi.inputs.nixpkgs-darwin-x64.follows = "nixpkgs";
     pi.inputs.nixpkgs.follows = "nixpkgs";
     pi.url = "github:earendil-works/pi/stable";
+    podgetv.inputs.nixpkgs.follows = "nixpkgs";
+    podgetv.inputs.flake-parts.follows = "flake-parts";
+    podgetv.url = "github:ConorHK/podgetv";
     plugins-alduin = {
       url = "github:conorhk/alduin.nvim";
       flake = false;

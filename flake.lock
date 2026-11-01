@@ -903,6 +903,29 @@
         "type": "github"
       }
     },
+    "podgetv": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793545850,
+        "narHash": "sha256-hTnYF2EVR97qZ0Xvt3ODCJj9anwgGzXusphTSizyuNA=",
+        "owner": "ConorHK",
+        "repo": "podgetv",
+        "rev": "8f7364ad0bdd6f06e735b6b7599b4d23eb0ff2d3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ConorHK",
+        "repo": "podgetv",
+        "type": "github"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat_5",
@@ -982,6 +1005,7 @@
         "nixpkgs": "nixpkgs_3",
         "pi": "pi",
         "plugins-alduin": "plugins-alduin",
+        "podgetv": "podgetv",
         "quadlet-nix": "quadlet-nix",
         "stylix": "stylix",
         "textfox": "textfox",

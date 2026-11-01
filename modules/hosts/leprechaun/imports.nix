@@ -53,6 +53,7 @@
       paperless
       photon
       pi
+      podgetv-offline
       podman
       podman-egress-watchdog
       prometheus
