@@ -84,6 +84,8 @@ in
           # flake check eval peaks near 8.3G.
           MemoryHigh = "10G";
           MemoryMax = "12G";
+          # Reads the token that fetches private flake inputs.
+          SupplementaryGroups = [ "nix-github" ];
         };
       };
 
