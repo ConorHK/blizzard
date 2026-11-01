@@ -54,6 +54,7 @@
       photon
       pi
       podgetv-offline
+      podgetv-picks
       podman
       podman-egress-watchdog
       prometheus
