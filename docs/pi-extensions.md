@@ -4,7 +4,7 @@ Pi extensions come from two places.
 
 - npm packages, pinned in one lockfile and built by Nix without running
   npm.
-- Local extensions in the repo (`advisor/`, `checkpoint/`, `ogham/`, `ttsr/`, and
+- Local extensions in the repo (`advisor/`, `ogham/`, `ttsr/`, and
   single `.ts` files), built as flake packages or used as plain paths.
 
 ## npm packages
@@ -75,9 +75,9 @@ These live as source in
 [`modules/home/core/cli/ai/pi/`](../modules/home/core/cli/ai/pi/). Two
 shapes exist.
 
-- Directories become a flake package (`packages.pi-checkpoint`,
+- Directories become a flake package (`packages.pi-advisor`,
   `packages.pi-ttsr`), registered through `programs.pi.extensionDirs`. See
-  [`pi-checkpoint.nix`](../modules/home/core/cli/ai/pi/pi-checkpoint.nix).
+  [`pi-advisor.nix`](../modules/home/core/cli/ai/pi/pi-advisor.nix).
 - Single files go straight in, as in
   `programs.pi.extensions.bash-highlight = ./bash-highlight.ts;`
   ([`pi-bash-highlight.nix`](../modules/home/core/cli/ai/pi/pi-bash-highlight.nix)).

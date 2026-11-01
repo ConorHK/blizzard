@@ -44,8 +44,6 @@ function textOf(content: unknown): string {
 function renderEntry(entry: EntryLike): string | undefined {
 	if (entry.type === "custom_message") {
 		if (entry.customType === ADVISOR_NOTE_TYPE) return undefined;
-		// The report replaces pruned exploration.
-		if (entry.customType === "rewind-report") return `**Checkpoint report:**\n${textOf(entry.content)}`;
 		return `**Context (${entry.customType}):** ${elide(textOf(entry.content), MAX_CONTEXT_MESSAGE)}`;
 	}
 	if (entry.type === "compaction" || entry.type === "branch_summary") {

@@ -19,7 +19,6 @@ import { type DeliveryChannel, deliveryChannel, EmissionGuard, normalizeNote, SE
 import { NoteCard, type NoteDetails } from "./render.ts";
 import { ADVISOR_NOTE_TYPE, MAX_REPLAY_CHARS, renderAdvisory, renderUpdate } from "./transcript.ts";
 
-const REWOUND_EVENT = "checkpoint:rewound";
 const MAX_FAILURES = 3;
 // Strict sync never hangs a session forever.
 const STRICT_WAIT_MS = 10 * 60_000;
@@ -391,11 +390,6 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_compact", () => {
 		resetAdvisor();
 		cursor = undefined;
-	});
-
-	pi.events.on(REWOUND_EVENT, () => {
-		resetAdvisor();
-		cursor = lastCtx?.sessionManager.getLeafId() ?? undefined;
 	});
 
 	pi.on("agent_start", (_event, ctx) => {

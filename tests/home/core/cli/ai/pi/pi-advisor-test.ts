@@ -53,7 +53,6 @@ test("update renders turns and skips own notes", () => {
 			},
 			{ type: "message", message: { role: "toolResult", toolName: "read", content: [{ type: "text", text: "x".repeat(3000) }] } },
 			{ type: "custom_message", customType: "advisor-note", content: "old advice" },
-			{ type: "custom_message", customType: "rewind-report", content: "found the bug" },
 		],
 		true,
 	);
@@ -64,7 +63,6 @@ test("update renders turns and skips own notes", () => {
 	assert.match(text, /Tool call `read`/);
 	assert.match(text, /\[elided 500 chars\]/);
 	assert.doesNotMatch(text, /old advice/);
-	assert.match(text, /Checkpoint report:\*\*\nfound the bug/);
 	assert.ok(text.endsWith(WIP_MARKER));
 	assert.equal(renderUpdate([{ type: "custom_message", customType: "advisor-note", content: "x" }], false), undefined);
 });
