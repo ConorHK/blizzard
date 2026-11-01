@@ -31,6 +31,7 @@ topLevel: {
         cnvim
         desktop
         git-identity
+        herdr-app
         jujutsu
         ntfy
         ssh
