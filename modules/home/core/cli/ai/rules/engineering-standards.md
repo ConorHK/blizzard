@@ -56,6 +56,12 @@ sibling packages read it and use the same library (for Brazil config in
 TypeScript, `@amzn/brazil-config-parser`). Never hand-roll a parser or
 reimplement precedence and substitution rules a library already handles.
 
+## No Long Waits Unless Asked
+
+Do not run polling loops, sleeps, or slow waits (waiting for certs, deploys,
+or services to come up) unless the user asks. Run one quick check at most,
+then hand the user the command to run themselves.
+
 ## Remote Hosts Require Confirmation
 
 Never ssh into a host, or run any remote or write operation against one, without
