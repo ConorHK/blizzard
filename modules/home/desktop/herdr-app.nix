@@ -25,6 +25,10 @@
             shell = [ (lib.getExe config.programs.fish.package) ];
           };
 
+      # Linked per file, since the app writes type files into mod folders.
+      xdg.configFile."herdr-app/mods/bsp/main.js".source = ./herdr-bsp/main.js;
+      xdg.configFile."herdr-app/mods/bsp/mod.json".source = ./herdr-bsp/mod.json;
+
       # The app has no prefix chords, so herdr prefix binds move to alt.
       xdg.configFile."herdr-app/keys.json".text = builtins.toJSON {
         global = {
@@ -88,8 +92,8 @@
           "ctrl-shift-p" = "app.palette";
           "ctrl-," = "app.settings";
           "alt-," = "app.settings";
-          "ctrl-shift-o" = "pane.split:right";
-          "alt-enter" = "pane.split:right";
+          "ctrl-shift-o" = "mod.open:bsp";
+          "alt-enter" = "mod.open:bsp";
           "ctrl-shift-e" = "pane.split:down";
           "ctrl-shift-w" = "tab.close";
           "ctrl-shift-x" = "pane.close";
