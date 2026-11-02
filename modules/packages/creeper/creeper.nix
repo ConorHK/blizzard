@@ -10,15 +10,25 @@
         };
 
         # The 15px bitmaps as .otf, which fontdb loads, with whole-pixel metrics.
+        # Unifont fills the symbols and emoji creeper lacks, so none fall back.
         creeper-otf = pkgs.stdenvNoCC.mkDerivation {
           name = "creeper-otf";
           version = "1.0";
           src = ./fonts;
-          nativeBuildInputs = [ (pkgs.python3.withPackages (p: [ p.fonttools ])) ];
+          nativeBuildInputs = [
+            (pkgs.python3.withPackages (p: [
+              p.fontforge
+              p.fonttools
+            ]))
+          ];
 
           buildPhase = ''
-            python3 -I ${./fix-metrics.py} creeper8x15r.otb creeper-regular.otf creeper-Regular
-            python3 -I ${./fix-metrics.py} creeper8x15b.otb creeper-bold.otf creeper-Bold
+            tar xzf ${pkgs.unifont.src} --wildcards --strip-components 3 '*/precompiled/unifont-*.hex' '*/precompiled/unifont_upper-*.hex'
+            for style in r:Regular b:Bold; do
+              s=''${style%:*} name=''${style#*:}
+              python3 -I ${./add-unifont.py} misc/creeper8x15$s.bdf creeper8x15$s.otb merged-$s.otb unifont-*.hex unifont_upper-*.hex
+              python3 -I ${./fix-metrics.py} merged-$s.otb creeper-''${name,,}.otf creeper-$name
+            done
           '';
 
           installPhase = ''
