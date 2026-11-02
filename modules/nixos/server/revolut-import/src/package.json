@@ -1,0 +1,16 @@
+{
+  "name": "revolut-import",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "revolut-import": "server.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@actual-app/api": "26.11.0",
+    "csv-parse": "7.0.3"
+  }
+}

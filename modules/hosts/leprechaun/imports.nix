@@ -61,6 +61,7 @@
       qbittorrent
       quadlet
       readmeabook
+      revolut-import
       satisfactory
       seerr
       server-users

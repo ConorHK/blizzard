@@ -14,3 +14,4 @@ see [AGENTS.md](../AGENTS.md).
 | [metrics.md](metrics.md) | Prometheus, exporters, resource alerts through ntfy |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |
 | [ogham.md](ogham.md) | The notes repo: sync, task curation, wins, search |
+| [revolut-import.md](revolut-import.md) | Phone CSV exports into Actual over WireGuard |
