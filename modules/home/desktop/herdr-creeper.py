@@ -43,7 +43,36 @@ async function jjBranch(cwd, on) {
 """
 WATCH = "if (!on) this.watch(repo, cx);"
 JJ_LOOKUP = 'if (info.branch === "(detached)") info.branch = await jjBranch(cwd, on);'
+# Git worktrees make no sense in a jj repo, so the menus leave them out there.
+JJ_ROOT = 'exec("jj", ["root", "--ignore-working-copy"], { cwd: folder, on })'
+MENU_CHECK = "async function checkout(folder, on) {"
+NEW_MENU_INIT = "    this.handle.focus();\n    cx.spawn(async cx => {"
+NEW_MENU_JJ = (
+    "    const folder = panes().find((p) => p.focused)?.cwd;\n"
+    "    const on = machine;\n"
+    "    if (folder) cx.spawn(async (cx) => {\n"
+    f"      const r = await {JJ_ROOT}.catch(() => null);\n"
+    "      this.jj = r?.code === 0;\n      cx.notify();\n    });\n"
+)
+NEW_MENU_ROW = 'row(id, icon, name, action, hint = "", enabled = true) {'
 PATCHES = {
+    "menu": [
+        (
+            MENU_CHECK,
+            f"{MENU_CHECK}\n  if ((await {JJ_ROOT}).code === 0) return null;",
+        ),
+    ],
+    "new-menu": [
+        ("knownAgents, run,", "knownAgents, exec, run,"),
+        (
+            NEW_MENU_INIT,
+            NEW_MENU_INIT.replace("    cx.spawn", NEW_MENU_JJ + "    cx.spawn"),
+        ),
+        (
+            NEW_MENU_ROW,
+            f'{NEW_MENU_ROW}\n    if (this.jj && id.startsWith("worktree")) return div();',
+        ),
+    ],
     "spaces": [
         ("export default class", JJ_BRANCH + "export default class"),
         (WATCH, f"{JJ_LOOKUP}\n      {WATCH}"),
