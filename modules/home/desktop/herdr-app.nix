@@ -27,6 +27,8 @@
         # Linked per file, since the app writes type files into mod folders.
         "herdr-app/mods/bsp/main.js".source = ./herdr-bsp/main.js;
         "herdr-app/mods/bsp/mod.json".source = ./herdr-bsp/mod.json;
+        "herdr-app/mods/workers/main.js".source = ./herdr-workers/main.js;
+        "herdr-app/mods/workers/mod.json".source = ./herdr-workers/mod.json;
 
         # The app has no prefix chords, so herdr prefix binds move to alt.
         "herdr-app/keys.json".text = builtins.toJSON {

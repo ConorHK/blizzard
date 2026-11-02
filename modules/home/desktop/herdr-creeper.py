@@ -163,6 +163,16 @@ def main() -> int:
         rename_mods(json.loads((home / "layouts" / "main.json").read_text()))
     )
     layout["terminal_menu"] = f"{PREFIX}menu"
+    # A zero-size block keeps the workers mod alive to grid sub-agents.
+    sidebar = next(c for c in layout["children"] if c.get("id") == "sidebar")
+    sidebar["children"].append(
+        {
+            "id": "workers-watch",
+            "type": "block",
+            "size": {"px": 0},
+            "content": {"mod": "workers", "props": {"layout": "creeper"}},
+        }
+    )
     (home / "layouts" / "creeper.json").write_text(json.dumps(layout, indent=2))
     return 0
 
