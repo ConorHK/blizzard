@@ -77,6 +77,9 @@ PATCHES = {
         ("export default class", JJ_BRANCH + "export default class"),
         (WATCH, f"{JJ_LOOKUP}\n      {WATCH}"),
     ],
+    "tabs": [
+        (".h(29).px(10).gap(7).rounded(7)", ".h(29).px(10).gap(7).rounded(0)"),
+    ],
 }
 
 
@@ -137,6 +140,15 @@ def rename_mods(node: object) -> object:
     return node
 
 
+def square(node: object) -> object:
+    """Give every rounded layout node square corners."""
+    if isinstance(node, dict):
+        return {k: 0 if k == "radius" else square(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [square(v) for v in node]
+    return node
+
+
 def main() -> int:
     """Write the clones into the Herdr home given as the first argument."""
     home, font = Path(sys.argv[1]), sys.argv[2]
@@ -147,7 +159,9 @@ def main() -> int:
         return 0
     for name in MODS:
         clone_mod(mods, name, font)
-    layout = rename_mods(json.loads((home / "layouts" / "main.json").read_text()))
+    layout = square(
+        rename_mods(json.loads((home / "layouts" / "main.json").read_text()))
+    )
     layout["terminal_menu"] = f"{PREFIX}menu"
     (home / "layouts" / "creeper.json").write_text(json.dumps(layout, indent=2))
     return 0
