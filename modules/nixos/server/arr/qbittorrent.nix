@@ -157,7 +157,7 @@ in
 
             qui.containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/autobrr/qui
-              image = "ghcr.io/autobrr/qui:v1.34.0";
+              image = "ghcr.io/autobrr/qui:v1.35.0";
               publishPorts = [ "127.0.0.1:${toString quiPort}:7476" ];
               volumes = [
                 "${quiDir}:/config"
