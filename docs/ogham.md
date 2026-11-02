@@ -60,7 +60,7 @@ The `ogham_task` tool (or `/task <title>`) binds a session to a task and
 records the binding in the session, so resume restores it. Given a URL,
 `/task` sends the agent a prompt to look up the item's ID and title, since
 only the agent has the tools to read it. The slug comes from the last URL
-path segment shaped like a ticket ID (`RV-123`, `INC48213`), so it does
+path segment shaped like a ticket ID (`ABC-123`, `INC48213`), so it does
 not depend on the fetched title. Without one, it takes the first bare number
 with the two segments before it (`blizzard-pull-42`), since numbers repeat
 across repos.
@@ -158,25 +158,28 @@ filter:
 | `tickets`, `issues`, `code`, `docs` | artifacts: lists of URLs |
 
 Artifacts come from every URL in the task note plus the win's evidence,
-sorted by regex rules on the URL. The built-in rules know only public hosts:
-GitHub issues, pull requests, and commits, GitLab merge requests and
-commits, Atlassian issues, and Google Docs. Rules for an employer's internal
-hosts belong in a private flake, in `programs.pi.ogham.settings.artifactRules`:
+sorted by regex rules on the URL. `issues` are for a tracker that serves
+the same item on several hosts, so they dedupe by ID; other trackers go in
+`tickets`. The built-in rules know only public hosts: GitHub issues, pull
+requests, and commits, GitLab merge requests and commits, Atlassian issues,
+and Google Docs. Rules for an employer's internal hosts belong in a private
+flake, in `programs.pi.ogham.settings.artifactRules`:
 
 ```nix
 programs.pi.ogham.settings.artifactRules = {
   tickets = [ ''^https://help\.example\.com/tickets/[A-Z]+\d+'' ];
   issues = [ ''^https://issues\.example\.com/issues/[\w-]+'' ];
-  code = [ ''^https://code\.example\.com/reviews/review-\d+'' ];
+  code = [ ''^https://review\.example\.com/changes/RV-\d+'' ];
   docs = [ ''^https://wiki\.example\.com/'' ];
 };
 ```
 
 Settings rules run before the built-in ones, and a bad pattern warns at
-session start. For tickets, issues, and code, the regex match is the stored
-URL, so a rule that stops before `/patchsets/2` or `/comments` collapses
-repeats; docs keep the whole URL without its anchor. issues dedupe by their
-last path segment, so one item on two hosts counts once. URLs no rule matches
+session start, as does an unknown kind. For tickets, issues, and code, the
+regex match is the stored URL, so a rule that stops before `/patchsets/2` or
+`/comments` collapses repeats; docs keep the whole URL without its anchor.
+Issues dedupe by their last path segment, so one item on two hosts counts
+once. URLs no rule matches
 (code browsing, pipelines, dashboards, short links) are not artifacts.
 
 A win's lists grow when a later run adds links to its task, when the task

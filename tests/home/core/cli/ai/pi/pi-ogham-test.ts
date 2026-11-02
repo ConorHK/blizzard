@@ -497,6 +497,7 @@ test("artifacts sort URLs by configured rules, then public defaults", () => {
 		docs: ["^https://wiki\\.example\\.com/", "("],
 	});
 	assert.deepEqual(bad, ["("]);
+	assert.deepEqual(compileRules({ bugs: ["x"] } as never).bad, ["unknown kind bugs"]);
 	const urls = [
 		"https://review.example.com/changes/RV-1001/patchsets/1#/diff",
 		"https://review.example.com/changes/RV-1001",
@@ -548,6 +549,11 @@ test("artifacts sort URLs by configured rules, then public defaults", () => {
 		docs: [],
 	});
 	assert.equal(artifactCounts(found), "4 tickets, 2 issues, 3 code changes, 2 docs");
+	// Same number in two repos stays two tickets.
+	assert.deepEqual(artifactsOf(["https://github.com/a/x/issues/12", "https://github.com/b/y/issues/12"]).tickets, [
+		"https://github.com/a/x/issues/12",
+		"https://github.com/b/y/issues/12",
+	]);
 	assert.equal(artifactCounts(noArtifacts()), "");
 	assert.equal(yamlValue(["a", "b c"]), '["a","b c"]');
 	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);

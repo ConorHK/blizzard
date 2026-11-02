@@ -28,7 +28,9 @@ const DEFAULT_RULES: Record<ArtifactKind, string[]> = {
 /** Settings rules first; bad patterns come back unthrown. */
 export function compileRules(extra: Partial<Record<ArtifactKind, string[]>> = {}): { rules: ArtifactRules; bad: string[] } {
 	const rules: ArtifactRules = [];
-	const bad: string[] = [];
+	const bad = Object.keys(extra)
+		.filter((kind) => !ARTIFACT_KINDS.includes(kind as ArtifactKind))
+		.map((kind) => `unknown kind ${kind}`);
 	for (const source of [extra, DEFAULT_RULES]) {
 		for (const kind of ARTIFACT_KINDS) {
 			for (const pattern of source[kind] ?? []) {
