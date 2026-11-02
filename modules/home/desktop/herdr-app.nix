@@ -88,7 +88,7 @@
           "ctrl-shift-n" = "space.new";
           "alt-shift-c" = "space.new";
           "ctrl-shift-t" = "tab.new";
-          "ctrl-shift-k" = "mod.open:picker";
+          "ctrl-shift-k" = "mod.open:creeper-picker";
           "ctrl-shift-p" = "app.palette";
           "ctrl-," = "app.settings";
           "alt-," = "app.settings";
@@ -102,7 +102,7 @@
           "f2" = "tab.rename";
           "shift-f2" = "space.rename";
         }
-        // bind "mod.open:picker" [
+        // bind "mod.open:creeper-picker" [
           "alt-p"
           "alt-t"
           "alt-s"

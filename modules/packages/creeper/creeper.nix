@@ -9,7 +9,7 @@
           glob = "*.otb";
         };
 
-        # fontdb loads only .otf and needs a PostScript name, which the .otb files lack.
+        # The 15px bitmaps as .otf, which fontdb loads, with whole-pixel metrics.
         creeper-otf = pkgs.stdenvNoCC.mkDerivation {
           name = "creeper-otf";
           version = "1.0";
@@ -17,12 +17,12 @@
           nativeBuildInputs = [ (pkgs.python3.withPackages (p: [ p.fonttools ])) ];
 
           buildPhase = ''
-            python3 -I ${./psname.py} creeper8x15r.otb creeper8x15r.otf creeper-Regular
-            python3 -I ${./psname.py} creeper8x15b.otb creeper8x15b.otf creeper-Bold
+            python3 -I ${./fix-metrics.py} creeper8x15r.otb creeper-regular.otf creeper-Regular
+            python3 -I ${./fix-metrics.py} creeper8x15b.otb creeper-bold.otf creeper-Bold
           '';
 
           installPhase = ''
-            install -Dm444 -t $out/share/fonts/opentype creeper8x15r.otf creeper8x15b.otf
+            install -Dm444 -t $out/share/fonts/opentype creeper-regular.otf creeper-bold.otf
           '';
         };
       };

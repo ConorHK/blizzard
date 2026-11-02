@@ -49,26 +49,33 @@
       look = {
         theme = "alduin";
         font = "creeper";
-        # The creeper strike is 15px; other sizes draw nothing, so the UI keeps its own font.
+        # Creeper has only a 15px bitmap; other sizes draw nothing.
         font_size = 15;
       };
     in
     {
       xdg.configFile = {
         "herdr-app/themes/alduin.json".text = builtins.toJSON theme;
-        "herdr-app/fonts/creeper8x15r.otf".source = "${creeper-otf}/share/fonts/opentype/creeper8x15r.otf";
-        "herdr-app/fonts/creeper8x15b.otf".source = "${creeper-otf}/share/fonts/opentype/creeper8x15b.otf";
+        "herdr-app/fonts/creeper-regular.otf".source =
+          "${creeper-otf}/share/fonts/opentype/creeper-regular.otf";
+        "herdr-app/fonts/creeper-bold.otf".source = "${creeper-otf}/share/fonts/opentype/creeper-bold.otf";
       };
 
       # The app writes settings.json from its Settings screen, so merge into it.
+      # App screens and toasts draw at sizes creeper lacks, so they keep the default font.
       home.activation.herdrLook = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         if [[ ! -v DRY_RUN ]]; then
           settings=${home}/settings.json
           mkdir -p ${home}
           { cat "$settings" 2>/dev/null || echo '{}'; } \
-            | ${lib.getExe pkgs.jq} '. + ${builtins.toJSON look}' > "$settings.new"
+            | ${lib.getExe pkgs.jq} '. + ${builtins.toJSON look} | del(.ui_font)' > "$settings.new"
           mv "$settings.new" "$settings"
         fi
+      '';
+
+      # Shipped mods exist only once the app has run, so clone them at switch time.
+      home.activation.herdrCreeper = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        run ${pkgs.python3.interpreter} -I ${./herdr-creeper.py} ${home} ${look.font}
       '';
     };
 }
