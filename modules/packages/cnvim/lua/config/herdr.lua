@@ -139,6 +139,48 @@ local function pick_agent(list, on_choice)
     end)
 end
 
+-- Reads /proc, so the sidebar gets no nav off Linux.
+local function client_pane(info)
+    local pid = vim.tbl_get(info, "client", "attributes", "pid")
+    local f = pid and io.open("/proc/" .. pid .. "/environ", "rb")
+    if not f then
+        return nil
+    end
+    local env = "\0" .. f:read("*a")
+    f:close()
+    return env:match("%zHERDR_PANE_ID=([^%z]+)")
+end
+
+-- The sidebar daemon outlives its pane, so nav follows each attached UI's pane.
+local function follow_ui_panes()
+    local panes = {}
+    -- A UI client reports its pid after UIEnter.
+    vim.api.nvim_create_autocmd("ChanInfo", {
+        callback = function()
+            local info = vim.v.event.info
+            local pane = vim.tbl_get(info, "client", "type") == "ui" and client_pane(info)
+            if not pane then
+                return
+            end
+            panes[info.id] = pane
+            local own = vim.env.HERDR_PANE_ID
+            vim.env.HERDR_PANE_ID = pane
+            require("herdr-nvim-nav").setup()
+            vim.env.HERDR_PANE_ID = own
+        end,
+    })
+    vim.api.nvim_create_autocmd("UILeave", {
+        callback = function()
+            local pane = panes[vim.v.event.chan]
+            panes[vim.v.event.chan] = nil
+            if pane then
+                local cache = vim.env.XDG_CACHE_HOME or (vim.env.HOME .. "/.cache")
+                os.remove(cache .. "/herdr/nvim-panes/" .. pane)
+            end
+        end,
+    })
+end
+
 function M.setup()
     if not (vim.env.HERDR_ENV or vim.env.HERDR_TAB_ID) then
         return
@@ -152,10 +194,12 @@ function M.setup()
 
     -- The sidebar daemon runs setup itself.
     if vim.v.servername:find("herdr%-nvim") then
+        follow_ui_panes()
         return
     end
 
     require("herdr-nvim").setup({})
+    require("herdr-nvim-nav").setup()
 end
 
 return M

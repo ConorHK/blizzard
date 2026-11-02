@@ -10,11 +10,18 @@
     let
       inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system})
         herdr-nvim
+        herdr-nvim-nav
         herdr-flash
         herdr-radar
         ;
       toml = pkgs.formats.toml { };
       radarId = "hhdebb.herdr-radar";
+      navigate = dir: keys: {
+        key = keys;
+        type = "plugin_action";
+        command = "herdr-nvim-nav.${dir}";
+        description = "navigate ${dir} (nvim/herdr)";
+      };
       radarSettings = toml.generate "herdr-radar.toml" {
         variant = "none";
         follow_appearance = false;
@@ -33,6 +40,10 @@
           herdrNvim = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim}/share/herdr-nvim \
               || warnEcho "herdr plugin link failed for herdr-nvim"
+          '';
+          herdrNvimNav = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-nvim-nav}/share/herdr-nvim-nav \
+              || warnEcho "herdr plugin link failed for herdr-nvim-nav"
           '';
           herdrFlash = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run --quiet ${lib.getExe pkgs.herdr} plugin link ${herdr-flash}/share/herdr-flash \
@@ -74,22 +85,11 @@
             navigate_pane_up = "ctrl+k";
             navigate_pane_right = "ctrl+l";
 
-            focus_pane_left = [
-              "ctrl+h"
-              "ctrl+left"
-            ];
-            focus_pane_down = [
-              "ctrl+j"
-              "ctrl+down"
-            ];
-            focus_pane_up = [
-              "ctrl+k"
-              "ctrl+up"
-            ];
-            focus_pane_right = [
-              "ctrl+l"
-              "ctrl+right"
-            ];
+            # herdr-nvim-nav owns ctrl+hjkl so nvim gets them first.
+            focus_pane_left = "";
+            focus_pane_down = "";
+            focus_pane_up = "";
+            focus_pane_right = "";
 
             split_horizontal = [
               "prefix+h"
@@ -116,6 +116,22 @@
             edit_scrollback = "prefix+shift+e";
 
             command = [
+              (navigate "left" [
+                "ctrl+h"
+                "ctrl+left"
+              ])
+              (navigate "down" [
+                "ctrl+j"
+                "ctrl+down"
+              ])
+              (navigate "up" [
+                "ctrl+k"
+                "ctrl+up"
+              ])
+              (navigate "right" [
+                "ctrl+l"
+                "ctrl+right"
+              ])
               {
                 key = "prefix+e";
                 type = "plugin_action";

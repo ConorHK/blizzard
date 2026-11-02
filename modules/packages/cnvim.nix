@@ -24,6 +24,7 @@
       packages.cnvim = unfreePkgs.callPackage ./cnvim/_package.nix {
         neovim-unwrapped = inputs.neovim-nightly-overlay.packages.${system}.neovim;
         herdr-nvim = self'.packages.herdr-nvim.vimPlugin;
+        herdr-nvim-nav = self'.packages.herdr-nvim-nav.vimPlugin;
         alduin = pkgs.vimUtils.buildVimPlugin {
           name = "alduin";
           src = inputs.plugins-alduin;
