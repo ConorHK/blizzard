@@ -56,6 +56,9 @@ import {
 import { parseHits } from "./ogham/knowledge.ts";
 import { withLock } from "./ogham/lock.ts";
 import { appendLines, getSection, parseNote, renderNote, setSection } from "./ogham/note.ts";
+import { filterItems, type PickItem, type Picked, pick } from "./ogham/picker.ts";
+import { parseSource, sourceSlug, sourceTitle, untracked } from "./ogham/source.ts";
+import { getKeybindings, visibleWidth } from "@earendil-works/pi-tui";
 
 const now = new Date(2026, 9, 20, 14, 5);
 const ref = { project: "blizzard", slug: "fix-sync" };
@@ -550,4 +553,150 @@ test("artifacts sort URLs by configured rules, then public defaults", () => {
 	assert.deepEqual(readList('["a","b c"]'), ["a", "b c"]);
 	assert.deepEqual(readList("[broken"), []);
 	assert.deepEqual(readList(undefined), []);
+});
+
+test("task sources parse, dedupe, and hide tracked items", () => {
+	const items = parseSource(
+		JSON.stringify([
+			{ id: "ACME-7", title: "  Fix\nsync ", url: "https://tasks.example.com/tasks/ACME-7", updated: "2026-10-29", status: "Open" },
+			{ id: "ACME-7", title: "duplicate" },
+			{ id: "ACME-8", title: "No link", url: "ftp://x" },
+			{ id: "", title: "no id" },
+			{ title: "missing id" },
+			"junk",
+			null,
+			{ id: "ACME-9", title: "ACME-9: Has its id" },
+		]),
+	);
+	assert.deepEqual(items, [
+		{ id: "ACME-7", title: "Fix sync", url: "https://tasks.example.com/tasks/ACME-7", updated: "2026-10-29", status: "Open" },
+		{ id: "ACME-8", title: "No link", url: undefined, updated: undefined, status: undefined },
+		{ id: "ACME-9", title: "ACME-9: Has its id", url: undefined, updated: undefined, status: undefined },
+	]);
+	assert.throws(() => parseSource("not json"), /did not print JSON/);
+	assert.throws(() => parseSource('{"id": 1}'), /JSON array/);
+	assert.equal(parseSource(JSON.stringify(Array.from({ length: 400 }, (_, n) => ({ id: `A-${n}`, title: "t" })))).length, 300);
+
+	assert.equal(sourceSlug(items[0]), "acme-7");
+	assert.equal(sourceSlug(items[1]), "acme-8");
+	assert.equal(sourceTitle(items[0]), "ACME-7: Fix sync");
+	assert.equal(sourceTitle(items[2]), "ACME-9: Has its id");
+	const rows = [{ project: "svc", file: "projects/svc/acme-7/acme-7.md", title: "ACME-7: Fix sync", status: "active", updated: "" }];
+	assert.deepEqual(
+		untracked(items, rows).map((item) => item.id),
+		["ACME-8", "ACME-9"],
+	);
+});
+
+test("picker filters fuzzily and offers typed text as new", () => {
+	const items: PickItem[] = [
+		{ value: "a", label: "svc: ACME-7: Fix sync", hint: "active" },
+		{ value: "b", label: "ACME-42: Rotate certs", hint: "assigned, Open" },
+		{ value: "c", label: "blz: Tidy waybar" },
+	];
+	assert.deepEqual(filterItems(items, ""), items);
+	assert.deepEqual(
+		filterItems(items, "acme cert").map((item) => item.value),
+		["b"],
+	);
+	assert.deepEqual(
+		filterItems(items, "assigned").map((item) => item.value),
+		["b"],
+	);
+	const newLabel = (text: string) => `New task: ${text}`;
+	assert.deepEqual(
+		filterItems(items, " zzz ", newLabel).map((item) => item.label),
+		["New task: zzz"],
+	);
+	// A real hit keeps the top; a loose one yields to the new row.
+	assert.deepEqual(
+		filterItems(items, "fix sync", newLabel).map((item) => item.value),
+		["a", "\u0000new"],
+	);
+	assert.deepEqual(
+		filterItems(items, "fxsnc", newLabel).map((item) => item.label),
+		["New task: fxsnc", "svc: ACME-7: Fix sync"],
+	);
+	const done = [{ project: "svc", file: "projects/svc/acme-42/acme-42.md", title: "ACME-42", status: "done", updated: "" }];
+	assert.deepEqual(untracked([{ id: "ACME-42", title: "Rotate certs" }], done), []);
+});
+
+test("picker component moves, picks, creates, cancels, and updates live", async () => {
+	const keys = { enter: "\r", escape: "\x1b", down: "\x1b[B", up: "\x1b[A" };
+	const theme = { fg: (_color: string, text: string) => text, bold: (text: string) => text };
+	const open = (items: PickItem[], options: Parameters<typeof pick>[3] = {}) => {
+		let component: { render(width: number): string[]; handleInput(data: string): void } | undefined;
+		let renders = 0;
+		const result = pick(
+			{
+				ui: {
+					custom: (factory: Function) =>
+						new Promise((resolve) => {
+							component = factory({ requestRender: () => renders++ }, theme, getKeybindings(), resolve);
+						}),
+				},
+			} as never,
+			"Pick one",
+			items,
+			options,
+		);
+		const type = (text: string) => {
+			for (const char of text) component!.handleInput(char);
+		};
+		return { result, component: () => component!, type, renders: () => renders };
+	};
+	const items: PickItem[] = [
+		{ value: "a", label: "svc: ACME-7: Fix sync" },
+		{ value: "b", label: "ACME-42: Rotate certs", hint: "assigned" },
+		{ value: "c", label: "blz: Tidy waybar" },
+	];
+
+	const first = open(items);
+	first.component().handleInput(keys.down);
+	first.component().handleInput(keys.down);
+	first.component().handleInput(keys.up);
+	first.component().handleInput(keys.enter);
+	assert.deepEqual(await first.result, { value: "b" } satisfies Picked);
+
+	const typed = open(items, { newLabel: (text) => `New task: ${text}` });
+	typed.type("waybar");
+	const lines = typed.component().render(30);
+	assert.ok(lines.every((line) => visibleWidth(line) <= 30), JSON.stringify(lines));
+	assert.ok(lines.some((line) => line.startsWith("> blz: Tidy waybar")), JSON.stringify(lines));
+	typed.component().handleInput(keys.enter);
+	assert.deepEqual(await typed.result, { value: "c" });
+
+	const fresh = open(items, { newLabel: (text) => `New task: ${text}` });
+	fresh.type("Write the runbook");
+	fresh.component().handleInput(keys.enter);
+	assert.deepEqual(await fresh.result, { text: "Write the runbook" });
+
+	const tabbed = open(items, { newLabel: (text) => `New task: ${text}` });
+	tabbed.type("sync");
+	assert.ok(tabbed.component().render(80)[2].startsWith("> svc: ACME-7: Fix sync"));
+	tabbed.component().handleInput("\t");
+	assert.ok(tabbed.component().render(80).some((line) => line.startsWith("> New task: sync")));
+	tabbed.component().handleInput(keys.enter);
+	assert.deepEqual(await tabbed.result, { text: "sync" });
+
+	const cancelled = open(items);
+	cancelled.component().handleInput(keys.escape);
+	assert.equal(await cancelled.result, undefined);
+
+	const empty = open(items);
+	empty.type("qqqq");
+	assert.ok(empty.component().render(80).some((line) => line.includes("No matches")));
+	empty.component().handleInput(keys.enter);
+	empty.component().handleInput(keys.escape);
+	assert.equal(await empty.result, undefined);
+
+	let setItems: (next: PickItem[]) => void = () => {};
+	const live = open(items, { onOpen: (set) => (setItems = set) });
+	live.type("rotate");
+	setItems([...items, { value: "d", label: "ACME-43: Rotate keys", hint: "assigned" }]);
+	assert.ok(live.renders() > 0);
+	assert.ok(live.component().render(80).some((line) => line.includes("ACME-43: Rotate keys")));
+	live.component().handleInput(keys.down);
+	live.component().handleInput(keys.enter);
+	assert.deepEqual(await live.result, { value: "d" });
 });

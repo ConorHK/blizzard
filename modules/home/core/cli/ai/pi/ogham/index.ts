@@ -1,4 +1,5 @@
 // Tracks tasks, knowledge and wins in ogham.
+import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
@@ -34,6 +35,8 @@ import {
 import { type Hit, reindex, search } from "./knowledge.ts";
 import { withLock } from "./lock.ts";
 import { appendLines, getSection, parseNote, renderNote } from "./note.ts";
+import { type PickItem, pick } from "./picker.ts";
+import { parseSource, type SourceItem, sourceSlug, sourceTitle, untracked } from "./source.ts";
 import {
 	findUrl,
 	formatRef,
@@ -112,12 +115,13 @@ interface Settings {
 	winGuidance?: string;
 	askOnStart?: boolean;
 	artifactRules?: Partial<Record<ArtifactKind, string[]>>;
+	taskSource?: { command?: string[]; label?: string; timeout?: number };
 }
 
 const NEW_TASK = "New ticket or title";
 const NO_TASK = "None";
 const CLOSE_IT = "Close it";
-const MAX_CHOICES = 7;
+const SOURCE_CACHE = path.join(homedir(), ".cache", "ogham", "source.json");
 
 const DESCRIPTION = `Bind this session to an ogham task, a markdown note in the user's notes repo.
 
@@ -140,6 +144,9 @@ export default function (pi: ExtensionAPI) {
 	const vault = process.env.OGHAM_VAULT ?? path.join(homedir(), "ogham");
 	let settings: Settings = {};
 	let rules: ArtifactRules = compileRules().rules;
+	let sourceItems: SourceItem[] = [];
+	let sourcing: Promise<SourceItem[]> | undefined;
+	let warnedSource = false;
 	let bound: Binding | undefined;
 	let session = "";
 	let related: Hit[] = [];
@@ -467,8 +474,8 @@ export default function (pi: ExtensionAPI) {
 		return result;
 	}
 
-	async function start(ctx: ExtensionContext, role: Role, task: NewTask, project?: string): Promise<string> {
-		const slug = (task.link && linkSlug(task.link)) || slugify(task.title);
+	async function start(ctx: ExtensionContext, role: Role, task: NewTask, project?: string, id?: string): Promise<string> {
+		const slug = id || (task.link && linkSlug(task.link)) || slugify(task.title);
 		const ref = { project: project ? projectName(project) : projectFor(ctx.cwd), slug };
 		const result = await bind(ctx, { ...task, ref, role });
 		pi.appendEntry<Binding>(ENTRY, { ref, title: task.title, role });
@@ -483,52 +490,97 @@ export default function (pi: ExtensionAPI) {
 		return `Looking up the title of ${url}.`;
 	}
 
+	function sourceCommand(): string[] | undefined {
+		const command = settings.taskSource?.command;
+		return Array.isArray(command) && command.length && command.every((part) => typeof part === "string") ? command : undefined;
+	}
+
+	/** Runs the source command once at a time; keeps the last good list. */
+	function refreshSource(ctx: ExtensionContext): Promise<SourceItem[]> {
+		const command = sourceCommand();
+		if (!command) return Promise.resolve([]);
+		sourcing ??= new Promise<SourceItem[]>((resolve) => {
+			const timeout = (settings.taskSource?.timeout ?? 30) * 1000;
+			execFile(command[0], command.slice(1), { timeout, maxBuffer: 8 * 1024 * 1024 }, async (error, stdout, stderr) => {
+				try {
+					if (error) throw new Error(stderr.trim().split("\n").at(-1) || error.message);
+					sourceItems = parseSource(stdout);
+					await mkdir(path.dirname(SOURCE_CACHE), { recursive: true });
+					await save(SOURCE_CACHE, JSON.stringify(sourceItems));
+				} catch (failure) {
+					if (!warnedSource) ctx.ui.notify(`ogham: task source failed: ${(failure as Error).message}`, "warning");
+					warnedSource = true;
+				}
+				sourcing = undefined;
+				resolve(sourceItems);
+			});
+		});
+		return sourcing;
+	}
+
+	function loadSourceCache(): void {
+		try {
+			sourceItems = sourceCommand() ? parseSource(readFileSync(SOURCE_CACHE, "utf8")) : [];
+		} catch {
+			sourceItems = [];
+		}
+	}
+
 	async function askForTask(ctx: ExtensionContext): Promise<void> {
 		const handled = new Set<string>();
+		const refreshed = refreshSource(ctx);
 		for (;;) {
 			const today = stamp(new Date()).slice(0, 10);
 			const rows = (await taskRows()).filter((row) => !handled.has(row.file));
 			const wins = (await winRecords()).filter((win) => !handled.has(win.file));
 			const due = [...impactDue(wins, rows, today, MAX_FOLLOW_UPS), ...closeDue(rows, today, MAX_FOLLOW_UPS)];
+			const label = settings.taskSource?.label ?? "assigned";
 			// true ends the prompt; follow-ups loop back.
-			const entries: { label: string; run: () => Promise<boolean> }[] = [
-				{
-					label: NEW_TASK,
-					run: async () => {
-						const input = (await ctx.ui.input("Ticket URL or task title", "https://..."))?.trim();
-						if (input && !bound) ctx.ui.notify(await startFrom(ctx, input), "info");
-						return true;
-					},
-				},
-				...taskChoices(rows, MAX_CHOICES).map((item) => ({
-					label: item.label,
-					run: async () => {
+			const actions = new Map<string, () => Promise<boolean>>();
+			const add = (item: PickItem, run: () => Promise<boolean>) => {
+				actions.set(item.value, run);
+				return item;
+			};
+			const build = (source: SourceItem[]): PickItem[] => [
+				add({ value: "new", label: NEW_TASK }, async () => {
+					const input = (await ctx.ui.input("Ticket URL or task title", "https://..."))?.trim();
+					if (input && !bound) ctx.ui.notify(await startFrom(ctx, input), "info");
+					return true;
+				}),
+				...taskChoices(rows, rows.length).map((item) =>
+					add({ value: `task:${item.ref}`, label: item.label }, async () => {
 						ctx.ui.notify(await join(ctx, item.ref, "worker"), "info");
 						return true;
-					},
-				})),
-				...due.map((item) => ({
-					label: item.label,
-					run: async () => {
+					}),
+				),
+				...due.map((item) =>
+					add({ value: `due:${item.kind}:${item.file}`, label: item.label }, async () => {
 						handled.add(item.file);
 						await followUp(ctx, item);
 						return false;
-					},
-				})),
-				{ label: NO_TASK, run: async () => true },
+					}),
+				),
+				...untracked(source, rows).map((item) =>
+					add({ value: `source:${item.id}`, label: sourceTitle(item), hint: [label, item.status].filter(Boolean).join(", ") }, async () => {
+						const task = { title: sourceTitle(item), link: item.url };
+						ctx.ui.notify(await start(ctx, "worker", task, undefined, item.url ? undefined : sourceSlug(item)), "info");
+						return true;
+					}),
+				),
+				add({ value: "none", label: NO_TASK }, async () => true),
 			];
-			const seen = new Set<string>();
-			for (const entry of entries) {
-				let label = entry.label;
-				for (let n = 2; seen.has(label); n++) label = `${entry.label} (${n})`;
-				entry.label = label;
-				seen.add(label);
-			}
-			const choice = await ctx.ui.select("Ogham task for this session?", entries.map((entry) => entry.label));
+			const picked = await pick(ctx, "Ogham task for this session?", build(sourceItems), {
+				newLabel: (text) => `New task: ${text}`,
+				onOpen: (setItems) => void refreshed.then((items) => setItems(build(items))),
+			});
 			// The user may bind with /task while the dialog is open.
-			if (!choice || bound) return;
-			const entry = entries.find((item) => item.label === choice);
-			if (!entry || (await entry.run())) return;
+			if (!picked || bound) return;
+			if ("text" in picked) {
+				ctx.ui.notify(await startFrom(ctx, picked.text), "info");
+				return;
+			}
+			const run = actions.get(picked.value);
+			if (!run || (await run())) return;
 		}
 	}
 
@@ -674,6 +726,7 @@ export default function (pi: ExtensionAPI) {
 
 	pi.on("session_start", async (event, ctx) => {
 		settings = readSettings();
+		loadSourceCache();
 		const compiled = compileRules(settings.artifactRules);
 		rules = compiled.rules;
 		if (compiled.bad.length) ctx.ui.notify(`ogham: bad artifactRules: ${compiled.bad.join(", ")}`, "warning");

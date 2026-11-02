@@ -65,13 +65,43 @@ not depend on the fetched title. Without one, it takes the first bare number
 with the two segments before it (`blizzard-pull-42`), since numbers repeat
 across repos.
 
-With `askOnStart`, a new interactive session asks for its task. It offers
-a new ticket or title, the 7 most recently updated open tasks, any
-follow-ups (see below), and None.
-A new ticket goes through the same path as `/task`. None or Escape leaves
-the session unbound. Resumed and reloaded sessions, sessions with messages,
-workers started with `OGHAM_TASK`, and print, json and rpc modes never ask.
-The dialog does not block startup, so other extensions still load.
+With `askOnStart`, a new interactive session asks for its task in a
+picker: type to filter (fuzzy, every word must match), up and down to move,
+Enter to pick, Escape to skip. It lists a new ticket or title, every open
+task newest first, any follow-ups (see below), items from `taskSource`, and
+None. Typed text is also offered as a new task, the same as `/task <text>`, so a
+URL or a title works. That row comes first unless some item contains every
+typed word, and Tab jumps to it, so a loose fuzzy hit never takes Enter from a
+new title. Resumed and
+reloaded sessions, sessions with messages, workers started with
+`OGHAM_TASK`, and print, json and rpc modes never ask. The picker does not
+block startup, so other extensions still load.
+
+`taskSource` adds outside items, such as tickets assigned to the user. Its
+`command` prints a JSON array of `{id, title, url?, status?}`. The last good
+list is cached in `~/.cache/ogham/source.json`, so the picker shows it at
+once and swaps in the fresh list when the command returns (30 s timeout,
+`timeout` overrides it). A failure warns once and keeps the cache. Items whose
+slug matches an existing task are left out: an open task is listed already,
+and a task closed in ogham stays closed while its ticket lags behind. Picking
+an item starts the task with title `<id>: <title>` and the URL as `link`,
+without asking the agent to look it up. `label` names the items in the
+picker (default `assigned`). For GitHub:
+
+```nix
+programs.pi.ogham.settings.taskSource.command = [
+  (lib.getExe (
+    pkgs.writeShellApplication {
+      name = "gh-assigned";
+      runtimeInputs = [ pkgs.gh pkgs.jq ];
+      text = ''
+        gh search issues --assignee @me --state open --json number,title,url,repository \
+          | jq '[.[] | {id: "\(.repository.name)#\(.number)", title, url}]'
+      '';
+    }
+  ))
+];
+```
 
 An orchestrator session starts workers in herdr panes with
 `OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker

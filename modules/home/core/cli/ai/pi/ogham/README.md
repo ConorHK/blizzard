@@ -19,9 +19,11 @@ tickets, issues, code changes, and docs involved.
 `wins.md` lists wins by initiative, and `index.md` lists every task with its
 status and next step.
 
-With `askOnStart`, the start prompt also asks for the measured impact of
-wins and shipped tasks older than 14 days, and offers to close tasks that
-look finished or have not changed in 21 days.
+With `askOnStart`, a new session opens a type-to-filter picker of open
+tasks, items from `taskSource` (a command that prints tickets assigned to
+you), and follow-ups: it asks for the measured impact of wins and shipped
+tasks older than 14 days, and offers to close tasks that look finished or
+have not changed in 21 days.
 
 While bound, the system prompt carries the task note and related notes that
 `zg` finds across the repo. `/task done` closes the task, moves its durable
@@ -35,4 +37,5 @@ lists the workers. Bindings survive resume.
 
 Settings: `model` (`provider/id`), `curate` (false turns the side model off),
 `winGuidance` (extra rules for wins), `zg` (path to zg), `askOnStart` (true
-asks for a task when a new interactive session starts).
+asks for a task when a new interactive session starts), `taskSource`
+(`command`, `label`, `timeout`), `artifactRules`.
