@@ -60,6 +60,7 @@ puca, leprechaun and bananach auto-upgrade daily from the `deployed` branch, sta
 
 ## Conventions
 
+- Write Nix that passes statix. Run `nix build .#checks.x86_64-linux.pre-commit` before committing. Common miss: repeated keys (W20), so group `xdg.configFile.a` and `xdg.configFile.b` into one `xdg.configFile = { ... };`.
 - `pipe-operators` is enabled; statix cannot parse it, so affected files sit in its ignore list in `modules/flake/checks.nix`.
 - npm-sourced pi extensions are pinned in `modules/home/core/cli/ai/pi/npm/package.json`; Renovate bumps them and the lockfile. To add one, add it there, run `npm install --package-lock-only --ignore-scripts` in that directory (its `.npmrc` pins the public registry and skips peers), then build it with `flake.lib.mkPiExtension pkgs "<name>" { }`. The `pi-extensions-<home>` checks load every extension in headless pi.
 - Container images carry a `# renovate: datasource=docker depName=...` comment on the line above `image =`, or Renovate never updates them.
