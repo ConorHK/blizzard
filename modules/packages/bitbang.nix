@@ -15,7 +15,7 @@
 
         vendorHash = "sha256-Tw8TjwWoG6hMlIjPLI77jX0gBsOvgRPKN5uHgEy2cVg=";
 
-        # Some corp networks sinkhole proxy.golang.org
+        # Some networks sinkhole proxy.golang.org
         overrideModAttrs = old: {
           preBuild = (old.preBuild or "") + ''
             export GOPROXY=direct

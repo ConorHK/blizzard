@@ -30,16 +30,6 @@ function M.setup()
             vim.wo.colorcolumn = "120"
         end,
     })
-
-    vim.api.nvim_create_autocmd("FileType", {
-        pattern = "brazil-config",
-        callback = function()
-            vim.bo.shiftwidth = 4
-            vim.bo.expandtab = true
-            vim.bo.tabstop = 4
-            vim.bo.softtabstop = 0
-        end,
-    })
 end
 
 return M

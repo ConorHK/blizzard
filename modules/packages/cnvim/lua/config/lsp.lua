@@ -53,17 +53,9 @@ function M.setup()
         root_markers = { ".git" },
     })
 
-    vim.filetype.add({ filename = { Config = "brazil-config" } })
-
     -- Server-specific configurations
     local servers = {
         bashls = {},
-
-        barium = {
-            cmd = { "barium" },
-            root_markers = { "Config" },
-            filetypes = { "brazil-config" },
-        },
 
         lua_ls = {
             server_capabilities = {

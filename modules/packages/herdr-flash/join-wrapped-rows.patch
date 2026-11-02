@@ -63,8 +63,8 @@ index 70bc626..fddf922 100644
 +    #[test]
 +    fn joins_a_wrapped_path_with_a_line_suffix() {
 +        assert_eq!(
-+            join_wrapped_link("src/main/java/com/\n  amazon/Handler.java:42:7"),
-+            Some("src/main/java/com/amazon/Handler.java:42:7".to_string())
++            join_wrapped_link("src/main/java/com/\n  example/Handler.java:42:7"),
++            Some("src/main/java/com/example/Handler.java:42:7".to_string())
 +        );
 +    }
 +

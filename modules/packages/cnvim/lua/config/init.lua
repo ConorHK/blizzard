@@ -21,7 +21,6 @@ local plugin_modules = {
     "indent",
     "java",
     "lsp",
-    "ninetynine",
     "snacks",
     "snippets",
     "statuscolumn",
@@ -33,6 +32,12 @@ local plugin_modules = {
 for _, plugin in ipairs(plugin_modules) do
     local import = string.format("config.%s", plugin)
     require(import).setup()
+end
+
+-- Machine-specific additions, written by programs.cnvim.extraLua.
+local extra = (vim.env.XDG_CONFIG_HOME or (vim.env.HOME .. "/.config")) .. "/cnvim/local.lua"
+if vim.uv.fs_stat(extra) then
+    dofile(extra)
 end
 
 -- disable unused remote plugin providers

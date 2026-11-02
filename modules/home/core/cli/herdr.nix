@@ -56,7 +56,7 @@
           theme.name = "terminal";
           ui.toast.delivery = "herdr";
 
-          # Devbox PATH lists another fish first.
+          # Some hosts list another fish first on PATH.
           terminal.default_shell = lib.getExe config.programs.fish.package;
 
           keys = {

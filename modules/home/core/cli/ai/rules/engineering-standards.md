@@ -52,8 +52,7 @@ level, at the top of the file. This applies in every language.
 ## Parse Formats With Existing Libraries
 
 Before parsing a config format, file type, or protocol by hand, check how
-sibling packages read it and use the same library (for Brazil config in
-TypeScript, `@amzn/brazil-config-parser`). Never hand-roll a parser or
+sibling packages read it and use the same library. Never hand-roll a parser or
 reimplement precedence and substitution rules a library already handles.
 
 ## No Long Waits Unless Asked
