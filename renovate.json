@@ -58,6 +58,26 @@
       "rangeStrategy": "pin",
       "groupName": "pi extensions",
       "separateMajorMinor": false
+    },
+    {
+      "description": "revolut-import: pinned, its npm deps in one PR.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchFileNames": [
+        "modules/nixos/server/revolut-import/src/package.json"
+      ],
+      "rangeStrategy": "pin",
+      "groupName": "revolut-import"
+    },
+    {
+      "description": "The Actual API must match the server version, so both move in one PR.",
+      "matchDepNames": [
+        "docker.io/actualbudget/actual-server",
+        "@actual-app/api"
+      ],
+      "groupName": "actual-budget",
+      "separateMajorMinor": false
     }
   ]
 }

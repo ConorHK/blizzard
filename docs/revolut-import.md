@@ -73,6 +73,6 @@ in place. Open "Send to Actual" once, paste the token, then tap
 
 ## Upgrades
 
-`@actual-app/api` in `src/package.json` should match the actual-server image
-version. Renovate bumps both; merge them together. After a bump, refresh the
-lockfile with `npm install --package-lock-only --ignore-scripts`.
+`@actual-app/api` in `src/package.json` must match the actual-server image
+version. Renovate bumps both in one `actual-budget` PR and refreshes the
+lockfile with it; its other npm deps share a `revolut-import` PR.
