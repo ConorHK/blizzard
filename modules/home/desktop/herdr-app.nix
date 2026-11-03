@@ -19,7 +19,7 @@
       ];
 
       xdg.configFile = {
-        # Login shell is crash, so pick fish for new terminals.
+        # New terminals get fish, not the login shell.
         "herdr-core/config.toml".source = (pkgs.formats.toml { }).generate "herdr-core.toml" {
           shell = [ (lib.getExe config.programs.fish.package) ];
         };

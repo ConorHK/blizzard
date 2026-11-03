@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.modules.homeManager.herdr-app =
+  flake.modules.homeManager.herdr-look =
     {
       config,
       lib,

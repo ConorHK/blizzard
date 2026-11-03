@@ -27,6 +27,7 @@ topLevel: {
         desktop
         git-identity
         herdr-app
+        herdr-look
         jujutsu
         laptop
         ntfy
