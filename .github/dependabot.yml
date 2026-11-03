@@ -4,3 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    # Private repo: Dependabot cannot fetch it, so update it by hand.
+    ignore:
+      - dependency-name: "podgetv"
