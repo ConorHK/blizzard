@@ -60,7 +60,10 @@
           pname = "ovis";
           inherit version src;
 
-          patches = [ ./ovis/allowed-origin.patch ];
+          patches = [
+            ./ovis/allowed-origin.patch
+            ./ovis/no-telemetry.patch
+          ];
 
           nativeBuildInputs = [
             bun

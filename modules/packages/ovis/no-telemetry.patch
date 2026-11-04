@@ -1,0 +1,48 @@
+--- a/server/index.ts
++++ b/server/index.ts
+@@ -5,7 +5,7 @@
+ import { randomBytes, randomUUID } from "node:crypto";
+ import { OrderSequence } from "./order-sequence.ts";
+ import { readHerdrProfiles, type HerdrMachineProfile } from "./herdr-profiles.ts";
+-import { accessSync, constants, readFileSync, rmSync, statSync } from "node:fs";
++import { accessSync, constants, rmSync, statSync } from "node:fs";
+ import { dirname, join } from "node:path";
+ import type { PendingMessage, SessionSnapshot } from "../shared/protocol.ts";
+ import { DEFAULT_PORT } from "../shared/protocol.ts";
+@@ -31,7 +31,7 @@
+ import { HerdrUpdater } from "./herdr-update.ts";
+ import { PortalService } from "./portal.ts";
+ import { RelayService } from "./relay/service.ts";
+-import { Telemetry } from "./telemetry.ts";
++import type { Telemetry } from "./telemetry.ts";
+ import { UsageService } from "./usage.ts";
+ import { CLIProxyService } from "./cliproxy.ts";
+ import { CLIProxyRoutes } from "./cliproxy-routes.ts";
+@@ -402,13 +402,11 @@
+     process.exit(1);
+   }
+   const updates = connectUpdater();
+-  const version = (JSON.parse(readFileSync(join(import.meta.dir, "..", "package.json"), "utf8")) as { version: string }).version;
+-  const telemetry = new Telemetry({ stateDir, version, env: process.env, fetch, previousVersion: () => updates.installed().previous_version });
+   const portal = new PortalService({ stateDir });
+   const relay = new RelayService({ stateDir });
+   let instance: ReturnType<typeof createServer>;
+   try {
+-    instance = createServer({ updates, herdrUpdate: new HerdrUpdater(), portal, relay, telemetry, registerBridge: true, herdrProfiles: readHerdrProfiles, shellAgents: new ShellAgentLocator(), agentDetector: new AgentDetector({ locate: catalogLocator({ probe: defaultLoginProbe() }) }), stateDir, siblingStateDir: siblingStateDir(stateDir) });
++    instance = createServer({ updates, herdrUpdate: new HerdrUpdater(), portal, relay, registerBridge: true, herdrProfiles: readHerdrProfiles, shellAgents: new ShellAgentLocator(), agentDetector: new AgentDetector({ locate: catalogLocator({ probe: defaultLoginProbe() }) }), stateDir, siblingStateDir: siblingStateDir(stateDir) });
+     instance.warmAgentCatalog();
+   } catch (err) {
+     const { code, syscall } = err as { code?: string; syscall?: string };
+@@ -425,12 +423,10 @@
+     herdrCore?.stop();
+     process.exit(1);
+   }
+-  telemetry.start();
+   let stopping = false;
+   const shutdown = () => {
+     if (stopping) return;
+     stopping = true;
+-    telemetry.stop();
+     instance.stop();
+     // Attach sidecars need ~1.2s to release herdr's exclusive client slot; Portal unregisters from
+     // its relay, and the pipes it logs to must outlive it

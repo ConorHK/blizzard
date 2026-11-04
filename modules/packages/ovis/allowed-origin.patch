@@ -1,8 +1,6 @@
-diff --git a/server/machine-security.ts b/server/machine-security.ts
-index d1fef41..5f9883c 100644
 --- a/server/machine-security.ts
 +++ b/server/machine-security.ts
-@@ -19,6 +19,9 @@ export function sameOrigin(request: Request): boolean {
+@@ -19,6 +19,9 @@
    const site = request.headers.get("sec-fetch-site");
    if (site && site !== "same-origin" && site !== "none") return false;
    const origin = request.headers.get("origin");
@@ -12,3 +10,15 @@ index d1fef41..5f9883c 100644
    if (!origin) {
      // No Origin at all. A browser leaves it off its own same-origin GET and HEAD (the PC
      // event stream, an EventSource, can send no header of its own), so a read keeps passing.
+--- a/server/update-api.ts
++++ b/server/update-api.ts
+@@ -86,6 +86,9 @@
+   const url = new URL(request.url);
+   let sameHost = true;
+   try { if (origin) sameHost = new URL(origin).host === url.host; } catch { sameHost = false; }
++  // Tunnels rewrite Host; trust one exact origin.
++  const allowed = process.env["OVIS_ALLOWED_ORIGIN"];
++  if (allowed && origin === allowed) sameHost = true;
+   return request.headers.get("x-herdr-update") === "1" && sameHost && (site === null || site === "same-origin") && !url.search;
+ }
+ 
