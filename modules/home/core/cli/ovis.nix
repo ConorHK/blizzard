@@ -3,6 +3,7 @@ topLevel: {
     {
       config,
       lib,
+      options,
       pkgs,
       ...
     }:
@@ -39,6 +40,11 @@ topLevel: {
       };
 
       config = lib.mkMerge [
+        # Chat shows pi-ask forms, ogham's start picker among them, through this bridge.
+        (lib.optionalAttrs (options.programs ? pi) {
+          programs.pi.extensionDirs.herdr-web-ui = "${ovis}/share/ovis/pi-extension";
+        })
+
         (lib.mkIf (cfg.runtime == "herdr") {
           # Herdr rewrites plugins.json, so link it.
           home.activation.ovis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

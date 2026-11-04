@@ -36,6 +36,7 @@ import { type Hit, reindex, search } from "./knowledge.ts";
 import { withLock } from "./lock.ts";
 import { appendLines, getSection, parseNote, renderNote } from "./note.ts";
 import { type PickItem, pick } from "./picker.ts";
+import { MAX_OPTIONS, type RemoteForm, remoteForm } from "./remote.ts";
 import { parseSource, type SourceItem, sourceSlug, sourceTitle, untracked } from "./source.ts";
 import {
 	findUrl,
@@ -136,6 +137,13 @@ function readSettings(): Settings {
 	} catch {
 		return {};
 	}
+}
+
+/** Rows Ovis Chat can answer: the new-task row and follow-ups need pi's own dialogs, and None stays in. */
+function remoteItems(items: PickItem[]): PickItem[] {
+	const usable = items.filter((item) => item.value !== "new" && !item.value.startsWith("due:"));
+	const none = usable.filter((item) => item.value === "none");
+	return [...usable.filter((item) => item.value !== "none").slice(0, MAX_OPTIONS - none.length), ...none];
 }
 
 export default function (pi: ExtensionAPI) {
@@ -569,10 +577,21 @@ export default function (pi: ExtensionAPI) {
 				),
 				add({ value: "none", label: NO_TASK }, async () => true),
 			];
-			const picked = await pick(ctx, "Ogham task for this session?", build(sourceItems), {
+			const title = "Ogham task for this session?";
+			const first = build(sourceItems);
+			let form: RemoteForm | undefined;
+			const picked = await pick(ctx, title, first, {
 				newLabel: (text) => `New task: ${text}`,
-				onOpen: (setItems) => void refreshed.then((items) => setItems(build(items))),
+				onFinish: (finish) => {
+					form = remoteForm(pi.events, title, remoteItems(first), finish);
+				},
+				onOpen: (setItems) =>
+					void refreshed.then((items) => {
+						setItems(build(items));
+						form?.update(remoteItems(build(items)));
+					}),
 			});
+			form?.close();
 			// The user may bind with /task while the dialog is open.
 			if (!picked || bound) return;
 			if ("text" in picked) {

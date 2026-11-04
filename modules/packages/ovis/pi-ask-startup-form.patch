@@ -1,0 +1,124 @@
+--- a/server/pi.ts
++++ b/server/pi.ts
+@@ -155,7 +155,7 @@
+   paneId: string,
+   sessionDir = defaultPiSessionDir(),
+   options: PiTranscriptOptions = {},
+-): Promise<{ path: string; agentDir: string | null } | { unwritten: { id: string; path: string } } | null> {
++): Promise<{ path: string; agentDir: string | null } | { unwritten: { id: string; path: string }; agentDir: string | null } | null> {
+   const agent = options.agent === undefined ? await agentGet(paneId).catch(() => null) : options.agent;
+   const session = agent?.agent_session;
+   if (agent?.agent !== "pi" || session?.agent !== "pi" || session.source !== "herdr:pi" || session.kind !== "path" || typeof session.value !== "string") return null;
+@@ -209,5 +209,5 @@
+   const agentDir = named === UNREAD ? bridgeAgentDirOwning(matches[0]!) : named;
+   if (path !== null) return { path, agentDir };
+   const unwritten = unwrittenSession(session.value, matches[0]!);
+-  return unwritten === null ? null : { unwritten };
++  return unwritten === null ? null : { unwritten, agentDir };
+ }
+--- a/server/pi-ask-bridge.ts
++++ b/server/pi-ask-bridge.ts
+@@ -14,7 +14,7 @@
+  * steps' answers here until the last one is given, as OpenCode's form does (prompt.ts).
+  */
+ import { existsSync, lstatSync, realpathSync } from "node:fs";
+-import { dirname, join } from "node:path";
++import { basename, dirname, join } from "node:path";
+ import {
+   PI_ASK_BRIDGE_DIRECTORY,
+   type PiAskBridgeState,
+@@ -37,6 +37,13 @@
+ const MAX_OPTIONS = 50;
+ const MAX_TEXT = 12_000;
+ const MAX_ANSWERS_JSON = 65_536;
++/** ogham's start picker opens before pi's first turn, so no ask_user call holds it. */
++const CALL_FREE_SOURCES = new Set(["ogham"]);
++
++function callFree(flow: unknown): boolean {
++  const { source, toolCallId } = (flow ?? {}) as { source?: unknown; toolCallId?: unknown };
++  return toolCallId === undefined && typeof source === "string" && CALL_FREE_SOURCES.has(source);
++}
+ 
+ export interface PiAskUserForm {
+   socket: string;
+@@ -75,7 +82,7 @@
+   if (typeof value !== "object" || value === null) return null;
+   const flow = value as Record<string, unknown>;
+   const questions = flow["questions"];
+-  if (!isString(flow["flowId"], 1_024) || !isString(flow["toolCallId"], 1_024) || !flow["toolCallId"] || !optionalString(flow["title"])
++  if (!isString(flow["flowId"], 1_024) || !(callFree(flow) || isString(flow["toolCallId"], 1_024) && flow["toolCallId"]) || !optionalString(flow["title"])
+     || typeof flow["createdAt"] !== "number" || !Array.isArray(questions) || questions.length === 0 || questions.length > MAX_QUESTIONS
+     || !questions.every(validQuestion) || new Set(questions.map((question) => question.id)).size !== questions.length) return null;
+   return value as PiAskFlow;
+@@ -100,8 +107,25 @@
+   } catch { return false; }
+ }
+ 
++/** A path by its nearest existing ancestor's real path: a session pi has not written yet has none of its own. */
++function canonicalPath(path: string): string | null {
++  const rest: string[] = [];
++  for (let dir = path; ; dir = dirname(dir)) {
++    try { return join(realpathSync(dir), ...rest.reverse()); } catch { /* not there yet */ }
++    if (dirname(dir) === dir) return null;
++    rest.push(basename(dir));
++  }
++}
++
+ function sameFile(left: string, right: string): boolean {
+-  try { return realpathSync(left) === realpathSync(right); } catch { return false; }
++  const canonical = canonicalPath(left);
++  return canonical !== null && canonical === canonicalPath(right);
++}
++
++/** The pane's session for a card, written or not, and the agent directory of its pi. */
++export function piAskSession(found: Awaited<ReturnType<typeof piTranscriptPath>>): { path: string; agentDir: string | null } | null {
++  if (found === null) return null;
++  return "path" in found ? found : { path: found.unwritten.path, agentDir: found.agentDir };
+ }
+ 
+ async function bridgeState(socket: string, signal?: AbortSignal): Promise<PiAskBridgeState | null> {
+@@ -204,7 +228,7 @@
+   const open = state.openCalls;
+   const waiting = state.flows.filter((flow) => {
+     const toolCallId = (flow as { toolCallId?: unknown } | null)?.toolCallId;
+-    return typeof toolCallId === "string" && open.includes(toolCallId);
++    return callFree(flow) || typeof toolCallId === "string" && open.includes(toolCallId);
+   });
+   const flow = waiting.length === 1 ? validFlow(waiting[0]) : null;
+   return flow ? { socket, pid, sessionFile: state.sessionFile, flow } : null;
+@@ -368,8 +392,8 @@
+   // from (pi-ask reopens a call's form under the same flowId); a pi pushed into the background
+   // still answers on its socket with its own form and session, so the foreground is read again
+   // last, right before the answer leaves
+-  const transcript = await piTranscriptPath(paneId).catch(() => null);
+-  const card = transcript && "path" in transcript && sameFile(transcript.path, form.transcript) ? await bindPiAsk(paneId, transcript, signal) : null;
++  const session = piAskSession(await piTranscriptPath(paneId).catch(() => null));
++  const card = session && sameFile(session.path, form.transcript) ? await bindPiAsk(paneId, session, signal) : null;
+   if (!card || card.socket !== form.socket || card.pid !== form.pid || !sameFlow(card.flow, form.flow) || !(await foregroundPids(paneId)).includes(form.pid)) {
+     drafts.delete(paneId);
+     return done(changed());
+--- a/server/prompt.ts
++++ b/server/prompt.ts
+@@ -13,7 +13,7 @@
+ import { heldOmoProcess } from "./omo.ts";
+ import { OmoAskReader, ompAsksAfter, type OmoAsks } from "./omo-ask.ts";
+ import { ompCallPrompt, ompMarkdownPrompt, ompOpenCall, ompStepPrompt } from "./omp-ask.ts";
+-import { answerPiAskUser, bindPiAsk, piAskActivity, piAskUserPrompt } from "./pi-ask-bridge.ts";
++import { answerPiAskUser, bindPiAsk, piAskActivity, piAskSession, piAskUserPrompt } from "./pi-ask-bridge.ts";
+ import { badRequest, errorResponse, jsonResponse, setRequestRoute } from "./http.ts";
+ import { claudePlanFile } from "./claude-plan.ts";
+ import { listPendingQuestionForms, openCodeService, replyOpenCodeForm } from "./opencode-service.ts";
+@@ -973,9 +973,10 @@
+   if (!["claude", "omp", "codex", "omo", "pi", "gjc", "hermes", "cmd", "opencode", ""].includes(agent)) return { prompt: null };
+   const piTranscript = agent === "pi" ? await piTranscriptPath(paneId).catch(() => null) : null;
+   // pi-ask's ask_user form, as the web UI's pi extension reports it: answered through pi-ask, never keys
+-  if (piTranscript && "path" in piTranscript) {
+-    const card = await bindPiAsk(paneId, piTranscript, signal);
+-    if (card) return { prompt: publicPrompt(piAskUserPrompt(paneId, piTranscript.path, card)) };
++  const piSession = piAskSession(piTranscript);
++  if (piSession) {
++    const card = await bindPiAsk(paneId, piSession, signal);
++    if (card) return { prompt: publicPrompt(piAskUserPrompt(paneId, piSession.path, card)) };
+   }
+   let screen = await liveScreen(paneId);
+   const questionnaire = agent === "pi" && isPiQuestionnaireScreen(screen);

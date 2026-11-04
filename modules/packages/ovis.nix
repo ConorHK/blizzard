@@ -64,6 +64,7 @@
             ./ovis/allowed-origin.patch
             ./ovis/no-telemetry.patch
             ./ovis/herdr-core-pi-session.patch
+            ./ovis/pi-ask-startup-form.patch
           ];
 
           nativeBuildInputs = [
@@ -83,6 +84,8 @@
             chmod -R u+w node_modules
             # The sandbox has no /usr/bin/env for the .bin shim.
             bun --bun node_modules/vite/bin/vite.js build
+            # Upstream's installer bundles the pi bridge the same way.
+            bun build integrations/pi-ask.ts --target node --format esm --outfile pi-extension/index.js
             runHook postBuild
           '';
 
@@ -91,7 +94,7 @@
             runHook preInstall
             root=$out/share/ovis
             mkdir -p $root/bin
-            cp -R dist server shared integrations scripts herdr-plugin.toml package.json \
+            cp -R dist server shared integrations scripts pi-extension herdr-plugin.toml package.json \
               CHANGELOG.md release-summaries.json $root/
             cp -R ${nodeModules}/runtime $root/node_modules
             # A link keeps autoPatchelf off the vouched bytes.

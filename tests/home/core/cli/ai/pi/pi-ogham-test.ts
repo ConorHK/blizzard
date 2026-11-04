@@ -58,6 +58,7 @@ import { withLock } from "./ogham/lock.ts";
 import { appendLines, getSection, parseNote, renderNote, setSection } from "./ogham/note.ts";
 import { filterItems, type PickItem, type Picked, pick } from "./ogham/picker.ts";
 import { parseSource, sourceSlug, sourceTitle, untracked } from "./ogham/source.ts";
+import { FORM_SOURCE, MAX_OPTIONS, remoteForm } from "./ogham/remote.ts";
 import { getKeybindings, visibleWidth } from "@earendil-works/pi-tui";
 
 const now = new Date(2026, 9, 20, 14, 5);
@@ -705,4 +706,64 @@ test("picker component moves, picks, creates, cancels, and updates live", async 
 	live.component().handleInput(keys.down);
 	live.component().handleInput(keys.enter);
 	assert.deepEqual(await live.result, { value: "d" });
+
+	const remote = open(items, { onFinish: (finish) => finish({ value: "c" }) });
+	assert.deepEqual(await remote.result, { value: "c" });
+});
+
+test("remote form mirrors the picker for Ovis Chat", () => {
+	const STARTED = "@eko24ive/pi-ask:started";
+	const SUBMIT = "@eko24ive/pi-ask:submit";
+	const RESULT = "@eko24ive/pi-ask:submit-result";
+	const COMPLETED = "@eko24ive/pi-ask:completed";
+	const emitted: { channel: string; data: any }[] = [];
+	const handlers = new Map<string, Set<(data: unknown) => void>>();
+	const events = {
+		emit(channel: string, data: unknown) {
+			emitted.push({ channel, data });
+			for (const handler of handlers.get(channel) ?? []) handler(data);
+		},
+		on(channel: string, handler: (data: unknown) => void) {
+			const set = handlers.get(channel) ?? new Set();
+			handlers.set(channel, set.add(handler));
+			return () => void set.delete(handler);
+		},
+	};
+	const last = (channel: string) => emitted.filter((event) => event.channel === channel).at(-1)?.data;
+	const result = (requestId: string) => emitted.find((event) => event.channel === RESULT && event.data.requestId === requestId)?.data;
+	const submit = (requestId: string, flowId: string, answers: unknown, kind = "answer") =>
+		events.emit(SUBMIT, { version: 1, requestId, flowId, response: { kind, answers } });
+	const many: PickItem[] = Array.from({ length: 60 }, (_, i) => ({ value: `task:${i}`, label: `Task ${i}`, ...(i ? {} : { hint: "assigned" }) }));
+
+	const picks: (Picked | undefined)[] = [];
+	const form = remoteForm(events, "Pick", many, (picked) => picks.push(picked));
+	const started = last(STARTED);
+	assert.equal(started.source, FORM_SOURCE);
+	assert.equal(started.toolCallId, undefined);
+	assert.equal(started.questions[0].options.length, MAX_OPTIONS);
+	assert.deepEqual(started.questions[0].options[0], { value: "task:0", label: "Task 0", description: "assigned" });
+
+	submit("elsewhere", "another-flow", { task: { values: ["task:1"] } });
+	assert.equal(result("elsewhere"), undefined);
+	submit("gone", started.flowId, { task: { values: ["task:55"] } });
+	assert.equal(result("gone").ok, false);
+	form.update([{ value: "task:55", label: "Task 55" }]);
+	assert.deepEqual(last(STARTED).questions[0].options, [{ value: "task:55", label: "Task 55" }]);
+	submit("typed", started.flowId, { task: { customText: " Write the runbook " } });
+	assert.equal(result("typed").ok, true);
+	assert.deepEqual(picks, [{ text: "Write the runbook" }]);
+	assert.equal(last(COMPLETED).flowId, started.flowId);
+	submit("late", started.flowId, { task: { values: ["task:55"] } });
+	assert.equal(result("late"), undefined);
+	form.close();
+	assert.equal(emitted.filter((event) => event.channel === COMPLETED).length, 1);
+
+	const more: (Picked | undefined)[] = [];
+	remoteForm(events, "Pick", many, (picked) => more.push(picked));
+	submit("pick", last(STARTED).flowId, { task: { values: ["task:2"] } });
+	remoteForm(events, "Pick", many, (picked) => more.push(picked));
+	submit("skip", last(STARTED).flowId, {});
+	remoteForm(events, "Pick", many, (picked) => more.push(picked));
+	submit("cancel", last(STARTED).flowId, undefined, "cancel");
+	assert.deepEqual(more, [{ value: "task:2" }, undefined, undefined]);
 });

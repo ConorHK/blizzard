@@ -15,6 +15,8 @@ export interface PickerOptions {
 	newLabel?: (text: string) => string;
 	/** Hands back a setter for live item updates. */
 	onOpen?: (setItems: (items: PickItem[]) => void) => void;
+	/** Hands back a closer for answers that arrive from elsewhere. */
+	onFinish?: (finish: (picked: Picked | undefined) => void) => void;
 	maxVisible?: number;
 }
 
@@ -45,6 +47,7 @@ export function pick(ctx: ExtensionContext, title: string, initial: PickItem[], 
 			shown = filterItems(items, input.getValue(), options.newLabel);
 			selected = Math.min(selected, Math.max(0, shown.length - 1));
 		};
+		options.onFinish?.(done);
 		options.onOpen?.((next) => {
 			items = next;
 			refilter();

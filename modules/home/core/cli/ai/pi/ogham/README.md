@@ -25,6 +25,10 @@ you), and follow-ups: it asks for the measured impact of wins and shipped
 tasks older than 14 days, and offers to close tasks that look finished or
 have not changed in 21 days.
 
+The picker also goes out as an `@eko24ive/pi-ask` form, so Ovis Chat shows it
+as a card. The card offers tasks, ticket items and None, at most 50 rows;
+typing an answer starts a new task. Follow-ups stay in the terminal.
+
 While bound, the system prompt carries the task note and related notes that
 `zg` finds across the repo. `/task done` closes the task, moves its durable
 findings into `topics/<topic>.md`, and records the task's win if one is not
