@@ -130,6 +130,11 @@
             "ctrl-v" = "terminal.paste_image";
             "ctrl-insert" = "terminal.copy";
             "shift-insert" = "terminal.paste";
+          }
+          # keys.json replaces the built-in keymap, which holds the cmd keys.
+          // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+            "cmd-c" = "terminal.copy";
+            "cmd-v" = "terminal.paste";
           };
         };
       };
