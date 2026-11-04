@@ -581,6 +581,8 @@ export default function (pi: ExtensionAPI) {
 			const first = build(sourceItems);
 			let form: RemoteForm | undefined;
 			let picked: Awaited<ReturnType<typeof pick>>;
+			// Blocked, Ovis refuses Chat sends, which would land in the picker's search box.
+			pi.events.emit("herdr:blocked", { active: true, label: title });
 			try {
 				picked = await pick(ctx, title, first, {
 					newLabel: (text) => `New task: ${text}`,
@@ -595,6 +597,7 @@ export default function (pi: ExtensionAPI) {
 				});
 			} finally {
 				form?.close();
+				pi.events.emit("herdr:blocked", { active: false });
 			}
 			// The user may bind with /task while the dialog is open.
 			if (!picked || bound) return;
