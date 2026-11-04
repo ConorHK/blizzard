@@ -89,6 +89,8 @@ import {
 } from "./wins.ts";
 
 const ENTRY = "ogham-task";
+// Other extensions, such as herdr-name, hear which task the session works on.
+const TASK_EVENT = "ogham:task";
 const WINS = "wins.md";
 const WINS_DIR = "wins";
 const INDEX = "index.md";
@@ -435,6 +437,10 @@ export default function (pi: ExtensionAPI) {
 		}
 	}
 
+	function announce(ref: TaskRef | undefined): void {
+		pi.events.emit(TASK_EVENT, { task: ref ? formatRef(ref) : null, slug: ref?.slug ?? null });
+	}
+
 	async function bind(ctx: ExtensionContext, request: BindRequest): Promise<string> {
 		if (!existsSync(vault)) throw new Error(`No ogham vault at ${vault}.`);
 		const now = new Date();
@@ -444,6 +450,7 @@ export default function (pi: ExtensionAPI) {
 
 		if (bound && formatRef(bound.ref) !== formatRef(ref)) await updateWorker("moved");
 		bound = { ref, title: request.title, role: request.role };
+		announce(ref);
 
 		const file = abs(workerNotePath(ref, session));
 		const pane = process.env.HERDR_PANE_ID;
@@ -672,6 +679,7 @@ export default function (pi: ExtensionAPI) {
 		const text = await closeTask(ctx, binding);
 		await updateWorker("done");
 		bound = undefined;
+		announce(undefined);
 		pi.appendEntry(ENTRY, null);
 		showStatus(ctx);
 		return text;
@@ -763,6 +771,7 @@ export default function (pi: ExtensionAPI) {
 		if (compiled.bad.length) ctx.ui.notify(`ogham: bad artifactRules: ${compiled.bad.join(", ")}`, "warning");
 		session = ctx.sessionManager.getSessionId();
 		bound = undefined;
+		announce(undefined);
 		related = [];
 		// ogham sync writes it when a rebase conflicts.
 		if (existsSync(abs(SYNC_ERROR))) ctx.ui.notify(`ogham: sync is stuck; resolve ${vault} by hand.`, "warning");

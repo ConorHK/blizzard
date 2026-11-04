@@ -41,6 +41,10 @@ the same as `OGHAM_TASK`, and either one given a ticket URL starts the task
 for that ticket, with no start dialog. `/task` alone lists the workers.
 Bindings survive resume.
 
+When the bound task changes, ogham emits `ogham:task` on `pi.events` with
+`{ task, slug }` (both null once unbound); herdr-name puts the slug in the
+session name.
+
 Settings: `model` (`provider/id`), `curate` (false turns the side model off),
 `winGuidance` (extra rules for wins), `zg` (path to zg), `askOnStart` (true
 asks for a task when a new interactive session starts), `taskSource`
