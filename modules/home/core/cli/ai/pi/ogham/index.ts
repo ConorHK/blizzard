@@ -699,6 +699,11 @@ export default function (pi: ExtensionAPI) {
 		}),
 	);
 
+	pi.registerFlag("ogham-task", {
+		description: "Ogham task for this session: a ticket URL starts it, a project/slug joins it",
+		type: "string",
+	});
+
 	pi.registerCommand("task", {
 		description: "Show, start, join, or finish the ogham task",
 		handler: async (args, ctx) => {
@@ -745,9 +750,14 @@ export default function (pi: ExtensionAPI) {
 			if (saved) await quietly(ctx, () => bind(ctx, saved));
 			return;
 		}
-		const env = process.env.OGHAM_TASK;
-		if (env) {
-			await quietly(ctx, () => join(ctx, env, "worker", process.env.OGHAM_PARENT));
+		const requested = (pi.getFlag("ogham-task") as string | undefined) || process.env.OGHAM_TASK;
+		if (requested && findUrl(requested) === requested) {
+			// A ticket URL starts its task, as the start dialog's "New ticket or title" does.
+			void migrating.then(() => quietly(ctx, async () => ctx.ui.notify(await startFrom(ctx, requested), "info")));
+			return;
+		}
+		if (requested) {
+			await quietly(ctx, () => join(ctx, requested, "worker", process.env.OGHAM_PARENT));
 			return;
 		}
 		const fresh = event.reason === "startup" || event.reason === "new";
