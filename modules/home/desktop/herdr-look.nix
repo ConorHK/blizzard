@@ -1,4 +1,7 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
+let
+  c = config.flake.lib.base16Scheme;
+in
 {
   flake.modules.homeManager.herdr-look =
     {
@@ -8,8 +11,7 @@
       ...
     }:
     let
-      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) creeper-otf;
-      c = config.lib.stylix.colors.withHashtag;
+      inherit (inputs.self.packages.${pkgs.stdenv.hostPlatform.system}) creeper-otf creeper-ttf;
       home = "${config.xdg.configHome}/herdr-app";
 
       theme = {
@@ -49,17 +51,37 @@
       look = {
         theme = "alduin";
         font = "creeper";
-        # Creeper has only a 15px bitmap; other sizes draw nothing.
+        # Creeper is a 15px font; other sizes draw blank or blurred.
         font_size = 15;
+      };
+
+      # macOS draws no bitmap-only fonts, so it gets the traced outlines.
+      font =
+        if pkgs.stdenv.hostPlatform.isDarwin then
+          {
+            dir = "${creeper-ttf}/share/fonts/truetype";
+            ext = "ttf";
+          }
+        else
+          {
+            dir = "${creeper-otf}/share/fonts/opentype";
+            ext = "otf";
+          };
+      fontFile = style: {
+        name = "herdr-app/fonts/creeper-${style}.${font.ext}";
+        value.source = "${font.dir}/creeper-${style}.${font.ext}";
       };
     in
     {
       xdg.configFile = {
         "herdr-app/themes/alduin.json".text = builtins.toJSON theme;
-        "herdr-app/fonts/creeper-regular.otf".source =
-          "${creeper-otf}/share/fonts/opentype/creeper-regular.otf";
-        "herdr-app/fonts/creeper-bold.otf".source = "${creeper-otf}/share/fonts/opentype/creeper-bold.otf";
-      };
+      }
+      // lib.listToAttrs (
+        map fontFile [
+          "regular"
+          "bold"
+        ]
+      );
 
       # The app writes settings.json from its Settings screen, so merge into it.
       # App screens and toasts draw at sizes creeper lacks, so they keep the default font.

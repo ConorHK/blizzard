@@ -20,10 +20,14 @@ let
   };
 in
 {
-  flake.modules = {
-    nixos.desktop = _: { stylix.base16Scheme = base16Scheme; };
-    homeManager.theme = {
-      stylix.base16Scheme = base16Scheme;
+  flake = {
+    # Shared with modules that theme apps without stylix.
+    lib = { inherit base16Scheme; };
+    modules = {
+      nixos.desktop = _: { stylix.base16Scheme = base16Scheme; };
+      homeManager.theme = {
+        stylix.base16Scheme = base16Scheme;
+      };
     };
   };
 }
