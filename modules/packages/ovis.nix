@@ -63,6 +63,7 @@
           patches = [
             ./ovis/allowed-origin.patch
             ./ovis/no-telemetry.patch
+            ./ovis/herdr-core-pi-session.patch
           ];
 
           nativeBuildInputs = [

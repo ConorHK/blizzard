@@ -1,0 +1,40 @@
+--- a/server/herdr-core/snapshot.ts
++++ b/server/herdr-core/snapshot.ts
+@@ -24,6 +24,8 @@
+ /** The names a person gave a workspace or tab Ovis made: names live in the app's document, which Ovis never writes. */
+ export const WORKSPACE_NAME_LABEL = "ovis.workspace";
+ export const TAB_NAME_LABEL = "ovis.tab";
++/** The session file a pi in the terminal labels it with; hc's status carries no session. */
++export const PI_SESSION_LABEL = "pi.session";
+ 
+ /** One OSC 7501 report (hc's `Status`): the program's own words. */
+ export interface HcStatus { app?: string; state: string; title?: string; msg?: string }
+@@ -228,6 +230,7 @@
+     workspace_id: workspaceId,
+     tab_id: tabId,
+     agent: agentOf(terminal),
++    agent_session: piSessionOf(terminal),
+     agent_status: agentStatusOf(terminal.status),
+     cwd,
+     foreground_cwd: cwd,
+@@ -239,6 +242,12 @@
+   };
+ }
+ 
++function piSessionOf(terminal: HcTerminal): PaneInfo["agent_session"] {
++  const path = terminal.labels?.[PI_SESSION_LABEL];
++  if (agentOf(terminal) !== "pi" || !path?.startsWith("/")) return null;
++  return { agent: "pi", kind: "path", source: "herdr:pi", value: path };
++}
++
+ export function agentInfoOf(pane: PaneInfo): AgentInfo {
+   return {
+     pane_id: pane.pane_id,
+@@ -246,6 +255,7 @@
+     workspace_id: pane.workspace_id,
+     tab_id: pane.tab_id,
+     agent: pane.agent ?? null,
++    agent_session: pane.agent_session ?? null,
+     agent_status: pane.agent_status,
+     cwd: pane.cwd ?? null,
+     foreground_cwd: pane.foreground_cwd ?? null,
