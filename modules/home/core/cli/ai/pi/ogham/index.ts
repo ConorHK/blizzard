@@ -580,18 +580,22 @@ export default function (pi: ExtensionAPI) {
 			const title = "Ogham task for this session?";
 			const first = build(sourceItems);
 			let form: RemoteForm | undefined;
-			const picked = await pick(ctx, title, first, {
-				newLabel: (text) => `New task: ${text}`,
-				onFinish: (finish) => {
-					form = remoteForm(pi.events, title, remoteItems(first), finish);
-				},
-				onOpen: (setItems) =>
-					void refreshed.then((items) => {
-						setItems(build(items));
-						form?.update(remoteItems(build(items)));
-					}),
-			});
-			form?.close();
+			let picked: Awaited<ReturnType<typeof pick>>;
+			try {
+				picked = await pick(ctx, title, first, {
+					newLabel: (text) => `New task: ${text}`,
+					onFinish: (finish) => {
+						form = remoteForm(pi.events, title, remoteItems(first), finish);
+					},
+					onOpen: (setItems) =>
+						void refreshed.then((items) => {
+							setItems(build(items));
+							form?.update(remoteItems(build(items)));
+						}),
+				});
+			} finally {
+				form?.close();
+			}
 			// The user may bind with /task while the dialog is open.
 			if (!picked || bound) return;
 			if ("text" in picked) {
