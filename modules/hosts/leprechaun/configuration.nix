@@ -122,7 +122,7 @@
       };
 
       # Default ARC ceiling is nearly all RAM.
-      boot.kernelParams = [ "zfs.zfs_arc_max=3221225472" ]; # 3 GiB
+      boot.kernelParams = [ "zfs.zfs_arc_max=8589934592" ]; # 8 GiB
 
       programs.nh = {
         enable = true;

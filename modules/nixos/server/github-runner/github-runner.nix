@@ -82,8 +82,8 @@ in
           Restart = lib.mkForce "always";
           RestartSec = "30s";
           # flake check eval peaks near 8.3G.
-          MemoryHigh = "10G";
-          MemoryMax = "12G";
+          MemoryHigh = "14G";
+          MemoryMax = "16G";
           # Reads the token that fetches private flake inputs.
           SupplementaryGroups = [ "nix-github" ];
         };
@@ -92,8 +92,8 @@ in
       systemd = {
         # CI swapping into zram froze the host.
         slices.ci.sliceConfig = {
-          MemoryHigh = "9G";
-          MemoryMax = "10G";
+          MemoryHigh = "14G";
+          MemoryMax = "16G";
           MemorySwapMax = 0;
           CPUWeight = 20;
           IOWeight = 20;
