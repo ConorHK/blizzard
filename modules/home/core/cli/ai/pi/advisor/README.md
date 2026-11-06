@@ -12,7 +12,7 @@ It also gets your `AGENTS.md` files and any `WATCHDOG.md`, advisor-only guidance
 | Severity | Delivery |
 |---|---|
 | `nit` | Shown, and sent with the next turn |
-| `concern` | Steers the running agent, or wakes it if it stopped mid-work; after a final answer it is only shown |
+| `concern` | Steers the running agent, or wakes it if it stopped mid-work (unless `wakeOn` is `blocker`); after a final answer it is only shown |
 | `blocker` | Steers or wakes the agent, even after a final answer |
 
 The transcript shows notes as cards in the theme's `accent`, `warning` and `error`
@@ -29,4 +29,5 @@ A failed review is rolled back out of the advisor session; three in a row stop i
 Settings in `~/.pi/agent/advisor.json` (`programs.pi.advisor.settings`): `enabled`,
 `model` (`provider/id[:level]`, default the session model and level), `reviewMode`
 (`turn` or `agent-end`), `reviewInterval`, `maxNotesPerUpdate` (4), `immuneTurns` (3),
-`syncBacklog` (`off`, or `strict` to wait for reviews before the agent stops), `tools`.
+`syncBacklog` (`off`, or `strict` to wait for reviews before the agent stops), `tools`,
+`wakeOn` (`concern`, or `blocker` so that only blockers wake a stopped agent).

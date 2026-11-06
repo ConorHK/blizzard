@@ -27,7 +27,7 @@ test("guard budget: blockers exempt, higher rank displaces pending", () => {
 });
 
 test("delivery channels", () => {
-	const base = { autoResumeSuppressed: false, streaming: false, terminalAnswer: false, immune: false };
+	const base = { autoResumeSuppressed: false, streaming: false, terminalAnswer: false, immune: false, wakeOn: "concern" as const };
 	assert.equal(deliveryChannel({ ...base, severity: "nit" }), "aside");
 	assert.equal(deliveryChannel({ ...base, severity: "concern" }), "steer");
 	assert.equal(deliveryChannel({ ...base, severity: "concern", terminalAnswer: true }), "preserve");
@@ -35,6 +35,15 @@ test("delivery channels", () => {
 	assert.equal(deliveryChannel({ ...base, severity: "blocker", autoResumeSuppressed: true }), "preserve");
 	assert.equal(deliveryChannel({ ...base, severity: "concern", immune: true }), "aside");
 	assert.equal(deliveryChannel({ ...base, severity: "blocker", immune: true }), "steer");
+});
+
+test("wakeOn blocker keeps concerns from waking a stopped agent", () => {
+	const base = { autoResumeSuppressed: false, streaming: false, terminalAnswer: false, immune: false, wakeOn: "blocker" as const };
+	assert.equal(deliveryChannel({ ...base, severity: "concern" }), "aside");
+	assert.equal(deliveryChannel({ ...base, severity: "concern", streaming: true }), "steer");
+	assert.equal(deliveryChannel({ ...base, severity: "blocker" }), "steer");
+	assert.equal(deliveryChannel({ ...base, severity: "blocker", terminalAnswer: true }), "steer");
+	assert.equal(deliveryChannel({ ...base, severity: "nit" }), "aside");
 });
 
 test("update renders turns and skips own notes", () => {

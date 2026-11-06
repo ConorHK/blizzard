@@ -33,6 +33,7 @@ interface AdvisorSettings {
 	immuneTurns: number;
 	syncBacklog: "off" | "strict";
 	tools: string[];
+	wakeOn: "concern" | "blocker";
 }
 
 const DEFAULTS: AdvisorSettings = {
@@ -43,6 +44,7 @@ const DEFAULTS: AdvisorSettings = {
 	immuneTurns: 3,
 	syncBacklog: "off",
 	tools: ["read", "grep", "find", "ls"],
+	wakeOn: "concern",
 };
 
 const ACK_SENT = "Delivered.";
@@ -265,6 +267,7 @@ export default function (pi: ExtensionAPI) {
 			streaming,
 			terminalAnswer: settings.reviewMode === "turn" && terminalAnswer(ctx),
 			immune: turnsSinceInterrupt < settings.immuneTurns,
+			wakeOn: settings.wakeOn,
 		});
 		const message = {
 			customType: ADVISOR_NOTE_TYPE,

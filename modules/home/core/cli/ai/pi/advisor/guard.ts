@@ -140,9 +140,12 @@ export function deliveryChannel(opts: {
 	streaming: boolean;
 	terminalAnswer: boolean;
 	immune: boolean;
+	/** The lowest severity that may wake a stopped agent; a running one is still steered. */
+	wakeOn: Severity;
 }): DeliveryChannel {
 	if (opts.terminalAnswer && opts.severity !== "blocker" && !opts.streaming) return "preserve";
 	if (opts.severity === "nit") return "aside";
+	if (!opts.streaming && SEVERITY_RANK[opts.severity] < SEVERITY_RANK[opts.wakeOn]) return "aside";
 	if (opts.autoResumeSuppressed && !opts.streaming) return "preserve";
 	if (opts.immune && opts.severity !== "blocker") return "aside";
 	return "steer";
