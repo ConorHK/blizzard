@@ -73,6 +73,16 @@ in
       };
     in
     {
+      # The home layout, its mods' prefix and the sidebar text, for modules that build on them.
+      lib.herdr = {
+        home = "creeper";
+        prefix = "creeper-";
+        text = {
+          inherit (look) font;
+          size = look.font_size;
+        };
+      };
+
       xdg.configFile = {
         "herdr-app/themes/alduin.json".text = builtins.toJSON theme;
       }

@@ -13,25 +13,35 @@
       bind = action: keys: lib.genAttrs keys (_: action);
     in
     {
-      home.packages = [
-        herdr-app
-        herdr-core
-      ];
+      options.programs.herdr-app.keys = lib.mkOption {
+        type = with lib.types; attrsOf (attrsOf str);
+        default = { };
+        description = "keys.json: each section's keys and their commands.";
+      };
 
-      xdg.configFile = {
-        # New terminals get fish, not the login shell.
-        "herdr-core/config.toml".source = (pkgs.formats.toml { }).generate "herdr-core.toml" {
-          shell = [ (lib.getExe config.programs.fish.package) ];
+      config = {
+        home.packages = [
+          herdr-app
+          herdr-core
+        ];
+
+        xdg.configFile = {
+          # New terminals get fish, not the login shell.
+          "herdr-core/config.toml".source = (pkgs.formats.toml { }).generate "herdr-core.toml" {
+            shell = [ (lib.getExe config.programs.fish.package) ];
+          };
+
+          # Linked per file, since the app writes type files into mod folders.
+          "herdr-app/mods/bsp/main.js".source = ./herdr-bsp/main.js;
+          "herdr-app/mods/bsp/mod.json".source = ./herdr-bsp/mod.json;
+          "herdr-app/mods/workers/main.js".source = ./herdr-workers/main.js;
+          "herdr-app/mods/workers/mod.json".source = ./herdr-workers/mod.json;
+
+          "herdr-app/keys.json".text = builtins.toJSON config.programs.herdr-app.keys;
         };
 
-        # Linked per file, since the app writes type files into mod folders.
-        "herdr-app/mods/bsp/main.js".source = ./herdr-bsp/main.js;
-        "herdr-app/mods/bsp/mod.json".source = ./herdr-bsp/mod.json;
-        "herdr-app/mods/workers/main.js".source = ./herdr-workers/main.js;
-        "herdr-app/mods/workers/mod.json".source = ./herdr-workers/mod.json;
-
         # The app has no prefix chords, so herdr prefix binds move to alt.
-        "herdr-app/keys.json".text = builtins.toJSON {
+        programs.herdr-app.keys = {
           global = {
             "alt-1" = "space.select:1";
             "alt-2" = "space.select:2";
