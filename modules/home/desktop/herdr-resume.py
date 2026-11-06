@@ -22,20 +22,27 @@ AGENTS = {
 }
 
 
-def log(msg):
+def log(msg: str) -> None:
+    """Print one timestamped line to stderr, which launchd or journald keeps."""
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}", file=sys.stderr, flush=True)
 
 
-def hc(*args, timeout=30):
-    r = subprocess.run(
-        [HC, *args, "--json"], capture_output=True, text=True, timeout=timeout
+def hc(*args: str, timeout: int = 30) -> dict | None:
+    """Run hc with --json and parse its answer, or None if it failed."""
+    r = subprocess.run(  # noqa: S603
+        [HC, *args, "--json"],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
     )
     if r.returncode != 0:
         return None
     return json.loads(r.stdout)
 
 
-def snapshot_entry(info, agent):
+def snapshot_entry(info: dict, agent: str) -> dict | None:
+    """Return what reopens this terminal's agent: its session, pid and folder."""
     label, _ = AGENTS[agent]
     session = (info.get("labels") or {}).get(label)
     if not session:
@@ -44,18 +51,24 @@ def snapshot_entry(info, agent):
     return {"agent": agent, "pid": info["pid"], "session": session, "cwd": cwd}
 
 
-def resume(address, entry):
+def resume(address: str, entry: dict) -> None:
+    """Type the agent's resume command into the shell that replaced it."""
     _, command = AGENTS[entry["agent"]]
     line = " ".join(shlex.quote(part) for part in command(entry["session"]))
     if entry.get("cwd"):
         line = f"cd {shlex.quote(entry['cwd'])} && {line}"
-    r = subprocess.run(
-        [HC, "send", address, line], capture_output=True, text=True, timeout=60
+    r = subprocess.run(  # noqa: S603
+        [HC, "send", address, line],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
     )
     log(f"{address}: {line} -> exit {r.returncode} {r.stderr.strip()}")
 
 
-def main():
+def main() -> None:
+    """Snapshot live agents, and resume the ones whose terminal restarted."""
     listing = hc("ls")
     if listing is None:
         return  # herdr-core is not up yet; keep the last snapshot for when it is
