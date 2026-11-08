@@ -42,6 +42,7 @@
       immich-public-proxy
       immich-stack
       jellyfin
+      llama-server
       matrix
       mealie
       nextdns
