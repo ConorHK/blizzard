@@ -44,6 +44,7 @@
       jellyfin
       llama-server
       matrix
+      matrix-gateway
       mealie
       nextdns
       navidrome
