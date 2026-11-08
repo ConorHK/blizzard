@@ -7,9 +7,9 @@
       # The jail hides home; bind read-only.
       programs.pi.jail.readOnly = [ config.age.secrets.zai-api-key.path ];
 
-      # Coding plan quota needs the coding-only endpoint.
+      # The general endpoint bills the pay-as-you-go balance.
       programs.pi.models.providers.zai = {
-        baseUrl = "https://api.z.ai/api/coding/paas/v4";
+        baseUrl = "https://api.z.ai/api/paas/v4";
         api = "openai-completions";
         apiKey = "!cat ${config.age.secrets.zai-api-key.path}";
         # GLM rejects the "developer" role and "store" field.
