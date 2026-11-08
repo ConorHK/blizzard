@@ -23,6 +23,7 @@ topLevel: {
 
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
+        claude
         cnvim
         desktop
         git-identity
