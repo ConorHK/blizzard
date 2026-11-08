@@ -365,10 +365,11 @@ _: {
                     continue
                   fi
                   while IFS= read -r f; do
-                    # Skip files changed or gone since. The hour
+                    # Skip files changed, renamed or gone since; ctime
+                    # catches log rotation, which keeps mtime. The hour
                     # covers writes between ZFS snapshot and restic.
-                    mtime=$(stat -c %Y -- "$f" 2>/dev/null) || continue
-                    [ "$mtime" -lt $((taken - 3600)) ] || continue
+                    changed=$(stat -c %Z -- "$f" 2>/dev/null) || continue
+                    [ "$changed" -lt $((taken - 3600)) ] || continue
                     if restic dump "$id" "$f" | cmp -s - "$f"; then
                       checked=$((checked + 1))
                     else

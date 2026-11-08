@@ -49,7 +49,10 @@
               ntfyTopicFile = "/etc/restic-topic";
               jobs.service-data = {
                 repository = "/var/restic-repo";
-                paths = [ "/var/data" ];
+                paths = [
+                  "/var/data"
+                  "/var/logs"
+                ];
                 dumpPaths = [ "/var/dumps" ];
                 passwordFile = "/etc/restic-password";
                 pauseContainers = [ "dummy" ];
@@ -72,14 +75,24 @@
               )
 
 
+          def in_2020(cmd):
+              """Run cmd with the clock in 2020, the only way to age a ctime."""
+              now = int(machine.succeed("date +%s"))
+              machine.succeed(f"date -s 2020-01-01 && ({cmd}); rc=$?; date -s @{now + 1}; exit $rc")
+
+
           start_recorder()
-          machine.succeed("mkdir -p /var/data && echo 'irreplaceable' > /var/data/family-photos")
-          # Owner-only, like hister's tree.
-          machine.succeed("mkdir -m 700 /var/data/private && echo 'secret' > /var/data/private/db && chmod 600 /var/data/private/db")
-          # Glob characters, as in real album names.
-          machine.succeed("mkdir -p '/var/data/music/Artist [Live]' && echo 'flac' > '/var/data/music/Artist [Live]/01 * Track.flac'")
+          # A clock jump would fire the timers mid-test.
+          machine.succeed("systemctl stop 'restic-*.timer'")
           # Older than the snapshot, so the drill compares them.
-          machine.succeed("find /var/data -exec touch -h -d '2020-01-01' {} +")
+          in_2020(
+              "mkdir -p /var/data && echo 'irreplaceable' > /var/data/family-photos"
+              # Owner-only, like hister's tree.
+              " && mkdir -m 700 /var/data/private && echo 'secret' > /var/data/private/db && chmod 600 /var/data/private/db"
+              # Glob characters, as in real album names.
+              " && mkdir -p '/var/data/music/Artist [Live]' && echo 'flac' > '/var/data/music/Artist [Live]/01 * Track.flac'"
+              " && mkdir -p /var/logs && echo first > /var/logs/app.log.1 && echo second > /var/logs/app.log"
+          )
           machine.succeed("mkdir -p /var/dumps && sqlite3 /var/dumps/app.db 'CREATE TABLE t(x); INSERT INTO t VALUES (1);'")
           machine.succeed("printf 'SELECT 1;\\n-- PostgreSQL database dump complete\\n\\n' | gzip > /var/dumps/pg.sql.gz")
           # A .db that is not SQLite, with null bytes.
@@ -128,11 +141,19 @@
               before = len(posts())
               machine.succeed("systemctl start restic-restore-drill-service-data.service")
               assert len(posts()) == before, posts()
-              machine.succeed("echo irreplaceable > /var/data/family-photos && touch -d '2020-01-01' /var/data/family-photos")
+              in_2020("echo irreplaceable > /var/data/family-photos")
+
+          with subtest("the restore drill skips rotated logs"):
+              # Rotation renames files, which keeps mtime but bumps ctime.
+              in_2020("echo third > /var/logs/app.log.new")
+              machine.succeed("cd /var/logs && mv app.log.1 app.log.2 && mv app.log app.log.1 && mv app.log.new app.log")
+              before = len(posts())
+              machine.succeed("systemctl start restic-restore-drill-service-data.service")
+              assert len(posts()) == before, posts()
 
           with subtest("the restore drill alerts when disk and backup differ"):
               before = len(posts())
-              machine.succeed("echo 'rotted' > /var/data/private/db && touch -d '2020-01-01' /var/data/private/db")
+              in_2020("echo 'rotted' > /var/data/private/db")
               machine.succeed("systemctl start restic-restore-drill-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
@@ -188,7 +209,7 @@
               machine.succeed("systemctl start restic-restore-drill-service-data.service")
               alert = wait_for_posts(before + 1)[before]
               assert alert["title"] == "machine: Restore drill failed", alert
-              assert "2 backup paths missing" in alert["message"], alert
+              assert "3 backup paths missing" in alert["message"], alert
 
           with subtest("a failed backup pages through OnFailure"):
               before = len(posts())
