@@ -32,6 +32,7 @@ topLevel: {
         cnvim
         desktop
         git-identity
+        hass
         herdr-app
         herdr-look
         jujutsu
