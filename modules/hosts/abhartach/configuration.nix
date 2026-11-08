@@ -26,6 +26,29 @@
           power_states.memory_clock = [ 3 ];
         };
       };
+
+      hyprctl = "${config.programs.hyprland.package}/bin/hyprctl";
+
+      # Pick the largest DP-1 mode within the client's size and FPS, then drop DP-2 so the cursor stays on the stream.
+      streamStart = pkgs.writeShellScript "sunshine-stream-start" ''
+        mode=$(${hyprctl} monitors -j | ${pkgs.jq}/bin/jq -r \
+          --argjson w "$SUNSHINE_CLIENT_WIDTH" --argjson h "$SUNSHINE_CLIENT_HEIGHT" --argjson f "$SUNSHINE_CLIENT_FPS" '
+            .[] | select(.name == "DP-1") | .availableModes
+            | map(capture("(?<w>[0-9]+)x(?<h>[0-9]+)@(?<r>[0-9.]+)Hz") | {w: (.w | tonumber), h: (.h | tonumber), r: (.r | tonumber)})
+            | map(select(.w <= $w and .h <= $h and .r <= $f + 1))
+            | max_by([.w * .h, .r]) // empty
+            | "\(.w)x\(.h)@\(.r)"')
+        [ -n "$mode" ] || mode=preferred
+        ${hyprctl} eval "hl.monitor({ output = \"DP-1\", mode = \"$mode\", position = \"0x0\", scale = \"1\" })"
+        ${hyprctl} eval 'hl.monitor({ output = "DP-2", disabled = true })'
+      '';
+      streamStop = pkgs.writeShellScript "sunshine-stream-stop" ''
+        ${hyprctl} reload
+      '';
+      matchClient = {
+        do = "${streamStart}";
+        undo = "${streamStop}";
+      };
     in
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBeGvQMzAFPToh87kRuK4ogdA3OCFXIiEPuohfcLPWx";
@@ -47,8 +70,35 @@
         };
       };
 
-      networking.hostName = "abhartach";
-      networking.ipv4.address = "192.168.0.38";
+      networking = {
+        hostName = "abhartach";
+        ipv4.address = "192.168.0.38";
+        # Lets Moonlight wake the PC.
+        interfaces.enp13s0.wakeOnLan.enable = true;
+      };
+
+      services.sunshine = {
+        settings.output_name = "DP-1";
+        applications.apps = [
+          {
+            name = "Desktop";
+            image-path = "desktop.png";
+            prep-cmd = [ matchClient ];
+          }
+          {
+            name = "Steam Big Picture";
+            image-path = "steam.png";
+            prep-cmd = [
+              matchClient
+              {
+                do = "";
+                undo = "${pkgs.util-linux}/bin/setsid steam steam://close/bigpicture";
+              }
+            ];
+            detached = [ "${pkgs.util-linux}/bin/setsid steam steam://open/bigpicture" ];
+          }
+        ];
+      };
 
       # venus advertises our LAN range; keep LAN local.
       services.tailscale.extraSetFlags = [ "--accept-routes=false" ];
