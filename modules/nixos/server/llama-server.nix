@@ -19,18 +19,15 @@
         settings = {
           host = "127.0.0.1";
           port = 11435;
-          hf-repo = "unsloth/Qwen3-4B-Instruct-2507-GGUF:Q4_K_M";
-          alias = "qwen3-4b";
-          ctx-size = 16384;
+          hf-repo = "unsloth/granite-4.1-3b-GGUF:Q4_K_M";
+          alias = "local";
+          ctx-size = 32768;
           n-gpu-layers = 99;
           flash-attn = "on";
           cache-type-k = "q8_0";
           cache-type-v = "q8_0";
           jinja = true;
-          temp = 0.7;
-          top-p = 0.8;
-          top-k = 20;
-          min-p = 0;
+          temp = 0.2;
         };
       };
 
