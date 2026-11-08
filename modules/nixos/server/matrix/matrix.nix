@@ -136,6 +136,11 @@ in
             database.name = "psycopg2";
             # Empty whitelist blocks all federation.
             federation_domain_whitelist = [ ];
+            # The default lets a user receive one invite per 333s, which stalls joining the assistant to every portal.
+            rc_invites.per_user = {
+              per_second = 1;
+              burst_count = 100;
+            };
             listeners = [
               {
                 port = synapsePort;
