@@ -10,7 +10,7 @@ _: {
       home-manager.users.containers.virtualisation.quadlet = {
         containers.immich-stack.containerConfig = {
           # renovate: datasource=docker depName=docker.io/majorfi/immich-stack
-          image = "docker.io/majorfi/immich-stack:0.2.43";
+          image = "docker.io/majorfi/immich-stack:0.2.44";
           # API_KEY loaded from agenix-managed env file
           environmentFiles = [ config.age.secrets.immich-stack-secrets.path ];
           environments = {
