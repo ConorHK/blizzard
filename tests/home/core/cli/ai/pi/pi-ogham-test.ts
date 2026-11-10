@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as path from "node:path";
 import { test } from "node:test";
+import { labeller } from "./ogham/label.ts";
 import {
 	findUrl,
 	linkSlug,
@@ -766,4 +767,34 @@ test("remote form mirrors the picker for Ovis Chat", () => {
 	remoteForm(events, "Pick", many, (picked) => more.push(picked));
 	submit("cancel", last(STARTED).flowId, undefined, "cancel");
 	assert.deepEqual(more, [{ value: "task:2" }, undefined, undefined]);
+});
+
+test("link label: a later clear wins over a slow earlier set", async () => {
+	const written: string[] = [];
+	const delays = [30, 0, 0];
+	const write = labeller(async (value) => {
+		await new Promise((resolve) => setTimeout(resolve, delays.shift() ?? 0));
+		written.push(value);
+	});
+	// Bound to ticket A, then a resumed session that binds nothing clears it.
+	void write("https://t.corp.amazon.com/A-1");
+	await write(undefined);
+	assert.deepEqual(written, ["https://t.corp.amazon.com/A-1", ""]);
+	await write("file:///etc/passwd");
+	assert.equal(written.at(-1), "");
+});
+
+test("link label: a failed write does not stop later ones", async () => {
+	const written: string[] = [];
+	let first = true;
+	const write = labeller(async (value) => {
+		if (first) {
+			first = false;
+			throw new Error("hc not running");
+		}
+		written.push(value);
+	});
+	await write("https://t.corp.amazon.com/A-1");
+	await write("https://t.corp.amazon.com/B-2");
+	assert.deepEqual(written, ["https://t.corp.amazon.com/B-2"]);
 });

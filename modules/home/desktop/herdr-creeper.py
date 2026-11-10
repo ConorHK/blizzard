@@ -55,6 +55,33 @@ NEW_MENU_JJ = (
     "      this.jj = r?.code === 0;\n      cx.notify();\n    });\n"
 )
 NEW_MENU_ROW = 'row(id, icon, name, action, hint = "", enabled = true) {'
+PANE_NAME = (
+    ".child(div().flex_none().truncate().max_w(260).font_medium()"
+    ".text_color(t.foreground).child(name))"
+)
+# ogham labels a pi session's terminal with its task's link; the header opens it.
+PANE_LINK = """function linkLabel(link) {
+  try {
+    const url = new URL(link);
+    const parts = url.pathname.split("/").filter(Boolean);
+    return decodeURIComponent(parts[parts.length - 1] ?? url.host);
+  } catch {
+    return "";
+  }
+}
+
+export default class Pane extends View {"""
+PANE_LINK_VAR = """    const pane = p.pane;
+    const link = terminals().find((x) => x.address === p.terminal)?.labels?.["ogham.link"];
+    const linked = typeof link === "string" && link.startsWith("https://");"""
+PANE_LINK_CHIP = """
+      .when(linked, (el) => el.child(div().id(`ph-link-${pane}`).flex_none().max_w(320).truncate().px(6)
+        .border(1).border_color(t.accent).text_color(t.accent).hover((s) => s.bg(t.hover))
+        .on_click((_e, cx) => {
+          cx.stop_propagation();
+          exec(window()?.platform === "macos" ? "open" : "xdg-open", [link]);
+        })
+        .child(linkLabel(link))))"""
 PATCHES = {
     "menu": [
         (
@@ -79,6 +106,15 @@ PATCHES = {
     ],
     "tabs": [
         (".h(29).px(10).gap(7).rounded(7)", ".h(29).px(10).gap(7).rounded(0)"),
+    ],
+    "pane": [
+        (
+            'import { panes, props, run, theme, home } from "herdr";',
+            'import { panes, props, run, theme, home, terminals, exec, window } from "herdr";',
+        ),
+        ("export default class Pane extends View {", PANE_LINK),
+        ("    const pane = p.pane;", PANE_LINK_VAR),
+        (PANE_NAME, PANE_NAME + PANE_LINK_CHIP),
     ],
 }
 

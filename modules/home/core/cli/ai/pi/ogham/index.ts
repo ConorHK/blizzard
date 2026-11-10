@@ -33,6 +33,7 @@ import {
 	withoutBookkeeping,
 } from "./curate.ts";
 import { type Hit, reindex, search } from "./knowledge.ts";
+import { labeller } from "./label.ts";
 import { withLock } from "./lock.ts";
 import { appendLines, getSection, parseNote, renderNote } from "./note.ts";
 import { type PickItem, pick } from "./picker.ts";
@@ -441,6 +442,16 @@ export default function (pi: ExtensionAPI) {
 		pi.events.emit(TASK_EVENT, { task: ref ? formatRef(ref) : null, slug: ref?.slug ?? null });
 	}
 
+	const terminal = process.env.HC_TERMINAL_ID;
+	const writeLink = labeller((value) => pi.exec("hc", ["label", terminal ?? "", `ogham.link=${value}`], { timeout: 5_000 }));
+
+	/** Herdr's pane header reads this label, so a session bound to a ticket links to it. */
+	async function labelLink(ctx: ExtensionContext, link: string | undefined): Promise<void> {
+		// Subagents inherit HC_TERMINAL_ID but run headless; only the TUI owns the terminal.
+		if (!terminal || ctx.mode !== "tui") return;
+		await writeLink(link);
+	}
+
 	async function bind(ctx: ExtensionContext, request: BindRequest): Promise<string> {
 		if (!existsSync(vault)) throw new Error(`No ogham vault at ${vault}.`);
 		const now = new Date();
@@ -475,6 +486,7 @@ export default function (pi: ExtensionAPI) {
 		if (created) await writeIndex();
 		showStatus(ctx);
 		void findRelated(bound);
+		void labelLink(ctx, request.link ?? readFrontmatter((await read(note)) ?? "").link);
 		return `Bound to ${note} as ${request.role}.`;
 	}
 
@@ -680,6 +692,7 @@ export default function (pi: ExtensionAPI) {
 		await updateWorker("done");
 		bound = undefined;
 		announce(undefined);
+		void labelLink(ctx, undefined);
 		pi.appendEntry(ENTRY, null);
 		showStatus(ctx);
 		return text;
@@ -772,6 +785,8 @@ export default function (pi: ExtensionAPI) {
 		session = ctx.sessionManager.getSessionId();
 		bound = undefined;
 		announce(undefined);
+		// A session that binds nothing must not keep the last one's link; a later bind writes after this.
+		void labelLink(ctx, undefined);
 		related = [];
 		// ogham sync writes it when a rebase conflicts.
 		if (existsSync(abs(SYNC_ERROR))) ctx.ui.notify(`ogham: sync is stuck; resolve ${vault} by hand.`, "warning");
@@ -842,5 +857,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_shutdown", async (_event, ctx) => {
 		await Promise.race([pending, new Promise((resolve) => setTimeout(resolve, 30_000))]);
 		await quietly(ctx, () => updateWorker("closed"));
+		// The terminal goes back to a shell, which has no task.
+		await labelLink(ctx, undefined);
 	});
 }
