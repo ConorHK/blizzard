@@ -72,16 +72,18 @@ PANE_LINK = """function linkLabel(link) {
 
 export default class Pane extends View {"""
 PANE_LINK_VAR = """    const pane = p.pane;
-    const link = linkHerdr.terminals().find((x) => x.address === p.terminal)?.labels?.["ogham.link"];
-    const linked = typeof link === "string" && link.startsWith("https://");"""
+    const labels = linkHerdr.terminals().find((x) => x.address === p.terminal)?.labels ?? {};
+    const link = labels["ogham.link"];
+    const linked = typeof link === "string" && link.startsWith("https://");
+    const linkText = labels["ogham.title"] || linkLabel(link);"""
 PANE_LINK_CHIP = """
-      .when(linked, (el) => el.child(div().id(`ph-link-${pane}`).flex_none().max_w(320).truncate().px(6)
+      .when(linked, (el) => el.child(div().id(`ph-link-${pane}`).flex_shrink(1).min_w_0().max_w(560).truncate().px(6)
         .border(1).border_color(t.accent).text_color(t.accent).hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => {
           cx.stop_propagation();
           linkHerdr.exec(linkHerdr.window()?.platform === "macos" ? "open" : "xdg-open", [link]);
         })
-        .child(linkLabel(link))))"""
+        .child(linkText)))"""
 PATCHES = {
     "menu": [
         (

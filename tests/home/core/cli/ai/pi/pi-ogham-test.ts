@@ -770,31 +770,35 @@ test("remote form mirrors the picker for Ovis Chat", () => {
 });
 
 test("link label: a later clear wins over a slow earlier set", async () => {
-	const written: string[] = [];
+	const written: string[][] = [];
 	const delays = [30, 0, 0];
-	const write = labeller(async (value) => {
+	const write = labeller(async (values) => {
 		await new Promise((resolve) => setTimeout(resolve, delays.shift() ?? 0));
-		written.push(value);
+		written.push(values);
 	});
 	// Bound to ticket A, then a resumed session that binds nothing clears it.
-	void write("https://t.corp.amazon.com/A-1");
+	void write({ link: "https://t.corp.amazon.com/A-1", title: "A-1: Release stale dom0" });
 	await write(undefined);
-	assert.deepEqual(written, ["https://t.corp.amazon.com/A-1", ""]);
-	await write("file:///etc/passwd");
-	assert.equal(written.at(-1), "");
+	assert.deepEqual(written, [
+		["ogham.link=https://t.corp.amazon.com/A-1", "ogham.title=A-1: Release stale dom0"],
+		["ogham.link=", "ogham.title="],
+	]);
+	// A link the header would not open clears both, title included.
+	await write({ link: "file:///etc/passwd", title: "x" });
+	assert.deepEqual(written.at(-1), ["ogham.link=", "ogham.title="]);
 });
 
 test("link label: a failed write does not stop later ones", async () => {
-	const written: string[] = [];
+	const written: string[][] = [];
 	let first = true;
-	const write = labeller(async (value) => {
+	const write = labeller(async (values) => {
 		if (first) {
 			first = false;
 			throw new Error("hc not running");
 		}
-		written.push(value);
+		written.push(values);
 	});
-	await write("https://t.corp.amazon.com/A-1");
-	await write("https://t.corp.amazon.com/B-2");
-	assert.deepEqual(written, ["https://t.corp.amazon.com/B-2"]);
+	await write({ link: "https://t.corp.amazon.com/A-1", title: "A" });
+	await write({ link: "https://t.corp.amazon.com/B-2", title: "B-2:  two\nlines" });
+	assert.deepEqual(written, [["ogham.link=https://t.corp.amazon.com/B-2", "ogham.title=B-2: two lines"]]);
 });

@@ -33,7 +33,7 @@ import {
 	withoutBookkeeping,
 } from "./curate.ts";
 import { type Hit, reindex, search } from "./knowledge.ts";
-import { labeller } from "./label.ts";
+import { labeller, type TaskLabel } from "./label.ts";
 import { withLock } from "./lock.ts";
 import { appendLines, getSection, parseNote, renderNote } from "./note.ts";
 import { type PickItem, pick } from "./picker.ts";
@@ -443,13 +443,13 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	const terminal = process.env.HC_TERMINAL_ID;
-	const writeLink = labeller((value) => pi.exec("hc", ["label", terminal ?? "", `ogham.link=${value}`], { timeout: 5_000 }));
+	const writeLink = labeller((values) => pi.exec("hc", ["label", terminal ?? "", ...values], { timeout: 5_000 }));
 
-	/** Herdr's pane header reads this label, so a session bound to a ticket links to it. */
-	async function labelLink(ctx: ExtensionContext, link: string | undefined): Promise<void> {
+	/** Herdr's pane header reads these labels, so a session bound to a ticket links to it by title. */
+	async function labelLink(ctx: ExtensionContext, task: TaskLabel | undefined): Promise<void> {
 		// Subagents inherit HC_TERMINAL_ID but run headless; only the TUI owns the terminal.
 		if (!terminal || ctx.mode !== "tui") return;
-		await writeLink(link);
+		await writeLink(task);
 	}
 
 	async function bind(ctx: ExtensionContext, request: BindRequest): Promise<string> {
@@ -486,7 +486,7 @@ export default function (pi: ExtensionAPI) {
 		if (created) await writeIndex();
 		showStatus(ctx);
 		void findRelated(bound);
-		void labelLink(ctx, request.link ?? readFrontmatter((await read(note)) ?? "").link);
+		void labelLink(ctx, { link: request.link ?? readFrontmatter((await read(note)) ?? "").link, title: request.title });
 		return `Bound to ${note} as ${request.role}.`;
 	}
 
