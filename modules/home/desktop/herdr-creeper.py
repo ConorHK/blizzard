@@ -72,14 +72,14 @@ PANE_LINK = """function linkLabel(link) {
 
 export default class Pane extends View {"""
 PANE_LINK_VAR = """    const pane = p.pane;
-    const link = terminals().find((x) => x.address === p.terminal)?.labels?.["ogham.link"];
+    const link = linkHerdr.terminals().find((x) => x.address === p.terminal)?.labels?.["ogham.link"];
     const linked = typeof link === "string" && link.startsWith("https://");"""
 PANE_LINK_CHIP = """
       .when(linked, (el) => el.child(div().id(`ph-link-${pane}`).flex_none().max_w(320).truncate().px(6)
         .border(1).border_color(t.accent).text_color(t.accent).hover((s) => s.bg(t.hover))
         .on_click((_e, cx) => {
           cx.stop_propagation();
-          exec(window()?.platform === "macos" ? "open" : "xdg-open", [link]);
+          linkHerdr.exec(linkHerdr.window()?.platform === "macos" ? "open" : "xdg-open", [link]);
         })
         .child(linkLabel(link))))"""
 PATCHES = {
@@ -108,15 +108,15 @@ PATCHES = {
         (".h(29).px(10).gap(7).rounded(7)", ".h(29).px(10).gap(7).rounded(0)"),
     ],
     "pane": [
-        (
-            'import { panes, props, run, theme, home } from "herdr";',
-            'import { panes, props, run, theme, home, terminals, exec, window } from "herdr";',
-        ),
         ("export default class Pane extends View {", PANE_LINK),
         ("    const pane = p.pane;", PANE_LINK_VAR),
         (PANE_NAME, PANE_NAME + PANE_LINK_CHIP),
     ],
 }
+
+# Imports the patches need, put first in the file once every patch matched; a namespace
+# import never clashes with the names the shipped import line grows.
+IMPORTS = {"pane": 'import * as linkHerdr from "herdr";\n'}
 
 
 def rewrite(source: str) -> str:
@@ -128,13 +128,15 @@ def rewrite(source: str) -> str:
 
 
 def patch(name: str, source: str) -> str:
-    """Apply this mod's patches, each of which must match exactly once."""
-    for old, new in PATCHES.get(name, []):
-        if source.count(old) != 1:
-            print(f"herdr-creeper: {name} changed, skipped a patch")
-            continue
+    """Apply all of this mod's patches, or none if any no longer matches once."""
+    patches = PATCHES.get(name, [])
+    if any(source.count(old) != 1 for old, _ in patches):
+        # A mod half patched can call what it never imported.
+        print(f"herdr-creeper: {name} changed, skipped its patches")
+        return source
+    for old, new in patches:
         source = source.replace(old, new)
-    return source
+    return IMPORTS.get(name, "") + source
 
 
 def set_font(source: str, font: str) -> str:
