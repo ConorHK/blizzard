@@ -4,12 +4,12 @@
   "dependencies": {
     "pi-ask-user": "0.17.2",
     "pi-btw": "0.8.1",
-    "pi-claude-bridge": "0.11.0",
-    "pi-hermes-memory": "0.10.0",
+    "pi-claude-bridge": "0.12.0",
+    "pi-hermes-memory": "0.11.0",
     "pi-intercom": "0.18.1",
     "pi-mcp-adapter": "7.0.1",
     "pi-messenger": "0.15.2",
-    "pi-subagents": "0.87.0",
+    "pi-subagents": "0.88.0",
     "pi-tool-display": "0.5.0",
     "pi-web-access": "0.47.0",
     "picomatch": "4.0.7"
