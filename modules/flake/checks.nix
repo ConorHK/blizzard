@@ -13,8 +13,13 @@
           enable = true;
           entry =
             let
+              # zstd-sys needs pkg-config and libzstd, which nixpkgs omits.
+              flake-checker = pkgs.flake-checker.overrideAttrs (old: {
+                nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.pkg-config ];
+                buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.zstd ];
+              });
               wrapper = pkgs.writeShellScript "flake-checker" ''
-                NIX_FLAKE_CHECKER_CHECK_OWNER=false ${pkgs.lib.getExe pkgs.flake-checker} -f
+                NIX_FLAKE_CHECKER_CHECK_OWNER=false ${pkgs.lib.getExe flake-checker} -f
               '';
             in
             toString wrapper;
