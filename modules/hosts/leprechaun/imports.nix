@@ -21,6 +21,7 @@
       audiobookshelf
       backup
       backup-b2
+      backup-offsite
       backup-phone
       backup-secrets
       bitbang

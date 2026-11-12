@@ -116,3 +116,14 @@ sit off for days; the failure alert and restore drill still run.
 puca stores only the backups Home Assistant makes itself, from
 `<config>/backups`. Home Assistant encrypts them with its own key, which
 restore also needs.
+
+## Offsite drive
+
+`backup-offsite` keeps a second copy of `service-data` on a USB drive
+stored off site. Plugging in a drive with the ext4 label `offsite` starts
+`offsite-backup`: it mounts the drive at `/mnt/offsite`, runs
+`restic-backups-offsite` into `/mnt/offsite/restic` with the same paths,
+password and ZFS snapshot as `service-data`, then unmounts and sends
+"Safe to unplug". `offsite-freshness` alerts every Monday once the last
+run is over 30 days old. The job has no timer and no scheduled restore
+drill; run `restic-restore-drill-offsite` by hand while the drive is in.

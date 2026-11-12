@@ -40,9 +40,15 @@ _: {
             };
 
             schedule = lib.mkOption {
-              type = lib.types.str;
+              type = lib.types.nullOr lib.types.str;
               default = "03:00";
-              description = "OnCalendar time of the daily backup.";
+              description = "OnCalendar time of the daily backup; null runs it only on demand.";
+            };
+
+            drillSchedule = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = "Sun 12:00";
+              description = "OnCalendar time of the restore drill; null runs it only on demand.";
             };
 
             paths = lib.mkOption {
@@ -174,10 +180,14 @@ _: {
             # Keep well clear of the 06:00-07:00 autoUpgrade reboot window: a
             # reboot mid-backup leaves a stale repo lock and the interrupted unit
             # is "stopped", not "failed", so OnFailure would never alert about it.
-            timerConfig = {
-              OnCalendar = job.schedule;
-              Persistent = true;
-            };
+            timerConfig =
+              if job.schedule == null then
+                null
+              else
+                {
+                  OnCalendar = job.schedule;
+                  Persistent = true;
+                };
             pruneOpts = [
               "--keep-daily 7"
               "--keep-weekly 5"
@@ -446,10 +456,10 @@ _: {
               };
             };
 
-            "restic-restore-drill-${name}" = {
+            "restic-restore-drill-${name}" = lib.mkIf (job.drillSchedule != null) {
               wantedBy = [ "timers.target" ];
               timerConfig = {
-                OnCalendar = "Sun 12:00";
+                OnCalendar = job.drillSchedule;
                 Persistent = true;
               };
             };
