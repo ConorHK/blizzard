@@ -240,9 +240,12 @@ _: {
                 )}
                 ${userCtl "stop"}
                 trap '${userCtl "start"}' EXIT
-                # One command: all datasets, one instant.
-                ${zfs} snapshot ${
-                  lib.concatMapStringsSep " " (ds: "${ds}@${snapName}") (lib.attrNames job.zfsDatasets)
+                # One command per pool, since zfs snapshot cannot span pools.
+                ${lib.concatMapStringsSep "\n"
+                  (dss: "${zfs} snapshot ${lib.concatMapStringsSep " " (ds: "${ds}@${snapName}") dss}")
+                  (
+                    lib.attrValues (lib.groupBy (ds: lib.head (lib.splitString "/" ds)) (lib.attrNames job.zfsDatasets))
+                  )
                 }
                 ${userCtl "start"}
                 trap - EXIT

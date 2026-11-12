@@ -12,6 +12,13 @@ in
     { config, ... }:
     let
       dataDir = "${config.blizzard.storage.data}/immich";
+      # Originals and DB dumps live on the bulk disk, the rest on the SSD.
+      photosDir = "${config.blizzard.storage.photos}/immich";
+      originals = [
+        "backups"
+        "library"
+        "upload"
+      ];
     in
     {
       age.secrets.immich-secrets = {
@@ -60,7 +67,8 @@ in
               volumes = [
                 "${dataDir}:/usr/src/app/upload"
                 "/etc/localtime:/etc/localtime:ro"
-              ];
+              ]
+              ++ map (dir: "${photosDir}/${dir}:/usr/src/app/upload/${dir}") originals;
               # DB_PASSWORD loaded from agenix-managed env file
               environmentFiles = [ config.age.secrets.immich-secrets.path ];
               environments.REDIS_HOSTNAME = "immich-redis";
@@ -86,11 +94,9 @@ in
       ];
 
       blizzard.backup.jobs.service-data.paths = [
-        "${dataDir}/backups"
-        "${dataDir}/library"
         "${dataDir}/profile"
-        "${dataDir}/upload"
-      ];
+      ]
+      ++ map (dir: "${photosDir}/${dir}") originals;
 
       services.nginx.virtualHosts.${url} = {
         enableACME = true;

@@ -30,7 +30,8 @@
             environmentFile = config.age.secrets.restic-env.path;
             # Matches disko.nix.
             zfsDatasets = {
-              "storage/data" = config.blizzard.storage.data;
+              "fast/data" = config.blizzard.storage.data;
+              "storage/photos" = config.blizzard.storage.photos;
               "storage/media" = config.blizzard.storage.media;
             };
           };
@@ -39,6 +40,8 @@
             environmentFile = config.age.secrets.phone-backup-b2.path;
           };
         };
+
+        containerSmoke.dataset = "fast/data";
 
         bitbang.shareMembers = [ "driver" ];
 
@@ -73,7 +76,10 @@
       boot = {
         supportedFilesystems = [ "zfs" ];
         zfs = {
-          extraPools = [ "storage" ];
+          extraPools = [
+            "storage"
+            "fast"
+          ];
           forceImportRoot = false;
         };
       };
@@ -88,12 +94,40 @@
       services = {
         sanoid = {
           enable = true;
-          datasets."storage/data" = {
-            autosnap = true;
-            autoprune = true;
-            hourly = 24;
-            daily = 7;
-            monthly = 3;
+          datasets = {
+            "fast/data" = {
+              autosnap = true;
+              autoprune = true;
+              hourly = 24;
+              daily = 7;
+              monthly = 3;
+            };
+            "storage/photos" = {
+              autosnap = true;
+              autoprune = true;
+              hourly = 24;
+              daily = 7;
+              monthly = 3;
+            };
+            # Prunes the snapshots syncoid copies in.
+            "storage/replica/data" = {
+              autosnap = false;
+              autoprune = true;
+              hourly = 24;
+              daily = 30;
+              monthly = 6;
+            };
+          };
+        };
+
+        # A dead SSD then costs at most a day, restored from the 18TB.
+        syncoid = {
+          enable = true;
+          interval = "daily";
+          commands."fast/data" = {
+            target = "storage/replica/data";
+            # Inherit mountpoint=none so the copy never shadows /storage/data.
+            recvOptions = "u x mountpoint";
           };
         };
 

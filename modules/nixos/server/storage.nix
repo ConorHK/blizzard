@@ -15,6 +15,18 @@ _: {
           description = "Root for media libraries.";
         };
 
+        photos = lib.mkOption {
+          type = lib.types.path;
+          default = "/storage/photos";
+          description = "Root for photo originals and their dumps.";
+        };
+
+        downloads = lib.mkOption {
+          type = lib.types.path;
+          default = "/storage/downloads";
+          description = "Scratch space for downloads in progress.";
+        };
+
         matrix = lib.mkOption {
           type = lib.types.path;
           default = "/storage/matrix";

@@ -48,6 +48,22 @@
           };
         };
 
+        fast = {
+          type = "disk";
+          device = "/dev/disk/by-id/nvme-Sabrent_288E07051A5302035881";
+          content = {
+            type = "gpt";
+            partitions = {
+              data = {
+                size = "100%";
+                content = {
+                  type = "zfs";
+                  pool = "fast";
+                };
+              };
+            };
+          };
+        };
       };
 
       zpool = {
@@ -61,15 +77,48 @@
             atime = "off";
           };
           datasets = {
-            "data" = {
+            "photos" = {
               type = "zfs_fs";
-              options.mountpoint = "/storage/data";
+              options.mountpoint = "/storage/photos";
+            };
+            # Nightly syncoid copies of the fast pool.
+            "replica" = {
+              type = "zfs_fs";
+              options = {
+                mountpoint = "none";
+                canmount = "off";
+              };
             };
             "media" = {
               type = "zfs_fs";
               options = {
                 mountpoint = "/storage/media";
                 compression = "off"; # media files are already compressed
+              };
+            };
+          };
+        };
+
+        fast = {
+          type = "zpool";
+          options.ashift = "12";
+          rootFsOptions = {
+            compression = "zstd";
+            atime = "off";
+            mountpoint = "none";
+          };
+          datasets = {
+            "data" = {
+              type = "zfs_fs";
+              options.mountpoint = "/storage/data";
+            };
+            # Capped so a large torrent cannot starve the databases.
+            "downloads" = {
+              type = "zfs_fs";
+              options = {
+                mountpoint = "/storage/downloads";
+                quota = "150G";
+                compression = "off";
               };
             };
           };

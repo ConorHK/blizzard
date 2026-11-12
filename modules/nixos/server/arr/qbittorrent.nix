@@ -28,7 +28,7 @@ in
         ...
       }:
       let
-        inherit (config.blizzard.storage) data media;
+        inherit (config.blizzard.storage) data downloads media;
         qbittorrentDir = "${data}/qbittorrent";
         quiDir = "${data}/qui";
         slskdDir = "${data}/slskd";
@@ -90,6 +90,8 @@ in
                 volumes = [
                   "${qbittorrentDir}:/config"
                   "${media}:/data"
+                  # Unfinished downloads; set as the temp path in qBittorrent.
+                  "${downloads}:/downloads"
                 ];
                 environments = {
                   # Container root is the host containers user.
@@ -177,6 +179,8 @@ in
         systemd = {
           tmpfiles.rules = [
             "d ${qbittorrentDir} 0750 containers containers -"
+            "d ${downloads} 0775 containers containers -"
+            "d ${downloads}/incomplete 0775 containers containers -"
             "d ${quiDir} 0750 containers containers -"
             "d ${slskdDir} 0750 containers containers -"
             "d ${mamDir} 0700 containers containers -"

@@ -35,7 +35,9 @@ Every job `<name>` gets:
 - `restic-restore-drill-<name>`, Sundays at 12:00. Restores sample files
   and databases and compares them with disk.
 - `restic-zfs-snapshot-<name>`, when `zfsDatasets` is set. Snapshots are
-  named `<dataset>@restic-<name>`.
+  named `<dataset>@restic-<name>`. Datasets in one pool share one atomic
+  snapshot; datasets in different pools are snapshotted one pool after
+  another while the paused containers are stopped.
 
 ## Status files
 
