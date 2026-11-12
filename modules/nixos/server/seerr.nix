@@ -20,7 +20,7 @@ in
       # Media servers live on sluagh, reached over the tailnet.
       home-manager.users.containers.virtualisation.quadlet.containers.seerr.containerConfig = {
         # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
-        image = "ghcr.io/seerr-team/seerr:v3.5.1";
+        image = "ghcr.io/seerr-team/seerr:v3.5.2";
         publishPorts = [ "127.0.0.1:${toString port}:5055" ];
         volumes = [ "${dataDir}:/app/config" ];
         # Image runs as node; map 1000 to containers.
