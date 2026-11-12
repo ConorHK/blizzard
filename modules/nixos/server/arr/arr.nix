@@ -117,6 +117,9 @@ in
                 - trash_id: 64fb5f9858489bdac2af690e27c8f42f # UHD Bluray + WEB
                   reset_unmatched_scores:
                     enabled: true
+                - trash_id: d1d310673359205736b4b84acd5ea8c8 # Remux 2160p (Combined)
+                  reset_unmatched_scores:
+                    enabled: true
         '';
 
         hotioEnv = {
