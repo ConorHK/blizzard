@@ -7,7 +7,6 @@
       # Order: puca (canary, own gatus window) -> leprechaun (gatus-watched,
       # kept at 06:00 inside gatus's maintenance window) -> bananach (runs
       # gatus, last; leprechaun's gatus-watch rides out its reboot).
-      # sluagh runs after, outside the chain.
       windows = {
         puca = {
           lower = "05:00";
@@ -20,10 +19,6 @@
         bananach = {
           lower = "07:00";
           upper = "08:00";
-        };
-        sluagh = {
-          lower = "08:00";
-          upper = "09:00";
         };
       };
       window =
