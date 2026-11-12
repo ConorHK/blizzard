@@ -6,6 +6,7 @@ let
       # renovate: datasource=docker depName=ghcr.io/hotio/sonarr
       image = "ghcr.io/hotio/sonarr:release-4.0.20.3014";
       port = 8989;
+      lan = true;
       health = "/ping";
       media = true;
       hotio = true;
@@ -14,6 +15,7 @@ let
       # renovate: datasource=docker depName=ghcr.io/hotio/radarr
       image = "ghcr.io/hotio/radarr:release-6.4.4.10685";
       port = 7878;
+      lan = true;
       health = "/ping";
       media = true;
       hotio = true;
@@ -122,6 +124,8 @@ in
                     enabled: true
         '';
 
+        lan = config.networking.ipv4.address;
+
         hotioEnv = {
           # Container root is the host containers user.
           PUID = "0";
@@ -132,7 +136,11 @@ in
 
         appContainer = name: app: {
           inherit (app) image;
-          publishPorts = [ "127.0.0.1:${toString app.port}:${toString app.port}" ];
+          publishPorts = [
+            "127.0.0.1:${toString app.port}:${toString app.port}"
+          ]
+          # LAN fallback for podgetv when nginx is down.
+          ++ lib.optional (app.lan or false) "${lan}:${toString app.port}:${toString app.port}";
           volumes = [ "${data}/${name}:/config" ] ++ lib.optional app.media "${media}:/data";
           environments = (if app.hotio then hotioEnv else { TZ = tz; }) // app.environments or { };
           # Pins each arr's API key for recyclarr and unpackerr.
@@ -148,6 +156,11 @@ in
           rekeyFile = ./secrets/arr-api-keys.age;
           owner = "containers";
         };
+
+        networking.firewall.allowedTCPPorts = lib.pipe apps [
+          (lib.filterAttrs (_: app: app.lan or false))
+          (lib.mapAttrsToList (_: app: app.port))
+        ];
 
         systemd.tmpfiles.rules =
           map (name: "d ${data}/${name} 0750 containers containers -") (lib.attrNames apps ++ [ "recyclarr" ])

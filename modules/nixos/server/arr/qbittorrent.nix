@@ -76,6 +76,8 @@ in
                 publishPorts = [
                   "127.0.0.1:${toString slskdPort}:${toString slskdPort}"
                   "127.0.0.1:${toString torrentPort}:8080"
+                  # LAN fallback for podgetv when nginx is down.
+                  "${config.networking.ipv4.address}:${toString torrentPort}:8080"
                 ];
                 environments = {
                   VPN_SERVICE_PROVIDER = "airvpn";
@@ -185,6 +187,8 @@ in
             };
           };
         };
+
+        networking.firewall.allowedTCPPorts = [ torrentPort ];
 
         systemd = {
           tmpfiles.rules = [

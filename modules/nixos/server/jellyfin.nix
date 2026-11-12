@@ -16,6 +16,8 @@ in
       dataDir = "${data}/jellyfin";
     in
     {
+      networking.firewall.allowedTCPPorts = [ port ];
+
       systemd.tmpfiles.rules = [
         "d ${dataDir} 0750 containers containers -"
         "d ${dataDir}/config 0750 containers containers -"
@@ -28,7 +30,11 @@ in
         containers.jellyfin.containerConfig = {
           # renovate: datasource=docker depName=docker.io/jellyfin/jellyfin
           image = "docker.io/jellyfin/jellyfin:12.4";
-          publishPorts = [ "127.0.0.1:${toString port}:8096" ];
+          publishPorts = [
+            "127.0.0.1:${toString port}:8096"
+            # LAN fallback for podgetv when nginx is down.
+            "${config.networking.ipv4.address}:${toString port}:8096"
+          ];
           volumes = [
             "${dataDir}/config:/config"
             "${dataDir}/cache:/cache"
