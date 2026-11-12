@@ -1,8 +1,11 @@
 _:
 let
-  url = "qui.lep.goosebox.org";
+  url = "qui.goosebox.org";
   quiPort = 7476;
   slskdUrl = "slskd.goosebox.org";
+  torrentUrl = "torrent.goosebox.org";
+  # Host port for the qBittorrent web UI, for API clients like podgetv.
+  torrentPort = 8085;
   slskdPort = 5030;
   # AirVPN forwarded port.
   slskdListenPort = 14948;
@@ -17,6 +20,10 @@ in
       slskd = {
         name = "slskd";
         url = "https://${slskdUrl}/health";
+      };
+      qbittorrent = {
+        name = "qbittorrent";
+        url = "https://${torrentUrl}";
       };
     };
 
@@ -65,8 +72,11 @@ in
                 addCapabilities = [ "NET_ADMIN" ];
                 devices = [ "/dev/net/tun" ];
                 environmentFiles = [ config.age.secrets.gluetun.path ];
-                # slskd web UI, for nginx and lidarr.
-                publishPorts = [ "127.0.0.1:${toString slskdPort}:${toString slskdPort}" ];
+                # slskd and qBittorrent web UIs, for nginx and lidarr.
+                publishPorts = [
+                  "127.0.0.1:${toString slskdPort}:${toString slskdPort}"
+                  "127.0.0.1:${toString torrentPort}:8080"
+                ];
                 environments = {
                   VPN_SERVICE_PROVIDER = "airvpn";
                   VPN_TYPE = "wireguard";
@@ -239,6 +249,14 @@ in
             forceSSL = true;
             locations."/" = {
               proxyPass = "http://127.0.0.1:${toString quiPort}";
+              proxyWebsockets = true;
+            };
+          };
+          ${torrentUrl} = {
+            enableACME = true;
+            forceSSL = true;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString torrentPort}";
               proxyWebsockets = true;
             };
           };

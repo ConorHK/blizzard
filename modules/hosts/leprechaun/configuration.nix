@@ -58,12 +58,18 @@
         nginx.redirects = lib.mapAttrs' (old: lib.nameValuePair "${old}.lep.goosebox.org") (
           lib.genAttrs [
             "autobrr"
+            "bazarr"
             "budget"
             "changedetection"
+            "jellyfin"
             "lidarr"
             "photon"
             "photos"
+            "prowlarr"
+            "qui"
+            "radarr"
             "slskd"
+            "sonarr"
           ] (name: "${name}.goosebox.org")
           // {
             dawarich = "location.goosebox.org";

@@ -17,7 +17,6 @@ in
     {
       systemd.tmpfiles.rules = [ "d ${dataDir} 0750 containers containers -" ];
 
-      # Media servers live on sluagh, reached over the tailnet.
       home-manager.users.containers.virtualisation.quadlet.containers.seerr.containerConfig = {
         # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
         image = "ghcr.io/seerr-team/seerr:v3.5.1";

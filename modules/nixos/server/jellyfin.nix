@@ -1,6 +1,6 @@
 _:
 let
-  url = "jellyfin.lep.goosebox.org";
+  url = "jellyfin.goosebox.org";
   port = 8096;
 in
 {
@@ -56,6 +56,8 @@ in
       services.nginx.virtualHosts.${url} = {
         enableACME = true;
         forceSSL = true;
+        # Old name, still used by TV clients.
+        serverAliases = [ "tv.goosebox.org" ];
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString port}";
           proxyWebsockets = true;

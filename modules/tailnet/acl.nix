@@ -176,20 +176,6 @@ let
           "tcp:22000"
         ];
       }
-      # leprechaun's nginx proxies sluagh's apps.
-      {
-        src = [ addresses.leprechaun ];
-        dst = [ addresses.sluagh ];
-        ip = tcp [
-          8096
-          8080
-          8989
-          7878
-          9696
-          6767
-          2468
-        ];
-      }
       {
         src = [
           "tag:client"
@@ -235,12 +221,6 @@ let
           80
           443
         ];
-      }
-      # immich-public-proxy to immich on venus.
-      {
-        src = [ "100.91.205.65" ];
-        dst = [ "100.66.244.36" ];
-        ip = [ "tcp:2283" ];
       }
       # gatus on bananach: https, clip, syncthing, home-assistant.
       {

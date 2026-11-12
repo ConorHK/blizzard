@@ -62,14 +62,7 @@ let
     };
   };
 
-  # sluagh's compose still owns these names.
-  onServer = [
-    "sonarr"
-    "radarr"
-    "prowlarr"
-    "bazarr"
-  ];
-  host = name: if lib.elem name onServer then "${name}.lep.goosebox.org" else "${name}.goosebox.org";
+  host = name: "${name}.goosebox.org";
 in
 {
   flake = {
