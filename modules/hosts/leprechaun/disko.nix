@@ -4,7 +4,7 @@
       disk = {
         main = {
           type = "disk";
-          device = "/dev/sda";
+          device = "/dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_S2R6NX0H614151A";
           content = {
             type = "gpt";
             partitions = {
@@ -31,10 +31,9 @@
           };
         };
 
-        # Data drive — ZFS for easy future RAID expansion
         storage = {
           type = "disk";
-          device = "/dev/sdb";
+          device = "/dev/disk/by-id/ata-TOSHIBA_MG09ACA18TE_3430A0LNFJDH";
           content = {
             type = "gpt";
             partitions = {
@@ -54,7 +53,6 @@
       zpool = {
         storage = {
           type = "zpool";
-          # No `mode` set = single disk for now; add mirror/raidz later
           options = {
             ashift = "12"; # 4K sector alignment, good for modern HDDs
           };
