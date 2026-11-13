@@ -15,6 +15,9 @@
 
         cargoHash = "sha256-pImtQ1YiM47VvA8u9ER/lXtDVsZhQy38fkCbzmT/gc4=";
 
+        nativeBuildInputs = [ pkgs.pkg-config ];
+        buildInputs = [ pkgs.libgit2 ];
+
         # Tests need a live herdr session.
         doCheck = false;
 
