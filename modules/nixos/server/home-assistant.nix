@@ -18,21 +18,24 @@ in
       imports = [ inputs.quadlet-nix.nixosModules.quadlet ];
 
       # Rootful: host network, USB radio and dbus.
-      virtualisation.quadlet.containers.homeassistant.containerConfig = {
-        # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-        image = "ghcr.io/home-assistant/home-assistant:2026.11.1";
-        volumes = [
-          "${dataDir}:/config"
-          "/etc/localtime:/etc/localtime:ro"
-          "/run/dbus:/run/dbus:ro"
-        ];
-        environments.TZ = "Europe/Dublin";
-        networks = [ "host" ];
-        devices = [ "${usbDevice}:${usbDevice}" ];
-        addCapabilities = [
-          "NET_RAW"
-          "NET_ADMIN"
-        ];
+      virtualisation.quadlet.containers.homeassistant = {
+        serviceConfig.MemoryMax = "2G";
+        containerConfig = {
+          # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
+          image = "ghcr.io/home-assistant/home-assistant:2026.11.1";
+          volumes = [
+            "${dataDir}:/config"
+            "/etc/localtime:/etc/localtime:ro"
+            "/run/dbus:/run/dbus:ro"
+          ];
+          environments.TZ = "Europe/Dublin";
+          networks = [ "host" ];
+          devices = [ "${usbDevice}:${usbDevice}" ];
+          addCapabilities = [
+            "NET_RAW"
+            "NET_ADMIN"
+          ];
+        };
       };
 
       systemd.tmpfiles.rules = [ "d ${dataDir} 0750 root root -" ];
