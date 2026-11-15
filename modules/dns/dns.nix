@@ -29,7 +29,7 @@ in
         ]
       ) nixosConfigurations;
 
-      zones."goosebox.org." =
+      goosebox =
         vhostRecords
         // {
           "" = [
@@ -101,6 +101,55 @@ in
               "dkim03"
             ]
         );
+
+      conorknowles = {
+        "" = [
+          # GitHub Pages.
+          {
+            type = "A";
+            values = [
+              "185.199.108.153"
+              "185.199.109.153"
+              "185.199.110.153"
+              "185.199.111.153"
+            ];
+          }
+          {
+            type = "MX";
+            values = [
+              {
+                preference = 10;
+                exchange = "mx1.simplelogin.co.";
+              }
+              {
+                preference = 20;
+                exchange = "mx2.simplelogin.co.";
+              }
+            ];
+          }
+          {
+            type = "TXT";
+            value = "v=spf1 include:simplelogin.co ~all";
+          }
+        ];
+        www = {
+          type = "CNAME";
+          value = "conorhk.github.io.";
+        };
+        _dmarc = {
+          type = "TXT";
+          value = "v=DMARC1\\; p=quarantine\\; pct=100\\; adkim=s\\; aspf=s";
+        };
+        "dkim._domainkey" = {
+          type = "CNAME";
+          value = "dkim._domainkey.simplelogin.co.";
+        };
+      };
+
+      zones = {
+        "goosebox.org." = goosebox;
+        "conorknowles.com." = conorknowles;
+      };
 
       zoneDir = pkgs.linkFarm "octodns-zones" (
         lib.mapAttrsToList (zone: records: {
