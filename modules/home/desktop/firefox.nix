@@ -100,6 +100,8 @@
               "browser.fullscreen.autohide" = false;
               "browser.nova.enabled" = false;
               "browser.tabs.closeWindowWithLastTab" = true;
+              # Old sidebar has no launcher; userChrome hides its header.
+              "sidebar.revamp" = false;
             };
             userChrome = ''
               /* Alduin Theme */
@@ -148,6 +150,7 @@
         profiles = [ "primary" ];
         config = {
           displayNavButtons = true;
+          displaySidebarTools = false;
         };
       };
     };
