@@ -16,23 +16,47 @@
         ];
         text = builtins.readFile ../auto-mode-guard.sh;
       };
+      # Labels the herdr-core terminal with the session, so herdr-resume can reopen it.
+      hcSession = pkgs.writeShellApplication {
+        name = "claude-hc-session";
+        runtimeInputs = [ pkgs.jq ];
+        text = ''
+          [ -n "''${HC_TERMINAL_ID:-}" ] && command -v hc >/dev/null || exit 0
+          session=$(jq -r '.session_id // empty')
+          [ -n "$session" ] || exit 0
+          # SessionStart stdout lands in the model's context, so keep it quiet.
+          hc label "$HC_TERMINAL_ID" "claude.session=$session" >/dev/null 2>&1 || true
+        '';
+      };
       settings = {
         model = "claude-opus-5-5";
         effortLevel = "medium";
         includeCoAuthoredBy = false;
         # Auto mode will not engage without this opt-in.
         env.CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
-        hooks.PreToolUse = [
-          {
-            matcher = "Bash";
-            hooks = [
-              {
-                type = "command";
-                command = lib.getExe guard;
-              }
-            ];
-          }
-        ];
+        hooks = {
+          PreToolUse = [
+            {
+              matcher = "Bash";
+              hooks = [
+                {
+                  type = "command";
+                  command = lib.getExe guard;
+                }
+              ];
+            }
+          ];
+          SessionStart = [
+            {
+              hooks = [
+                {
+                  type = "command";
+                  command = lib.getExe hcSession;
+                }
+              ];
+            }
+          ];
+        };
         permissions = {
           defaultMode = "auto";
           allow = [

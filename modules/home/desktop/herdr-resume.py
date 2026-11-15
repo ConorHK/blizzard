@@ -18,7 +18,7 @@ KEEP_S = 7 * 86400
 # The label that holds each agent's session, and the command that reopens it.
 AGENTS = {
     "pi": ("pi.session", lambda s: ["pi", "--session", s]),
-    "claude": ("claude.session", lambda s: ["claude", "--resume", s]),
+    "claude-code": ("claude.session", lambda s: ["claude", "--resume", s]),
 }
 
 
