@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
   c = config.flake.lib.base16Scheme;
+  inherit (config.flake.modules.homeManager) herdr-sidebar;
 in
 {
   flake.modules.homeManager.herdr-look =
@@ -73,6 +74,8 @@ in
       };
     in
     {
+      imports = [ herdr-sidebar ];
+
       # The home layout, its mods' prefix and the sidebar text, for modules that build on them.
       lib.herdr = {
         home = "creeper";

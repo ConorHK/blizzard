@@ -2,7 +2,7 @@
 {
   # A tree of spaces in place of the spaces and agents lists and the tab bar, a canvas sidebar for
   # what pi's show_ui tool draws, and agent sessions that reopen after a reboot.
-  flake.modules.homeManager.herdr-look =
+  flake.modules.homeManager.herdr-sidebar =
     {
       config,
       lib,

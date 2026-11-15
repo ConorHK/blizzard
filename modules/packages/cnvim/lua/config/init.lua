@@ -17,7 +17,6 @@ local plugin_modules = {
     "filesystem",
     "ftplugin",
     "git",
-    "herdr",
     "indent",
     "java",
     "lsp",

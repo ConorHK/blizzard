@@ -5,7 +5,6 @@ in
 {
   flake.modules.homeManager.pi =
     {
-      config,
       lib,
       pkgs,
       ...
@@ -24,15 +23,7 @@ in
       };
     in
     {
-      options.programs.pi.webAccess.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install the pi-web-access package.";
-      };
-
-      config = lib.mkIf config.programs.pi.webAccess.enable {
-        # Package entry: loads manifest extensions.
-        programs.pi.settings.packages = [ "${pi-web-access}" ];
-      };
+      # Package entry: loads manifest extensions.
+      programs.pi.settings.packages = [ "${pi-web-access}" ];
     };
 }

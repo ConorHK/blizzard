@@ -10,7 +10,6 @@
     {
       system,
       pkgs,
-      self',
       ...
     }:
     let
@@ -29,8 +28,6 @@
             buildInputs = old.buildInputs ++ [ unfreePkgs.aws-lc ];
           });
         };
-        herdr-nvim = self'.packages.herdr-nvim.vimPlugin;
-        herdr-nvim-nav = self'.packages.herdr-nvim-nav.vimPlugin;
         alduin = pkgs.vimUtils.buildVimPlugin {
           name = "alduin";
           src = inputs.plugins-alduin;

@@ -5,8 +5,6 @@ in
 {
   flake.modules.homeManager.pi =
     {
-      config,
-      lib,
       pkgs,
       ...
     }:
@@ -24,19 +22,11 @@ in
       };
     in
     {
-      options.programs.pi.mcpAdapter.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install the pi-mcp-adapter package.";
-      };
-
-      config = lib.mkIf config.programs.pi.mcpAdapter.enable {
-        programs.pi.settings = {
-          # Package entry: loads the manifest extension.
-          packages = [ "${pi-mcp-adapter}" ];
-          # The adapter replaces built-in MCP.
-          extensions = [ "-builtin:mcp" ];
-        };
+      programs.pi.settings = {
+        # Package entry: loads the manifest extension.
+        packages = [ "${pi-mcp-adapter}" ];
+        # The adapter replaces built-in MCP.
+        extensions = [ "-builtin:mcp" ];
       };
     };
 }

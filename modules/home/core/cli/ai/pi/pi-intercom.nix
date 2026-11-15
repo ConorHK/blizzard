@@ -5,7 +5,6 @@ in
 {
   flake.modules.homeManager.pi =
     {
-      config,
       lib,
       pkgs,
       ...
@@ -22,15 +21,7 @@ in
       };
     in
     {
-      options.programs.pi.intercom.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install the pi-intercom package.";
-      };
-
-      config = lib.mkIf config.programs.pi.intercom.enable {
-        # Package entry: loads manifest extensions and skills.
-        programs.pi.settings.packages = [ "${pi-intercom}" ];
-      };
+      # Package entry: loads manifest extensions and skills.
+      programs.pi.settings.packages = [ "${pi-intercom}" ];
     };
 }
