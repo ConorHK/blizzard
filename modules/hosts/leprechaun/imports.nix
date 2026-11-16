@@ -56,6 +56,7 @@
       paperless
       photon
       pi
+      pinchflat
       podgetv-offline
       podgetv-picks
       podman

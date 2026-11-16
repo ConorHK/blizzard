@@ -30,6 +30,7 @@ in
           # Same paths as Jellyfin, for direct file access.
           "${media}/movies:/data/movies:ro"
           "${media}/tv:/data/tv:ro"
+          "${media}/youtube:/data/youtube:ro"
           "${media}/bumpers:/data/bumpers:ro"
         ];
         devices = [ "nvidia.com/gpu=all" ];
