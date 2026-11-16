@@ -26,26 +26,13 @@
         programs.waybar = {
           enable = true;
           systemd.enable = true;
-          # This Hyprland parses IPC dispatches as Lua, so waybar's legacy dispatch strings never fire.
           package = pkgs.waybar.overrideAttrs (old: {
             postPatch = (old.postPatch or "") + ''
-              substituteInPlace src/modules/hyprland/workspace.cpp \
-                --replace-fail '"dispatch focusworkspaceoncurrentmonitor " + std::to_string(id())' \
-                               '"dispatch hl.dsp.focus({workspace = " + std::to_string(id()) + ", on_current_monitor = true})"' \
-                --replace-fail '"dispatch workspace " + std::to_string(id())' \
-                               '"dispatch hl.dsp.focus({workspace = " + std::to_string(id()) + "})"' \
-                --replace-fail '"dispatch focusworkspaceoncurrentmonitor name:" + name()' \
-                               '"dispatch hl.dsp.focus({workspace = \"name:" + name() + "\", on_current_monitor = true})"' \
-                --replace-fail '"dispatch workspace name:" + name()' \
-                               '"dispatch hl.dsp.focus({workspace = \"name:" + name() + "\"})"' \
-                --replace-fail '"dispatch togglespecialworkspace " + name()' \
-                               '"dispatch hl.dsp.workspace.toggle_special(\"" + name() + "\")"' \
-                --replace-fail '"dispatch togglespecialworkspace"' \
-                               '"dispatch hl.dsp.workspace.toggle_special()"'
               # Class follows the real failed-unit count, not the managers' transient SystemState.
               substituteInPlace src/modules/systemd_failed_units.cpp \
-                --replace-fail 'if (overall_state == "degraded") RequestFailedUnits();' \
-                               'RequestFailedUnits(); overall_state = nr_failed == 0 ? "ok" : "degraded";'
+                --replace-fail 'if (overall_state_ == "degraded") {' 'if (true) {' \
+                --replace-fail 'RequestFailedUnits([this, done] { RequestFailedUnitsList(done); });' \
+                               'RequestFailedUnits([this, done] { overall_state_ = nr_failed_ == 0 ? "ok" : "degraded"; RequestFailedUnitsList(done); });'
             '';
           });
           style = builtins.readFile ./style.css;
