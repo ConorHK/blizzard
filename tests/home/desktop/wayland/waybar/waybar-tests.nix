@@ -46,7 +46,6 @@
           touch $out
         '';
       }
-      // mkChecks hosts "dispatch" ./check-dispatch.sh [ pkgs.binutils ] packages
       // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (
         nixos: map (user: "${user.xdg.configFile."waybar/config".source}") (waybarUsers nixos)
       )
