@@ -21,7 +21,7 @@ in
         containers = {
           changedetection-browser.containerConfig = {
             # renovate: datasource=docker depName=docker.io/dgtlmoon/sockpuppetbrowser
-            image = "docker.io/dgtlmoon/sockpuppetbrowser:0.0.4";
+            image = "docker.io/dgtlmoon/sockpuppetbrowser:0.0.5";
             # Chrome's namespace sandbox needs it; rootless, so it is not host root.
             addCapabilities = [ "SYS_ADMIN" ];
             # Chrome crashes on podman's 64M default /dev/shm.
