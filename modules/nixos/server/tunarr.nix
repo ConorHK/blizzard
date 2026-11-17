@@ -102,33 +102,35 @@ in
     {
       environment.systemPackages = [ refresh ];
 
-      # Tunarr fixes each lineup when built, so new videos air only after a rebuild.
-      systemd.services.tunarr-refresh = {
-        description = "Rebuild Tunarr lineups with new videos";
-        unitConfig.OnFailure = "alert-failure@tunarr-refresh.service";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = lib.getExe refresh;
-          DynamicUser = true;
-          PrivateTmp = true;
-          ProtectSystem = "strict";
-          NoNewPrivileges = true;
+      systemd = {
+        # Tunarr fixes each lineup when built, so new videos air only after a rebuild.
+        services.tunarr-refresh = {
+          description = "Rebuild Tunarr lineups with new videos";
+          unitConfig.OnFailure = "alert-failure@tunarr-refresh.service";
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = lib.getExe refresh;
+            DynamicUser = true;
+            PrivateTmp = true;
+            ProtectSystem = "strict";
+            NoNewPrivileges = true;
+          };
         };
-      };
 
-      systemd.timers.tunarr-refresh = {
-        description = "Rebuild Tunarr lineups daily";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "07:00";
-          Persistent = true;
+        timers.tunarr-refresh = {
+          description = "Rebuild Tunarr lineups daily";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "07:00";
+            Persistent = true;
+          };
         };
-      };
 
-      systemd.tmpfiles.rules = [
-        "d ${dataDir} 0750 containers containers -"
-        "d ${media}/bumpers 0775 containers containers -"
-      ];
+        tmpfiles.rules = [
+          "d ${dataDir} 0750 containers containers -"
+          "d ${media}/bumpers 0775 containers containers -"
+        ];
+      };
 
       home-manager.users.containers.virtualisation.quadlet.containers.tunarr.containerConfig = {
         # renovate: datasource=docker depName=docker.io/chrisbenincasa/tunarr
