@@ -96,6 +96,7 @@
             id = 0;
             settings = {
               "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+              "general.autoScroll" = true;
               "browser.ctrlTab.sortByRecentlyUsed" = true;
               "browser.fullscreen.autohide" = false;
               "browser.nova.enabled" = false;
