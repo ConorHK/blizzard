@@ -42,13 +42,14 @@ Pre-commit hooks: treefmt, deadnix, statix, shellcheck, ruff, yamllint, ripsecre
 - `modules/lib/`: helpers exposed as `flake.lib` (`mkUser`, `mkDisko`, ssh keys, syncthing devices).
 - `modules/packages/`: per-system packages, consumed as `inputs.self.packages.<system>.<name>`.
 - `modules/theme/`: Stylix, opt-in targets only.
+- `modules/wrappers/<name>/`: programs wrapped with their config, which sits beside the `.nix` file in its native format. Built as `packages.<system>.<name>`; hosts install them through `flake.wrappers.<name>.install`.
 - `tests/`: checks and VM tests, mirroring `modules/`. Shared fixtures sit in `test-support.nix` files (`flake.testSupport`).
 
 `nixosHosts.<host>` has one option, `system`. `mkHost` in `modules/flake/nixos.nix` combines `core` with `flake.modules.nixos."nixosConfigurations/<host>"`.
 
 ## Design notes
 
-`docs/` explains flows that span files: hosts, deploys, container smoke tests, secrets, monitoring, pi extensions. Update the matching note when you change one.
+`docs/` explains flows that span files: hosts, deploys, container smoke tests, secrets, monitoring, wrappers, pi extensions. Update the matching note when you change one.
 
 ## Secrets
 
@@ -63,6 +64,7 @@ puca, leprechaun and bananach auto-upgrade daily from the `deployed` branch, sta
 - Write Nix that passes statix. Run `nix build .#checks.x86_64-linux.pre-commit` before committing. Common miss: repeated keys (W20), so group `xdg.configFile.a` and `xdg.configFile.b` into one `xdg.configFile = { ... };`.
 - `pipe-operators` is enabled; statix cannot parse it, so affected files sit in its ignore list in `modules/flake/checks.nix`.
 - npm-sourced pi extensions are pinned in `modules/home/core/cli/ai/pi/npm/package.json`; Renovate bumps them and the lockfile. To add one, add it there, run `npm install --package-lock-only --ignore-scripts` in that directory (its `.npmrc` pins the public registry and skips peers), then build it with `flake.lib.mkPiExtension pkgs "<name>" { }`. The `pi-extensions-<home>` checks load every extension in headless pi.
+- Program config goes in a wrapper (`modules/wrappers/`), not in a new Home Manager `programs.*` block. `docs/wrappers.md` has the steps for moving an existing one.
 - Container images carry a `# renovate: datasource=docker depName=...` comment on the line above `image =`, or Renovate never updates them.
 - Every public nginx vhost needs a `flake.monitoringChecks` entry or a `blizzard.monitoring.exempt` entry; the build fails otherwise.
 - Tests for `modules/<path>/<name>` live in `tests/<path>/<name>-tests.nix`, with their helper files beside them. The `tests-mirror` check fails on a test with no matching module, and on helper files with no test beside them. Checks generated per host from host configs (`hyprland-<host>`) stay in `modules/flake/`. Package source keeps its language-native tests (aqua-booking's pytest suite).

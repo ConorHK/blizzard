@@ -1,0 +1,2 @@
+# OSC-8 links kitty can open at the match line.
+--hyperlink-format=kitty

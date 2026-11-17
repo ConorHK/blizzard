@@ -12,6 +12,7 @@ see [AGENTS.md](../AGENTS.md).
 | [tailnet.md](tailnet.md) | The Tailscale policy in Nix, `acl-sync`, derived grants |
 | [monitoring.md](monitoring.md) | `monitoringChecks`, the coverage rule, maintenance windows |
 | [metrics.md](metrics.md) | Prometheus, exporters, resource alerts through ntfy |
+| [wrappers.md](wrappers.md) | Programs wrapped with their config, installing them, leaving Home Manager |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |
 | [ogham.md](ogham.md) | The notes repo: sync, task curation, wins, search |
 | [revolut-import.md](revolut-import.md) | Phone CSV exports into Actual over WireGuard |
