@@ -90,12 +90,22 @@ let
 
   startPluginsWithDeps = lib.unique (foldPlugins startPlugins);
 
+  grammarSplit = lib.partition (
+    plugin: plugin.isTreesitterGrammar or false || plugin.isTreesitterQuery or false
+  ) startPluginsWithDeps;
+
+  # A start directory per language slows every runtime file search.
+  grammars = symlinkJoin {
+    name = "nvim-treesitter-grammars";
+    paths = grammarSplit.right;
+  };
+
   packpath = runCommandLocal "packpath" { } ''
     mkdir -p $out/pack/${packageName}/{start,opt}
 
     ${lib.concatMapStringsSep "\n" (
       plugin: "ln -vsfT ${plugin} $out/pack/${packageName}/start/${lib.getName plugin}"
-    ) startPluginsWithDeps}
+    ) (grammarSplit.wrong ++ [ grammars ])}
 
     cp -r ${./lua} $out/lua
     cp -r ${./snippets} $out/snippets
