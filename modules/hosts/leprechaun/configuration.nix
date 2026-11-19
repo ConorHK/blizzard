@@ -137,6 +137,8 @@
             target = "storage/replica/data";
             # Inherit mountpoint=none so the copy never shadows /storage/data.
             recvOptions = "u x mountpoint";
+            # Restic recreates its snapshot under the same name daily, which the replica rejects.
+            extraArgs = [ "--exclude-snaps=^restic-" ];
           };
         };
 
