@@ -6,6 +6,7 @@
 
   flake.modules.nixos."nixosConfigurations/bananach".imports = with config.flake.modules.nixos; [
     server-users
+    failed-units
     gatus
     nginx
     github-nix-access

@@ -35,6 +35,7 @@ in
       nginx
       podman
       server-users
+      failed-units
     ];
   };
 }

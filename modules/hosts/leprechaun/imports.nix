@@ -69,6 +69,7 @@
       satisfactory
       seerr
       server-users
+      failed-units
       smartd
       syncthing-server
       systemd-boot

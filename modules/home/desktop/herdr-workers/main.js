@@ -65,20 +65,26 @@ export default class Workers extends View {
     });
   }
 
-  sync() {
-    if (shared("layout") !== props()?.layout) return;
-    // The mod runtime has no structuredClone.
-    const tree = JSON.parse(JSON.stringify(layout()));
+  async sync() {
+    const name = shared("layout");
+    if (name !== props()?.layout) return;
+    const workers = tabWorkers();
+    const width = this.width / (settings().zoom ?? 1);
+    const key = JSON.stringify([name, workers, width]);
+    if (key === this.synced) return;
+    this.synced = key;
+    // layout() leaves out hidden nodes, so writing it back would show them.
+    const text = await readTextFile(`${appHome()}/layouts/${name}.json`).catch(() => null);
+    if (!text) return;
+    const tree = JSON.parse(text);
     const body = findNode(tree, "work-body");
     const main = findNode(tree, "main");
     if (!body || !main) return;
     const before = JSON.stringify(body);
     body.children = body.children.filter((c) => c.id !== "workers");
-    const workers = tabWorkers();
     if (workers.length) {
       main.size = { weight: MAIN_WEIGHT };
-      const zoom = settings().zoom ?? 1;
-      body.children.splice(body.children.indexOf(main) + 1, 0, grid(workers, this.width / zoom));
+      body.children.splice(body.children.indexOf(main) + 1, 0, grid(workers, width));
     } else {
       delete main.size;
     }

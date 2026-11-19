@@ -82,6 +82,11 @@ rebooting host has a check that no window silences. See [deploy.md](deploy.md).
 - bananach going down silences gatus itself. leprechaun's
   [`gatus-watch`](../modules/nixos/server/gatus/watch.nix) probes gatus
   every 5 minutes and pages after 3 straight failures.
+- A unit that wires `unitConfig.OnFailure = "alert-failure@%n"` pages
+  the moment it fails. On servers,
+  [`failed-units`](../modules/nixos/server/failed-units.nix) checks hourly
+  for failed units without that hook and pages once per unit until it
+  recovers.
 
 ## Add a public service
 
