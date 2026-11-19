@@ -36,6 +36,30 @@ Every wrapper sets `package`. `wlib.modules.default` adds `env`,
 library copies that one file to the store, so the wrapper rebuilds only
 when the file changes.
 
+## A program with a config directory
+
+[`kitty/`](../modules/wrappers/kitty/) carries a whole directory, because
+kitty looks for kittens, watchers and `open-actions.conf` beside
+`kitty.conf`. The wrapper builds that directory and sets
+`KITTY_CONFIG_DIRECTORY`. An environment variable reaches every entry point;
+a flag would break `kitty +kitten` and `kitty @`, whose first argument must
+come first.
+
+A host adds its own lines after the shared file:
+
+```nix
+wrappers.kitty.extraConfig = ''
+  font_size 14
+'';
+```
+
+On macOS the Dock and Spotlight start the app bundle's executable, not
+`bin/kitty`. The wrapper wraps that executable too, through
+`wrapperVariants`.
+
+Kitty reads its config at start, so a running kitty keeps the old config
+until it restarts.
+
 ## What a wrapper exports
 
 | Output | Use |
