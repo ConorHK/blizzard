@@ -82,7 +82,8 @@
         pkgs.runCommand "herdr-${mod}-mod" { nativeBuildInputs = [ pkgs.esbuild ]; } ''
           mkdir $out
           esbuild ${dir}/main.js --bundle --format=esm --log-level=warning \
-            --external:gpui-kit --external:gpui-base --external:herdr --outfile=$out/main.js
+            --external:gpui-kit --external:gpui-base --external:herdr --external:fs/promises \
+            --outfile=$out/main.js
           cp ${dir}/mod.json $out/mod.json
         '';
       # Linked per file, since the app writes type files into mod folders.
@@ -113,6 +114,7 @@
             tree
             canvas
             canvasWatch
+            modFiles
             ;
           # Views import it to hand their layout to a space they open.
           spaceLayout = ./tree/space-layout.js;
