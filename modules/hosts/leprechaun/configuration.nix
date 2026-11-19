@@ -100,6 +100,10 @@
         hostId = "748fda6c";
       };
 
+      systemd.services = lib.genAttrs [ "sanoid" "syncoid-fast-data" ] (_: {
+        unitConfig.OnFailure = "alert-failure@%n";
+      });
+
       services = {
         sanoid = {
           enable = true;

@@ -136,7 +136,7 @@
           fi
         '';
 
-        # herdr-core gives lost terminals back as shells, so this reopens their pi and Claude sessions.
+        # herdr-core gives lost terminals back as blank shells, so this reopens agents and replays shell text.
         launchd.agents.herdr-resume = lib.mkIf isDarwin {
           enable = true;
           config = {
@@ -148,14 +148,14 @@
         };
         systemd.user = lib.mkIf isLinux {
           services.herdr-resume = {
-            Unit.Description = "Reopen agent sessions in herdr terminals";
+            Unit.Description = "Restore herdr terminals after a restart";
             Service = {
               Type = "oneshot";
               ExecStart = "${resume}";
             };
           };
           timers.herdr-resume = {
-            Unit.Description = "Reopen agent sessions in herdr terminals";
+            Unit.Description = "Restore herdr terminals after a restart";
             Timer = {
               OnStartupSec = "30s";
               OnUnitActiveSec = "60s";
