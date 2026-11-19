@@ -32,7 +32,7 @@ in
         containers = {
           immich-redis.containerConfig = {
             # renovate: datasource=docker depName=docker.io/valkey/valkey
-            image = "docker.io/valkey/valkey:9@sha256:3add1a336a920ea54770a001ab6feb3da5fceea96a40373a3a2cd469b815f0b7";
+            image = "docker.io/valkey/valkey:9@sha256:13010f40f0623c52f0d3527a48bbf059870e6864b4eee642cdabad3f5e240e69";
             networks = [ "immich.network" ];
             noNewPrivileges = true;
           };
@@ -53,7 +53,7 @@ in
 
           immich-machine-learning.containerConfig = {
             # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
-            image = "ghcr.io/immich-app/immich-machine-learning:v3.4.1";
+            image = "ghcr.io/immich-app/immich-machine-learning:v3.4.2";
             volumes = [ "${dataDir}/models:/cache" ];
             networks = [ "immich.network" ];
             noNewPrivileges = true;
@@ -62,7 +62,7 @@ in
           immich-server = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
-              image = "ghcr.io/immich-app/immich-server:v3.4.1";
+              image = "ghcr.io/immich-app/immich-server:v3.4.2";
               publishPorts = [ "127.0.0.1:2283:2283" ];
               volumes = [
                 "${dataDir}:/usr/src/app/upload"
