@@ -1,8 +1,8 @@
 { inputs, ... }:
 {
   # A tree of spaces in place of the spaces and agents lists and the tab bar, a canvas sidebar for
-  # what pi's show_ui tool draws, and agent sessions that reopen after a reboot.
-  flake.modules.homeManager.herdr-sidebar =
+  # what pi's show_ui tool draws, and terminals that come back after a reboot.
+  flake.modules.homeManager.herdr =
     {
       config,
       lib,
@@ -73,7 +73,7 @@
       };
 
       resume = pkgs.writers.writePython3 "herdr-resume" { flakeIgnore = [ "E501" ]; } (
-        builtins.replaceStrings [ "@hc@" ] [ (lib.getExe herdr-core) ] (builtins.readFile ./herdr-resume.py)
+        builtins.replaceStrings [ "@hc@" ] [ (lib.getExe herdr-core) ] (builtins.readFile ./resume.py)
       );
 
       # Herdr resolves imports after symlinks, so each mod is bundled into one linked file.
@@ -115,10 +115,10 @@
             canvasWatch
             ;
           # Views import it to hand their layout to a space they open.
-          spaceLayout = ./herdr-tree/space-layout.js;
+          spaceLayout = ./tree/space-layout.js;
         };
 
-        xdg.configFile = modFiles "tree" ./herdr-tree // modFiles "canvas" ./herdr-canvas;
+        xdg.configFile = modFiles "tree" ./tree // modFiles "canvas" ./canvas;
 
         programs.herdr-app.keys.global."ctrl-shift-g" = "layout.toggle:canvas";
         programs.pi.showUi.enable = true;

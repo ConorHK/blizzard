@@ -1,10 +1,9 @@
 { config, inputs, ... }:
 let
   c = config.flake.lib.base16Scheme;
-  inherit (config.flake.modules.homeManager) herdr-sidebar;
 in
 {
-  flake.modules.homeManager.herdr-look =
+  flake.modules.homeManager.herdr =
     {
       config,
       lib,
@@ -74,8 +73,6 @@ in
       };
     in
     {
-      imports = [ herdr-sidebar ];
-
       # The home layout, its mods' prefix and the sidebar text, for modules that build on them.
       lib.herdr = {
         home = "creeper";
@@ -110,7 +107,7 @@ in
 
       # Shipped mods exist only once the app has run, so clone them at switch time.
       home.activation.herdrCreeper = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-        run ${pkgs.python3.interpreter} -I ${./herdr-creeper.py} ${home} ${look.font}
+        run ${pkgs.python3.interpreter} -I ${./creeper.py} ${home} ${look.font}
       '';
     };
 }

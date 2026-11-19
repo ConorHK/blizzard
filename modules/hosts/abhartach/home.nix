@@ -33,8 +33,7 @@ topLevel: {
         desktop
         git-identity
         hass
-        herdr-app
-        herdr-look
+        herdr
         jujutsu
         ntfy
         ssh

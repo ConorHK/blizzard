@@ -27,8 +27,7 @@ topLevel: {
         cnvim
         desktop
         git-identity
-        herdr-app
-        herdr-look
+        herdr
         jujutsu
         laptop
         ntfy

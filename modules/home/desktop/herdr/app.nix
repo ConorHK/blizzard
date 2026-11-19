@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.modules.homeManager.herdr-app =
+  flake.modules.homeManager.herdr =
     {
       config,
       lib,
@@ -32,12 +32,12 @@
           };
 
           # Linked per file, since the app writes type files into mod folders.
-          "herdr-app/mods/bsp/main.js".source = ./herdr-bsp/main.js;
-          "herdr-app/mods/bsp/mod.json".source = ./herdr-bsp/mod.json;
-          "herdr-app/mods/workers/main.js".source = ./herdr-workers/main.js;
-          "herdr-app/mods/workers/mod.json".source = ./herdr-workers/mod.json;
-          "herdr-app/mods/spacer/main.js".source = ./herdr-spacer/main.js;
-          "herdr-app/mods/spacer/mod.json".source = ./herdr-spacer/mod.json;
+          "herdr-app/mods/bsp/main.js".source = ./bsp/main.js;
+          "herdr-app/mods/bsp/mod.json".source = ./bsp/mod.json;
+          "herdr-app/mods/workers/main.js".source = ./workers/main.js;
+          "herdr-app/mods/workers/mod.json".source = ./workers/mod.json;
+          "herdr-app/mods/spacer/main.js".source = ./spacer/main.js;
+          "herdr-app/mods/spacer/mod.json".source = ./spacer/mod.json;
 
           "herdr-app/keys.json".text = builtins.toJSON config.programs.herdr-app.keys;
         };
