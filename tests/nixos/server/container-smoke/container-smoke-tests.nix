@@ -83,7 +83,10 @@
 
             blizzard.containerSmoke = {
               requester = "ci";
-              emptyPaths.web = [ "/www/secret" ];
+              emptyPaths = {
+                web = [ "/www/secret" ];
+                nested = [ "/www/secret" ];
+              };
               createPaths.media = [
                 "/data/app/downloads"
                 "/www/secret/made"
@@ -125,6 +128,23 @@
                       "/storage/media:/data"
                       "/storage/data/web:/www"
                     ];
+                  };
+              # A second volume sits on an emptied path, like immich's photo library.
+              nested =
+                lib.recursiveUpdate
+                  (container [
+                    "sh"
+                    "-c"
+                    "test -f /www/index.html && test ! -e /www/secret/photo.jpg && mkdir /srv && exec httpd -f -p 8080 -h /srv"
+                  ])
+                  {
+                    containerConfig = {
+                      publishPorts = [ "127.0.0.1:8083:8080" ];
+                      volumes = [
+                        "/storage/data/web:/www"
+                        "/storage/photos:/www/secret"
+                      ];
+                    };
                   };
               # Would fail; skipped instead.
               online = container [ "false" ];
@@ -212,6 +232,10 @@
                 assert smoke("twins", ["twin-a", "twin-b"]) == 0, result("twins")
                 assert result("twins")["twin-a"]["status"] == "pass", result("twins")
                 assert result("twins")["twin-b"]["status"] == "pass", result("twins")
+
+            with subtest("a volume on an emptied path mounts once"):
+                assert smoke("nested", ["nested"]) == 0, result("nested")
+                assert result("nested")["nested"]["status"] == "pass", result("nested")
 
             with subtest("a skipped target passes untested"):
                 assert smoke("skip", ["online"]) == 0, result("skip")

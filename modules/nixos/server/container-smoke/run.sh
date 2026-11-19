@@ -104,9 +104,11 @@ host_path() {
 volume_args() {
   local name=$1 json host target ro path source suffix wanted best i
   local mounts=() sources=()
+  local -A declared=()
   json=$(entry "$name")
   mapfile -t empty < <(jq -r '.emptyPaths[]' <<<"$json")
   mapfile -t create < <(jq -r '.createPaths[]' <<<"$json")
+  while IFS= read -r target; do declared[$target]=1; done < <(jq -r '.volumes[].target' <<<"$json")
   while IFS=$'\t' read -r host target ro; do
     path=$(host_path "$host")
     for blanked in "${empty[@]}"; do
@@ -118,7 +120,8 @@ volume_args() {
     mounts+=("$target")
     sources+=("$path")
     for blanked in "${empty[@]}"; do
-      if [[ $blanked == "$target"/* ]]; then
+      # A nested volume at the same path gets blanked on its own.
+      if [[ $blanked == "$target"/* && -z ${declared[$blanked]:-} ]]; then
         source=$(blank "$path${blanked#"$target"}")
         echo "--volume=$source:$blanked"
         mounts+=("$blanked")
