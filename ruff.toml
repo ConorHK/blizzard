@@ -6,7 +6,7 @@ ignore = ["D203", "D213"]
 
 [lint.per-file-ignores]
 # kittens and aqua-booking predate the strict set
-"modules/home/desktop/kitty/*.py" = ["ANN", "BLE", "D", "PLW", "PTH", "RUF", "S"]
+"modules/wrappers/kitty/config/*.py" = ["ANN", "BLE", "D", "PLW", "PTH", "RUF", "S"]
 "modules/nixos/server/aqua-booking/**" = [
   "ANN",
   "BLE",
