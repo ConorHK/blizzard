@@ -23,6 +23,9 @@
           phone-backup-b2.rekeyFile = ./secrets/phone-backup-b2.age;
         };
 
+      # The nvidia module and its firmware add ~180MB to an initrd on a 512M ESP.
+      facter.detected.boot.graphics.kernelModules = [ ];
+
       blizzard = {
         backup.jobs = {
           service-data = {
