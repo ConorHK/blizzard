@@ -2,7 +2,7 @@
 // Lives in a zero-size layout block and edits the layout with layout.set.
 
 import { View, div } from "gpui-kit";
-import { appHome, focused, layout, panes, props, readTextFile, run, settings, shared, terminals } from "herdr";
+import { appHome, focused, panes, props, readTextFile, run, settings, shared, terminals } from "herdr";
 
 // Logical px the layout spends beside the grid: sidebar, padding and gap.
 const CHROME = 268 + 16 + 8;
@@ -73,7 +73,7 @@ export default class Workers extends View {
     const key = JSON.stringify([name, workers, width]);
     if (key === this.synced) return;
     this.synced = key;
-    // layout() leaves out hidden nodes, so writing it back would show them.
+    // layout() merges one-child containers and drops their hidden flag, so edit the file.
     const text = await readTextFile(`${appHome()}/layouts/${name}.json`).catch(() => null);
     if (!text) return;
     const tree = JSON.parse(text);

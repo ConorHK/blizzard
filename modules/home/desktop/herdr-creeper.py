@@ -189,6 +189,29 @@ def square(node: object) -> object:
     return node
 
 
+def pad_hidden(node: object) -> object:
+    """Give each hidden container with one child a zero-size spacer as a second."""
+    if isinstance(node, list):
+        return [pad_hidden(v) for v in node]
+    if not isinstance(node, dict):
+        return node
+    node = {k: pad_hidden(v) for k, v in node.items()}
+    kids = node.get("children")
+    if node.get("hidden") and isinstance(kids, list) and len(kids) == 1:
+        node["children"] = [*kids, spacer(node["id"])]
+    return node
+
+
+def spacer(owner: str) -> dict:
+    """Return a zero-size block that draws nothing."""
+    return {
+        "id": f"{owner}-spacer",
+        "type": "block",
+        "size": {"px": 0},
+        "content": {"mod": "spacer"},
+    }
+
+
 def main() -> int:
     """Write the clones into the Herdr home given as the first argument."""
     home, font = Path(sys.argv[1]), sys.argv[2]
@@ -199,8 +222,8 @@ def main() -> int:
         return 0
     for name in MODS:
         clone_mod(mods, name, font)
-    layout = square(
-        rename_mods(json.loads((home / "layouts" / "main.json").read_text()))
+    layout = pad_hidden(
+        square(rename_mods(json.loads((home / "layouts" / "main.json").read_text())))
     )
     layout["terminal_menu"] = f"{PREFIX}menu"
     # A zero-size block keeps the workers mod alive to grid sub-agents.

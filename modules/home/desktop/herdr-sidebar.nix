@@ -52,6 +52,13 @@
             type = "block";
             content.mod = "canvas";
           }
+          # A second child, so Herdr never merges this column away with its hidden flag.
+          {
+            id = "canvas-spacer";
+            type = "block";
+            size.px = 0;
+            content.mod = "spacer";
+          }
         ];
       };
       # An invisible floating copy of the canvas mod that opens the canvas on a new show_ui.
