@@ -47,7 +47,6 @@ let
     "gtk"
     "gtksourceview"
     "hyprlock"
-    "mpv"
     "nixos-icons"
     "qt"
     "starship"

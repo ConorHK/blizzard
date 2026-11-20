@@ -1,17 +1,7 @@
+{ config, ... }:
 {
-  flake.modules.homeManager.mpv =
-    { lib, pkgs, ... }:
-    {
-      programs.mpv = {
-        enable = true;
-        defaultProfiles = [ "gpu-hq" ];
-        scripts = lib.attrValues {
-          inherit (pkgs.mpvScripts)
-            uosc
-            mpris
-            autoload
-            ;
-        };
-      };
-    };
+  flake.modules.homeManager.mpv = {
+    imports = [ config.flake.wrappers.mpv.install ];
+    wrappers.mpv.enable = true;
+  };
 }

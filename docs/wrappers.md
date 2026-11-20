@@ -73,6 +73,17 @@ theme or syntax goes in `config/`.
 The theme repeats the colours of
 [`colorscheme.nix`](../modules/theme/colorscheme.nix). Change both together.
 
+## A program that takes its config as a flag
+
+[`btop/`](../modules/wrappers/btop/) reads no environment variable for its
+config, so the wrapper passes `--config` and `--themes-dir` through `flags`.
+
+[`mpv/`](../modules/wrappers/mpv/) only accepts `--flag=value`, which
+`flagSeparator = "="` produces. The wrapper includes `mpv.conf` and leaves
+the config directory alone, because mpv writes its watch-later state there.
+nixpkgs points `umpv`, and on macOS the app bundle, at its own mpv. Each
+gets a wrapper variant, so every way in reads the config.
+
 ## What a wrapper exports
 
 | Output | Use |
