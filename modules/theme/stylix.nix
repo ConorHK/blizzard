@@ -36,7 +36,6 @@ let
 
   homeTargets = enableTargets [
     "alacritty"
-    "btop"
     "dunst"
     "firefox"
     "fish"
