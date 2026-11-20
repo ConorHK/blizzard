@@ -1,0 +1,3 @@
+--height 40%
+--border
+--color bg:#1c1c1c,bg+:#262626,fg:#dfdfaf,fg+:#dfdfaf,header:#878787,hl:#878787,hl+:#878787,info:#af875f,marker:#87afaf,pointer:#87afaf,prompt:#af875f,spinner:#87afaf

@@ -42,7 +42,6 @@ let
     "fish"
     "font-packages"
     "fontconfig"
-    "fzf"
     "glance"
     "gnome"
     "gnome-text-editor"

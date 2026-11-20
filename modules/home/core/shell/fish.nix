@@ -107,7 +107,6 @@
 
       programs = {
         zoxide.enableFishIntegration = true;
-        fzf.enableFishIntegration = true;
         carapace = {
           enable = true;
           enableFishIntegration = true;

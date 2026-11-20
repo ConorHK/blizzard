@@ -1,6 +1,11 @@
 {
   flake.modules.homeManager.core =
-    { lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       home.packages = [
         pkgs.pre-commit
@@ -54,7 +59,7 @@
             alias = {
               # https://bernsteinbear.com/git
               recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
-              switch-branch = "! git branch --sort=committerdate | ${lib.getExe pkgs.fzf} --reverse | xargs -I {} git checkout {}";
+              switch-branch = "! git branch --sort=committerdate | ${lib.getExe config.wrappers.fzf.wrapper} --reverse | xargs -I {} git checkout {}";
             };
           };
         };

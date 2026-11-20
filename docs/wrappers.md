@@ -126,5 +126,7 @@ Three things change when config moves into the wrapper:
 - Stylix themes a program through its Home Manager target. A wrapped
   program needs its colours in the config file, and its target removed from
   [`stylix.nix`](../modules/theme/stylix.nix).
-- Session variables, shell aliases and user services are not part of a
-  wrapper. They stay in the Home Manager module.
+- Session variables, shell aliases, shell integration and user services are
+  not part of a wrapper. They stay in the Home Manager module.
+  [`fzf.nix`](../modules/home/core/cli/fzf.nix) sources fzf's key bindings
+  from the wrapped package.

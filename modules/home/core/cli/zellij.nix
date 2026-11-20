@@ -2,6 +2,7 @@
   flake.modules.homeManager.zellij =
 
     {
+      config,
       inputs,
       pkgs,
       lib,
@@ -18,7 +19,7 @@
           if [ -z "$ZELLIJ" ]; then
             if [ "$NO_SESSIONS" -ge 2 ]; then
               zellij attach \
-              "$(echo "$ZJ_SESSIONS" | ${pkgs.fzf}/bin/fzf)"
+              "$(echo "$ZJ_SESSIONS" | ${lib.getExe config.wrappers.fzf.wrapper})"
             else
                zellij attach -c
             fi
@@ -30,7 +31,6 @@
     in
     {
       home.packages = [
-        pkgs.fzf
         sesh
         pkgs.zellij
       ];
