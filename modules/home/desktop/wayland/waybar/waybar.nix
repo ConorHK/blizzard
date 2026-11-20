@@ -33,6 +33,9 @@
                 --replace-fail 'if (overall_state_ == "degraded") {' 'if (true) {' \
                 --replace-fail 'RequestFailedUnits([this, done] { RequestFailedUnitsList(done); });' \
                                'RequestFailedUnits([this, done] { overall_state_ = nr_failed_ == 0 ? "ok" : "degraded"; RequestFailedUnitsList(done); });'
+              # Custom modules pack their label at the start of a box, so it left-aligns in a vertical bar.
+              substituteInPlace src/AIconLabel.cpp \
+                --replace-fail 'event_box_.add(box_);' 'label_.set_hexpand(true); event_box_.add(box_);'
             '';
           });
           style = builtins.readFile ./style.css;
