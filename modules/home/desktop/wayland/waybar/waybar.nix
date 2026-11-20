@@ -143,7 +143,7 @@
                 exec-if = "test -d $HOME/repositories/blizzard/.git";
                 interval = 300;
                 tooltip = true;
-                on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe git-status}";
+                on-click = "${lib.getExe config.wrappers.alacritty.wrapper} --class alacritty-popup -e ${lib.getExe git-status}";
                 return-type = "json";
               };
             systemd-failed-units =
@@ -165,7 +165,7 @@
                 format = "SYSF:{nr_failed}";
                 system = true;
                 user = true;
-                on-click = "${lib.getExe pkgs.alacritty} --class alacritty-popup -e ${lib.getExe check-failing-units}";
+                on-click = "${lib.getExe config.wrappers.alacritty.wrapper} --class alacritty-popup -e ${lib.getExe check-failing-units}";
               };
             "custom/backup" =
               let

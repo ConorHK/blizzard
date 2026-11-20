@@ -35,7 +35,6 @@ let
   ];
 
   homeTargets = enableTargets [
-    "alacritty"
     "dunst"
     "firefox"
     "fish"

@@ -1,8 +1,13 @@
 {
   flake.modules.homeManager.network-manager =
-    { pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       programs.waybar.settings.main.network.on-click =
-        "${pkgs.alacritty}/bin/alacritty --class alacritty-popup -e ${pkgs.networkmanager}/bin/nmtui-connect";
+        "${lib.getExe config.wrappers.alacritty.wrapper} --class alacritty-popup -e ${pkgs.networkmanager}/bin/nmtui-connect";
     };
 }

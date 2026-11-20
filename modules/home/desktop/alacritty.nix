@@ -1,3 +1,4 @@
+{ config, ... }:
 {
   hyprland.lua.alacritty = ''
     hl.bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd("uwsm app -- alacritty"))
@@ -6,23 +7,7 @@
   '';
 
   flake.modules.homeManager.alacritty = {
-    programs = {
-      alacritty = {
-        enable = true;
-        settings = {
-          window = {
-            padding = {
-              x = 5;
-              y = 5;
-            };
-            decorations_theme_variant = "Dark";
-          };
-          cursor = {
-            style = "block";
-            unfocused_hollow = true;
-          };
-        };
-      };
-    };
+    imports = [ config.flake.wrappers.alacritty.install ];
+    wrappers.alacritty.enable = true;
   };
 }

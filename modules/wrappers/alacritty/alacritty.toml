@@ -1,0 +1,48 @@
+[window]
+padding = { x = 5, y = 5 }
+decorations_theme_variant = "Dark"
+opacity = 1.0
+
+[cursor]
+style = "block"
+unfocused_hollow = true
+
+[font]
+size = 10
+
+[font.normal]
+family = "gohu"
+style = "Regular"
+
+[colors.primary]
+foreground = "#dfdfaf"
+background = "#1c1c1c"
+bright_foreground = "#dfdfaf"
+
+[colors.selection]
+text = "#dfdfaf"
+background = "#626262"
+
+[colors.cursor]
+text = "#1c1c1c"
+cursor = "#dfdfaf"
+
+[colors.normal]
+black = "#1c1c1c"
+red = "#af5f5f"
+green = "#87875f"
+yellow = "#af875f"
+blue = "#878787"
+magenta = "#af8787"
+cyan = "#87afaf"
+white = "#dfdfaf"
+
+[colors.bright]
+black = "#878787"
+red = "#af5f5f"
+green = "#87875f"
+yellow = "#af875f"
+blue = "#878787"
+magenta = "#af8787"
+cyan = "#87afaf"
+white = "#dfdfaf"
