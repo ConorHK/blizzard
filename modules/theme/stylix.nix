@@ -52,7 +52,6 @@ let
     "starship"
     "vesktop"
     "xresources"
-    "zathura"
   ];
 
   # Opt-in target list for home-manager. Kept separate from the module that
