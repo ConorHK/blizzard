@@ -60,6 +60,19 @@ On macOS the Dock and Spotlight start the app bundle's executable, not
 Kitty reads its config at start, so a running kitty keeps the old config
 until it restarts.
 
+## A program with a theme
+
+[`bat/`](../modules/wrappers/bat/) keeps its colours in a theme file,
+`config/themes/blizzard.tmTheme`, beside `config/config`. Bat loads themes
+from a compiled cache, never from the theme file. The wrapper builds that
+cache and sets `BAT_CACHE_PATH` beside `BAT_CONFIG_DIR`.
+
+The cache sits in the store, so `bat cache --build` cannot change it. A new
+theme or syntax goes in `config/`.
+
+The theme repeats the colours of
+[`colorscheme.nix`](../modules/theme/colorscheme.nix). Change both together.
+
 ## What a wrapper exports
 
 | Output | Use |
