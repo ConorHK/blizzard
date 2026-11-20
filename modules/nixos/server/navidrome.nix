@@ -62,6 +62,7 @@ in
             ND_LISTENBRAINZ_ENABLED = "true";
             ND_DEEZER_ENABLED = "true";
             ND_ENABLEINSIGHTSCOLLECTOR = "false";
+            ND_SESSIONTIMEOUT = "720h";
           };
           networks = [ "navidrome.network" ];
           noNewPrivileges = true;
