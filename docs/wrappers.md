@@ -130,6 +130,18 @@ other modules that call the program by store path.
 4. Add `tests/wrappers/<name>/<name>-tests.nix`. Run the wrapped program
    and assert on behaviour the config causes.
 
+How the test sees the config depends on the program:
+
+- A program with a batch mode prints it. bat colours a file; kitty and mpv
+  run a probe script.
+- A terminal program draws it. `flake.testSupport.ptyExpect` runs fzf and
+  btop in a pty and waits for a colour from the config.
+- A GTK program runs on GTK's broadway display server, which needs no
+  screen. zathura's debug log then names the file it read and any line it
+  rejected.
+- A program with no display to borrow has its own tool read the file the
+  wrapper passes. alacritty's `migrate --dry-run` parses it.
+
 Three things change when config moves into the wrapper:
 
 - The config rides with the wrapped binary. An alias or script that calls
