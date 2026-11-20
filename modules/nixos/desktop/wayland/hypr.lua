@@ -45,6 +45,9 @@ hl.config({
         mouse_move_enables_dpms = true,
 
         background_color = "rgb(1c1c1c)",
+
+        -- Fullscreen only, so desktop windows never trigger VRR flicker.
+        vrr = 2,
     },
 
     cursor = {
