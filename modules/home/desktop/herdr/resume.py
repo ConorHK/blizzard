@@ -54,7 +54,7 @@ def snapshot_entry(info: dict, agent: str) -> dict | None:
     return {"agent": agent, "pid": info["pid"], "session": session, "cwd": cwd}
 
 
-def resume(address: str, entry: dict) -> None:
+def resume(address: str, entry: dict) -> bool:
     """Type the agent's resume command into the shell that replaced it."""
     _, command = AGENTS[entry["agent"]]
     line = " ".join(shlex.quote(part) for part in command(entry["session"]))
@@ -68,6 +68,7 @@ def resume(address: str, entry: dict) -> None:
         check=False,
     )
     log(f"{address}: {line} -> exit {r.returncode} {r.stderr.strip()}")
+    return r.returncode == 0
 
 
 def save_screen(address: str) -> None:
@@ -138,11 +139,18 @@ def main() -> None:
         if not info:
             continue
         old = prev.get(address)
+        # A lost terminal has no pid until its new shell starts, so wait for the next run.
+        if info.get("pid") is None:
+            if old:
+                out[address] = old
+            continue
         agent = t.get("agent")
         local = not t.get("machine")
-        if old and info.get("pid") != old["pid"] and agent not in AGENTS:
+        if old and info["pid"] != old["pid"] and agent not in AGENTS:
             if old.get("agent"):
-                resume(address, old)
+                if not resume(address, old):
+                    out[address] = old
+                    continue
             elif local:
                 restore_screen(address, info["pid"])
             out[address] = {**old, "pid": info["pid"], "seen": now}
