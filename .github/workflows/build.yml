@@ -81,6 +81,18 @@ jobs:
           out=$(nix --extra-experimental-features pipe-operators build -L --print-out-paths \
             .#nixosConfigurations.${{ matrix.machine }}.config.system.build.toplevel)
           nix path-info -r "$out" | cachix push conorhk
+  # Bot PRs get reviewed as soon as their build ends, not at the next hourly pass.
+  claude-ci:
+    needs: [check, build-machines]
+    if: ${{ !cancelled() && (startsWith(github.ref_name, 'renovate/') || startsWith(github.ref_name, 'dependabot/')) }}
+    runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run claude-ci.yml --repo "$GITHUB_REPOSITORY" --ref main
   # Hosts auto-upgrade from this branch.
   promote:
     needs: [build-machines]

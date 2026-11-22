@@ -8,6 +8,7 @@ see [AGENTS.md](../AGENTS.md).
 | [hosts.md](hosts.md) | How import-tree, `mkHost` and host directories build a system |
 | [deploy.md](deploy.md) | CI, the `deployed` branch, staggered auto-upgrades |
 | [container-smoke.md](container-smoke.md) | Testing Renovate image bumps on cloned data |
+| [claude-ci.md](claude-ci.md) | Claude reviewing, merging and fixing bot PRs |
 | [secrets.md](secrets.md) | agenix-rekey, the YubiKey, adding secrets and hosts |
 | [tailnet.md](tailnet.md) | The Tailscale policy in Nix, `acl-sync`, derived grants |
 | [monitoring.md](monitoring.md) | `monitoringChecks`, the coverage rule, maintenance windows |

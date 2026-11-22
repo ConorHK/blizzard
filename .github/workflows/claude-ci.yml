@@ -1,0 +1,33 @@
+name: claude-ci
+# Reviews and merges green bot PRs, and fixes red ones; see docs/claude-ci.md.
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: claude-ci
+  cancel-in-progress: false
+jobs:
+  claude-ci:
+    # Runs from main only, so a PR branch can never change its own reviewer.
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, nix, x86_64-linux]
+    timeout-minutes: 180
+    permissions:
+      actions: write
+      contents: write
+      # The OIDC token Anthropic's federation rule exchanges for API access.
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Sync repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Review, merge and fix bot PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_IDENTITY_TOKEN_FILE: ${{ runner.temp }}/anthropic-jwt
+        run: nix --extra-experimental-features pipe-operators run .#claude-ci -- --repo "$GITHUB_REPOSITORY"
