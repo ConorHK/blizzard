@@ -73,6 +73,8 @@ in
           services.github-runners.blizzard = {
             enable = true;
             url = "https://github.com/ConorHK/blizzard";
+            # One registration per host; a shared name collides.
+            name = config.networking.hostName;
             tokenFile = config.age.secrets.github-runner-token.path;
             extraLabels = [
               "nix"
