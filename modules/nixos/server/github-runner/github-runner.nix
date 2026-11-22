@@ -172,6 +172,11 @@ in
               expires = "never";
               probe = config.blizzard.secretExpiry.probes.github;
             };
+            # Shared by every runner; check once.
+            github-runner = {
+              file = config.age.secrets.github-runner-token.path;
+              probe = config.blizzard.secretExpiry.probes.github;
+            };
           };
 
           deployedLag.remote = "https://github.com/ConorHK/blizzard";
