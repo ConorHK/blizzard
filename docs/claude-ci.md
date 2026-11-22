@@ -27,8 +27,9 @@ The gate runs before Claude sees the PR, and Claude cannot override it.
 - Bot commits may change `flake.lock`, `package.json`, `package-lock.json`,
   `image = "..."` lines and `# renovate:` comments in `.nix` files, and
   `uses:` pins in workflows. Any other change waits for the owner.
-- Files the fixer's own commits touched pass the gate, so a fixed PR can
-  still merge after Claude reviews the whole diff.
+- Files the fixer's own commits touched pass the gate, so a fixed PR still
+  gets a review. Claude never merges it: the fixer reads untrusted build logs,
+  so a PR with a fix commit waits for the owner.
 - Nobody may touch `.secrets/`, `*.age`, `.github/` (bots may still bump
   `uses:` pins), the runner module or `claude-ci` itself.
 
@@ -60,6 +61,10 @@ read, search, write, run one flake check or host build, and finish. Writes
 to protected paths are refused. It keeps the update and adapts blizzard to
 it, never pins back or weakens a check. Its commit carries the
 `Claude-CI-Fix: true` trailer. A PR gets at most two fix commits.
+
+claude-ci trusts only its own marker comments, posted by
+`github-actions[bot]`. The repo is public, so anyone else's comment could
+otherwise carry a marker and silence a PR.
 
 ## Credentials
 

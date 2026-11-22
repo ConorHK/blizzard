@@ -61,8 +61,12 @@ class GitHub:
         return [f["filename"] for f in self.api(f"commits/{sha}")["files"]]
 
     def comments(self, number: int) -> list[str]:
-        """Return a PR's comment bodies."""
-        return [c["body"] for c in self.pages(f"issues/{number}/comments?per_page=100")]
+        """Return the bodies of a PR's comments that claude-ci itself posted."""
+        # The repo is public: anyone's comment could carry a marker and silence a PR.
+        return [
+            c["body"] for c in self.pages(f"issues/{number}/comments?per_page=100")
+            if (c.get("user") or {}).get("login") == "github-actions[bot]"
+        ]
 
     def has_marker(self, number: int, kind: str, sha: str) -> bool:
         """Tell whether a decision of this kind exists for this commit."""

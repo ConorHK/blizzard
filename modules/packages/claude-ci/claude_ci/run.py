@@ -47,7 +47,8 @@ def handle_green(gh: GitHub, pr: dict) -> None:
     number, sha = pr["number"], pr["headRefOid"]
     if gh.has_marker(number, "review", sha):
         return
-    fixer_files = {f for c in fix_commits(gh, number) for f in gh.commit_files(c["sha"])}
+    fixes = fix_commits(gh, number)
+    fixer_files = {f for c in fixes for f in gh.commit_files(c["sha"])}
     gate = merge_gate(gh.files(number), fixer_files)
     if not gate.ok:
         body = ["**Not auto-merging.** This diff needs a human:", *[f"- {r}" for r in gate.reasons]]
@@ -60,7 +61,10 @@ def handle_green(gh: GitHub, pr: dict) -> None:
         gh.comment(number, "review", sha, f"**Claude review failed:** {e}. Leaving this for a human.")
         return
     body = review_lines(review)
-    if review.verdict == "approve":
+    if review.verdict == "approve" and fixes:
+        # Fixer commits read untrusted logs, so the owner merges them, never Claude.
+        body += ["", "**Contains Claude fix commits: waiting for the owner to merge.**"]
+    elif review.verdict == "approve":
         try:
             gh.merge(number, sha)
             gh.dispatch("build.yml", "main")
