@@ -75,6 +75,8 @@
         ipv4.address = "192.168.0.38";
         # Lets Moonlight wake the PC.
         interfaces.enp13s0.wakeOnLan.enable = true;
+        # Catches what deletes the wired subnet route at boot; revert once found.
+        networkmanager.logLevel = "TRACE";
       };
 
       services.sunshine = {
