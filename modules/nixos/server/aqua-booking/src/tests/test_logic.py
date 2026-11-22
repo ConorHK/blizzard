@@ -11,6 +11,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from aqua_booking.api import ApiError, GymClass, waitlist_position
+from aqua_booking.clock import Clock
 from aqua_booking.config import (
     WEEKDAYS,
     Api,
@@ -344,6 +345,17 @@ def _config(state_dir: Path, release: datetime) -> Config:
     )
 
 
+class _RecordingClock(Clock):
+    """Real time, but sleeps are recorded instead of taken."""
+
+    def __init__(self):
+        super().__init__()
+        self.slept = []
+
+    def sleep(self, seconds):
+        self.slept.append(seconds)
+
+
 class _Auth:
     def access_token(self):
         return "TOKEN"
@@ -374,7 +386,8 @@ class PreRelease(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.store = Store(Path(self.tmp.name))
-        self.slept = []
+        self.clock = _RecordingClock()
+        self.slept = self.clock.slept
         now = datetime.now(timezone.utc)
         self.target = (now + timedelta(days=1)).date().isoformat()
         self.release = now + timedelta(seconds=30)
@@ -384,7 +397,7 @@ class PreRelease(unittest.TestCase):
         args = argparse.Namespace(dry_run=dry_run)
         return _acquire(
             args, cfg, timezone.utc, _Auth(), self.store,
-            connect=lambda cfg, token: api, sleep=self.slept.append,
+            connect=lambda cfg, token: api, clock=self.clock,
         )
 
     def _feed(self, my_booking=None):

@@ -39,10 +39,12 @@ class RetryPolicy:
         settings: RetrySettings,
         now: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
+        rng: random.Random | None = None,
     ):
         self.settings = settings
         self._now = now
         self._sleep = sleep
+        self._rng = rng or random.Random()
         self._deadline = now() + settings.budget_seconds
         self._prev = settings.base_seconds
 
@@ -52,7 +54,7 @@ class RetryPolicy:
     def _next_backoff(self) -> float:
         # Decorrelated jitter (AWS "Exponential Backoff and Jitter").
         upper = max(self.settings.base_seconds, self._prev * 3)
-        delay = min(self.settings.max_backoff_seconds, random.uniform(self.settings.base_seconds, upper))
+        delay = min(self.settings.max_backoff_seconds, self._rng.uniform(self.settings.base_seconds, upper))
         self._prev = delay
         return delay
 

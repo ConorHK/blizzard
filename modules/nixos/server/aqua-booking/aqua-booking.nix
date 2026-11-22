@@ -30,6 +30,7 @@ _: {
           "aqua_booking"
           "aqua_booking.api"
           "aqua_booking.auth"
+          "aqua_booking.clock"
           "aqua_booking.config"
           "aqua_booking.log"
           "aqua_booking.notify"

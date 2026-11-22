@@ -19,13 +19,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import time as systime
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from .api import ApiError, BookingApi, GymClass, TransientApiError, waitlist_position
 from .auth import Authenticator, Credentials, TransientAuthError
+from .clock import Clock
 from .config import Config, ScheduledClass, load_secrets
 from .log import log, setup
 from .notify import notify
@@ -184,7 +184,7 @@ def main() -> int:
 
     auth = Authenticator(cfg, Credentials.from_secrets(secrets))
     if args.login_only:
-        call_with_retry(_policy(cfg, cfg.retry.budget_seconds), auth.access_token, (TransientAuthError,))
+        call_with_retry(_policy(cfg, cfg.retry.budget_seconds, Clock()), auth.access_token, (TransientAuthError,))
         log.info("auth ok")
         return 0
 
@@ -195,14 +195,17 @@ def main() -> int:
     return code
 
 
-def _policy(cfg, budget_seconds) -> RetryPolicy:
+def _policy(cfg, budget_seconds, clock) -> RetryPolicy:
     return RetryPolicy(
         RetrySettings(
             budget_seconds,
             cfg.retry.base_seconds,
             cfg.retry.max_backoff_seconds,
             cfg.retry.max_retry_after_seconds,
-        )
+        ),
+        now=clock.monotonic,
+        sleep=clock.sleep,
+        rng=clock.rng,
     )
 
 
@@ -225,12 +228,12 @@ def _prefetch(api, targets, tz, target_date, day_start, day_end, policy) -> None
         )
 
 
-def _attempt(args, target, match, store, api, tz, release) -> tuple[bool, bool]:
+def _attempt(args, target, match, store, api, tz, release, clock) -> tuple[bool, bool]:
     """Settle one target. Returns (unresolved, failed)."""
     try:
         return _settle(args, target, match, store, api), False
     except ApiError:
-        if datetime.now(tz) < release + _OPEN_GRACE:
+        if clock.now(tz) < release + _OPEN_GRACE:
             # Our clock may run ahead of theirs: an early refusal is retried.
             target.posted = True
             log.warning("booking %s refused just after release; retrying", target.label, exc_info=True)
@@ -240,8 +243,9 @@ def _attempt(args, target, match, store, api, tz, release) -> tuple[bool, bool]:
         return False, True
 
 
-def _acquire(args, cfg, tz, auth, store, connect=BookingApi, sleep=systime.sleep) -> int:
-    now = datetime.now(tz)
+def _acquire(args, cfg, tz, auth, store, connect=BookingApi, clock=None) -> int:
+    clock = clock or Clock()
+    now = clock.now(tz)
     target_date = (now + timedelta(days=cfg.release_horizon_days)).date()
     weekday = target_date.strftime("%A").lower()
     entries = cfg.schedule.get(weekday, ())
@@ -263,7 +267,7 @@ def _acquire(args, cfg, tz, auth, store, connect=BookingApi, sleep=systime.sleep
 
     release = datetime.combine(now.date(), cfg.release_time, tz)
     early = now < release
-    policy = _policy(cfg, cfg.retry.budget_seconds)
+    policy = _policy(cfg, cfg.retry.budget_seconds, clock)
 
     token = call_with_retry(policy, auth.access_token, (TransientAuthError,))
     log.debug("signed in (%.0fs budget left)", policy.time_left())
@@ -272,27 +276,28 @@ def _acquire(args, cfg, tz, auth, store, connect=BookingApi, sleep=systime.sleep
     day_end = datetime.combine(target_date, time(23, 59, 59), tz)
 
     if not args.dry_run:
-        store.prune_before(datetime.now(tz) - timedelta(days=1))
+        store.prune_before(clock.now(tz) - timedelta(days=1))
 
     pending = targets
     failed = False
 
     if early:
-        until_release = (release - datetime.now(tz)).total_seconds()
-        _prefetch(api, targets, tz, target_date, day_start, day_end, _policy(cfg, until_release))
+        until_release = (release - clock.now(tz)).total_seconds()
+        _prefetch(api, targets, tz, target_date, day_start, day_end, _policy(cfg, until_release, clock))
         if not args.dry_run:
-            wait = (release + _RELEASE_SLACK - datetime.now(tz)).total_seconds()
+            wait = (release + _RELEASE_SLACK - clock.now(tz)).total_seconds()
             log.info("waiting %.1fs for the release", max(wait, 0))
             if wait > 0:
-                sleep(wait)
+                clock.sleep(wait)
         # The full budget starts at release.
-        policy = _policy(cfg, cfg.retry.budget_seconds)
+        overrun = max(0.0, (clock.now(tz) - release).total_seconds())
+        policy = _policy(cfg, cfg.retry.budget_seconds - overrun, clock)
         unresolved = []
         for target in pending:
             if target.early is None:
                 unresolved.append(target)
                 continue
-            again, refused = _attempt(args, target, target.early, store, api, tz, release)
+            again, refused = _attempt(args, target, target.early, store, api, tz, release, clock)
             failed = failed or refused
             if again:
                 unresolved.append(target)
@@ -318,7 +323,7 @@ def _acquire(args, cfg, tz, auth, store, connect=BookingApi, sleep=systime.sleep
         unresolved = []
         for target in pending:
             match = _find_match(classes, target.entry, tz, target_date)
-            again, refused = _attempt(args, target, match, store, api, tz, release)
+            again, refused = _attempt(args, target, match, store, api, tz, release, clock)
             failed = failed or refused
             if again:
                 unresolved.append(target)
