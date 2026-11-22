@@ -8,7 +8,8 @@
       boot.loader = {
         systemd-boot = {
           enable = true;
-          configurationLimit = 10;
+          # Every generation can add its own kernel and initrd to the 512M ESP.
+          configurationLimit = 5;
           editor = false;
         };
       };
