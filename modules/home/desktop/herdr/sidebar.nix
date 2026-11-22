@@ -38,6 +38,46 @@
           };
         };
       };
+      # The sidebar's lower half: the added blocks, tabbed by title when there are several.
+      blocks = map (b: removeAttrs b [ "title" ]) cfg.sidebar.blocks;
+      tabs = map (b: {
+        inherit (b) id;
+        title = b.title or b.id;
+      }) cfg.sidebar.blocks;
+      lower =
+        if blocks == [ ] then
+          [ ]
+        else if lib.length blocks == 1 then
+          [ (lib.head blocks // { size.weight = 3; }) ]
+        else
+          [
+            {
+              id = "sidebar-lower";
+              type = "column";
+              size.weight = 3;
+              min = 120;
+              children = [
+                {
+                  id = "sidebar-tabs";
+                  type = "block";
+                  size.px = 31;
+                  content = {
+                    mod = "sidebar-tabs";
+                    props = herdr.text // {
+                      stack = "sidebar-stack";
+                      inherit tabs;
+                    };
+                  };
+                }
+                {
+                  id = "sidebar-stack";
+                  type = "stack";
+                  active = (lib.head blocks).id;
+                  children = blocks;
+                }
+              ];
+            }
+          ];
       # The right sidebar of what pi's show_ui tool draws, hidden until its key shows it.
       canvas = {
         id = "canvas";
@@ -103,7 +143,7 @@
         sidebar.blocks = lib.mkOption {
           type = with lib.types; listOf attrs;
           default = [ ];
-          description = "Layout blocks under the tree in the home layout's sidebar.";
+          description = "Layout blocks in the lower half of the home layout's sidebar, tabbed by an optional `title`.";
         };
       };
 
@@ -120,7 +160,8 @@
           spaceLayout = ./tree/space-layout.js;
         };
 
-        xdg.configFile = modFiles "tree" ./tree // modFiles "canvas" ./canvas;
+        xdg.configFile =
+          modFiles "tree" ./tree // modFiles "canvas" ./canvas // modFiles "sidebar-tabs" ./sidebar-tabs;
 
         programs.herdr-app.keys.global."ctrl-shift-g" = "layout.toggle:canvas";
         programs.pi.showUi.enable = true;
@@ -130,7 +171,7 @@
           layout=${config.xdg.configHome}/herdr-app/layouts/${herdr.home}.json
           if [[ -f "$layout" && ! -v DRY_RUN ]]; then
             ${lib.getExe pkgs.jq} \
-              --argjson lists ${json ([ tree ] ++ cfg.sidebar.blocks)} \
+              --argjson lists ${json ([ tree ] ++ lower)} \
               --argjson line ${json border} \
               --argjson col ${json canvas} \
               --argjson watch ${json canvasWatch} \
