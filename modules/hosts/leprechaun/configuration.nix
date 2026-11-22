@@ -143,6 +143,17 @@
             recvOptions = "u x mountpoint";
             # Restic recreates its snapshot under the same name daily, which the replica rejects.
             extraArgs = [ "--exclude-snaps=^restic-" ];
+            # syncoid prunes its own sync snapshots on the replica.
+            localTargetAllow = [
+              "change-key"
+              "compression"
+              "create"
+              "destroy"
+              "mount"
+              "mountpoint"
+              "receive"
+              "rollback"
+            ];
           };
         };
 
