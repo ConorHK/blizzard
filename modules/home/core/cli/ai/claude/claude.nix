@@ -8,14 +8,6 @@
       ...
     }:
     let
-      guard = pkgs.writeShellApplication {
-        name = "claude-auto-mode-guard";
-        runtimeInputs = [
-          pkgs.jq
-          pkgs.git
-        ];
-        text = builtins.readFile ../auto-mode-guard.sh;
-      };
       # Labels the herdr-core terminal with the session, so herdr-resume can reopen it.
       hcSession = pkgs.writeShellApplication {
         name = "claude-hc-session";
@@ -35,17 +27,6 @@
         # Auto mode will not engage without this opt-in.
         env.CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
         hooks = {
-          PreToolUse = [
-            {
-              matcher = "Bash";
-              hooks = [
-                {
-                  type = "command";
-                  command = lib.getExe guard;
-                }
-              ];
-            }
-          ];
           SessionStart = [
             {
               hooks = [

@@ -98,7 +98,7 @@
         }
         bind --bind "$cwd"
         bind --bind "$HOME/.pi/agent"
-        # A session cannot rewrite next session's guard.
+        # A session cannot rewrite next session's extensions.
         bind --ro-bind "$HOME/.pi/agent/extensions"
         bind --ro-bind "$HOME/.nix-profile"
         allow=(${lib.escapeShellArgs allow})

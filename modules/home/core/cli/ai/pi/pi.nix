@@ -19,19 +19,6 @@ topLevel: {
             )}
             exec ${lib.getExe cfg.package} "$@"
           '';
-      defaultGuard = pkgs.writeShellApplication {
-        name = "pi-bash-guard";
-        runtimeInputs = [
-          pkgs.jq
-          pkgs.git
-        ];
-        text = builtins.readFile ../auto-mode-guard.sh;
-      };
-      guardExtension = pkgs.writeText "pi-guard.ts" (
-        builtins.replaceStrings [ "@guard@" ] [ (lib.getExe cfg.guard.script) ] (
-          builtins.readFile ./guard.ts
-        )
-      );
       jailScript = topLevel.config.flake.lib.mkPiJail pkgs {
         package = piPackage;
         inherit (cfg.jail)
@@ -73,7 +60,7 @@ topLevel: {
         extensions = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
           default = { };
-          description = "Extra extensions installed to ~/.pi/agent/extensions/<name>.ts. The name guard is reserved.";
+          description = "Extra extensions installed to ~/.pi/agent/extensions/<name>.ts.";
         };
         extensionDirs = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
@@ -89,18 +76,6 @@ topLevel: {
           type = lib.types.attrsOf lib.types.path;
           default = { };
           description = "Theme files installed to ~/.pi/agent/themes/<name>.json.";
-        };
-        guard = {
-          enable = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Block guarded bash commands via a tool_call extension.";
-          };
-          script = lib.mkOption {
-            type = lib.types.package;
-            default = defaultGuard;
-            description = "Guard reading PreToolUse JSON on stdin, deny JSON on stdout.";
-          };
         };
         jail = {
           enable = lib.mkOption {
@@ -166,9 +141,6 @@ topLevel: {
             // lib.mapAttrs' (
               name: src: lib.nameValuePair ".pi/agent/themes/${name}.json" { source = src; }
             ) cfg.themes
-            // lib.optionalAttrs cfg.guard.enable {
-              ".pi/agent/extensions/guard.ts".source = guardExtension;
-            }
             // lib.optionalAttrs (cfg.models != { }) {
               ".pi/agent/models.json".source = modelsFile;
             };
