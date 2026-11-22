@@ -1,6 +1,12 @@
 topLevel: {
   flake.modules.nixos.home-manager =
-    { config, inputs, ... }:
+    {
+      config,
+      inputs,
+      lib,
+      options,
+      ...
+    }:
     let
       inherit (config.networking) hostName;
     in
@@ -21,7 +27,8 @@ topLevel: {
           # by the NixOS stylix home-manager integration, so we import only the
           # target settings here (not the full `theme` module) to avoid a
           # double import conflicting on the read-only `stylix.base16`.
-          (topLevel.config.flake.modules.homeManager.stylix or { })
+          # Hosts without the stylix NixOS module (servers) skip it.
+          (lib.optionalAttrs (options ? stylix) (topLevel.config.flake.modules.homeManager.stylix or { }))
           (topLevel.config.flake.modules.homeManager."homeConfigurations/${hostName}" or { })
         ];
 
