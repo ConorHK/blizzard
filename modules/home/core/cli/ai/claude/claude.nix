@@ -24,6 +24,7 @@
         model = "claude-opus-5-5";
         effortLevel = "medium";
         includeCoAuthoredBy = false;
+        tui = "fullscreen";
         # Auto mode will not engage without this opt-in.
         env.CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
         hooks = {
