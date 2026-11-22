@@ -83,13 +83,18 @@ class GitHub:
         # Pushes and merges made with the workflow token start no workflows.
         self.run("workflow", "run", workflow, "--repo", self.repo, "--ref", ref)
 
-    def failed_logs(self, sha: str, workflow: str) -> str:
-        """Return the failed steps' logs of the newest failed run on a commit."""
-        runs = json.loads(self.run(
-            "run", "list", "--repo", self.repo, "--workflow", workflow, "--commit", sha,
-            "--json", "databaseId,conclusion", "--limit", "5",
-        ))
-        failed = [r["databaseId"] for r in runs if r["conclusion"] == "failure"]
-        if not failed:
-            return ""
-        return self.run("run", "view", str(failed[0]), "--repo", self.repo, "--log-failed")
+    def failed_run(self, sha: str, workflow: str) -> dict | None:
+        """Return the newest run of a workflow on a commit if it failed, with its attempt number."""
+        runs = self.api(f"actions/workflows/{workflow}/runs?head_sha={sha}&per_page=5")["workflow_runs"]
+        newest = max(runs, key=lambda r: r["created_at"], default=None)
+        if not newest or newest["conclusion"] != "failure":
+            return None
+        return {"id": newest["id"], "attempt": newest["run_attempt"]}
+
+    def failed_logs(self, run_id: int) -> str:
+        """Return a run's failed steps' logs."""
+        return self.run("run", "view", str(run_id), "--repo", self.repo, "--log-failed")
+
+    def rerun_failed(self, run_id: int) -> None:
+        """Rerun a run's failed jobs."""
+        self.run("run", "rerun", str(run_id), "--repo", self.repo, "--failed")

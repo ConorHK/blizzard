@@ -36,11 +36,24 @@ GitHub merges only the head commit Claude reviewed (`--match-head-commit`).
 Merges made with the workflow token start no workflow, so claude-ci
 dispatches `build.yml` on `main` itself.
 
+## What the reviewer reads
+
+Claude gets the PR title, the bot's PR body (Renovate's release notes,
+Dependabot's commit list), blizzard's diff, and what changed upstream
+([`upstream.py`](../modules/packages/claude-ci/claude_ci/upstream.py)). For
+each flake input whose locked revision moved, nested inputs included,
+GitHub's compare API supplies the commits, the changed files and, while they
+fit a 150,000-character budget, the patches. Inputs with over 1,000 commits
+(nixpkgs) show only the count, and inputs not on GitHub say so. Container
+images and npm packages have no upstream diff; their release notes stand in.
+
 ## The fixer
 
 Claude first classifies the failed run's logs as `blizzard_config`,
 `upstream_breakage`, `infrastructure` or `unclear`. Only `blizzard_config`
-gets a fix.
+gets a fix. An `infrastructure` failure on a run's first attempt gets its
+failed jobs rerun once; a rerun that fails is diagnosed again, and is left for
+the owner if it is infrastructure again.
 
 The fixer works in a worktree of the PR branch through six tools: list,
 read, search, write, run one flake check or host build, and finish. Writes

@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from . import claude
+from . import claude, upstream
 from .gate import FIX_TRAILER, MAX_FIXES, ci_state, is_bot_pr, merge_gate
 from .gh import GitHub
 
@@ -54,7 +54,8 @@ def handle_green(gh: GitHub, pr: dict) -> None:
         gh.comment(number, "review", sha, "\n".join(body))
         return
     try:
-        review = claude.review(pr, gh.diff(number))
+        base = gh.api(f"pulls/{number}")["base"]["sha"]
+        review = claude.review(pr, gh.diff(number), upstream.report(gh, base, sha))
     except claude.RefusedError as e:
         gh.comment(number, "review", sha, f"**Claude review failed:** {e}. Leaving this for a human.")
         return
@@ -92,17 +93,20 @@ def attr_names(path: Path, attr: str) -> set[str]:
 
 
 def handle_red(gh: GitHub, pr: dict) -> None:
-    """Diagnose a red PR and push a fix when blizzard is at fault, once per head commit."""
+    """Diagnose a red PR's failed build, once per run attempt: rerun, fix, or leave it."""
     number, sha, branch = pr["number"], pr["headRefOid"], pr["headRefName"]
-    if gh.has_marker(number, "fix", sha):
+    run = gh.failed_run(sha, "build.yml")
+    # A rerun is a new attempt, so its failure gets its own diagnosis.
+    key = f"{sha}-{run['attempt']}" if run else sha
+    if gh.has_marker(number, "fix", key):
+        return
+    if not run:
+        gh.comment(number, "fix", key, "**Claude fixer:** no failed build.yml run to read (container-smoke failures need a human).")
         return
     if len(fix_commits(gh, number)) >= MAX_FIXES:
-        gh.comment(number, "fix", sha, f"**Claude fixer:** still failing after {MAX_FIXES} fix commits. Leaving this for a human.")
+        gh.comment(number, "fix", key, f"**Claude fixer:** still failing after {MAX_FIXES} fix commits. Leaving this for a human.")
         return
-    logs = gh.failed_logs(sha, "build.yml")
-    if not logs:
-        gh.comment(number, "fix", sha, "**Claude fixer:** no failed build.yml run to read (container-smoke failures need a human).")
-        return
+    logs = gh.failed_logs(run["id"])
     lines = logs.splitlines()
     if len(lines) > LOG_LINES:
         logs = f"(showing the last {LOG_LINES} of {len(lines)} lines)\n" + "\n".join(lines[-LOG_LINES:])
@@ -110,11 +114,18 @@ def handle_red(gh: GitHub, pr: dict) -> None:
     try:
         diagnosis = claude.diagnose(pr, diff, logs)
     except claude.RefusedError as e:
-        gh.comment(number, "fix", sha, f"**Claude fixer failed:** {e}.")
+        gh.comment(number, "fix", key, f"**Claude fixer failed:** {e}.")
         return
     head = f"**Claude diagnosis: {diagnosis.category}** ({diagnosis.failing_target})\n\n{diagnosis.explanation}"
+    if diagnosis.category == "infrastructure":
+        if run["attempt"] == 1:
+            gh.rerun_failed(run["id"])
+            gh.comment(number, "fix", key, f"{head}\n\n**Rerunning the failed jobs once.**")
+        else:
+            gh.comment(number, "fix", key, f"{head}\n\nAlready rerun once; leaving this for a human.")
+        return
     if diagnosis.category != "blizzard_config":
-        gh.comment(number, "fix", sha, f"{head}\n\nNot a blizzard change, so no fix attempted.")
+        gh.comment(number, "fix", key, f"{head}\n\nNot a blizzard change, so no fix attempted.")
         return
     agents = Path("AGENTS.md").read_text()
     with worktree(branch) as path:
@@ -122,7 +133,7 @@ def handle_red(gh: GitHub, pr: dict) -> None:
         fixed, summary = claude.fix(pr, diff, logs, diagnosis, ws, agents)
         changed = git("status", "--porcelain", cwd=path).strip()
         if not (fixed and changed):
-            gh.comment(number, "fix", sha, f"{head}\n\n**No fix pushed.** {summary}")
+            gh.comment(number, "fix", key, f"{head}\n\n**No fix pushed.** {summary}")
             return
         title = f"fix: adapt blizzard to {pr['title']}"[:72]
         git("add", "-A", cwd=path)
@@ -131,7 +142,7 @@ def handle_red(gh: GitHub, pr: dict) -> None:
         # No force: if the bot pushed meanwhile, this fails and the next pass retries.
         git("push", "origin", f"HEAD:refs/heads/{branch}", cwd=path)
     gh.dispatch("build.yml", branch)
-    gh.comment(number, "fix", sha, f"{head}\n\n**Pushed a fix.** {summary}")
+    gh.comment(number, "fix", key, f"{head}\n\n**Pushed a fix.** {summary}")
 
 
 def main() -> None:
