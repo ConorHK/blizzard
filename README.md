@@ -7,6 +7,7 @@
 | **dullahan** | Laptop                      |
 | **puca**     | HomeAssistant Fuji          |
 | **leprechaun** | Home server               |
+| **sluagh**   | Spare server                |
 
 ## tests
 

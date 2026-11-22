@@ -4,7 +4,7 @@ Guidance for coding agents working in this repository.
 
 ## Overview
 
-Blizzard is a NixOS and Home Manager flake for five hosts:
+Blizzard is a NixOS and Home Manager flake for six hosts:
 
 | Host | Role |
 |------|------|
@@ -13,6 +13,7 @@ Blizzard is a NixOS and Home Manager flake for five hosts:
 | dullahan | Laptop |
 | leprechaun | Home server: containers, nginx, backups, CI runner |
 | puca | Home Assistant |
+| sluagh | Spare server, no role yet |
 
 It uses flake-parts with import-tree. Every `.nix` file under `modules/` and `tests/` is imported automatically. There is no import list.
 
@@ -57,7 +58,7 @@ agenix-rekey with a YubiKey master identity (`.secrets/age-yubikey-identity.pub`
 
 ## Deploys
 
-puca, leprechaun and bananach auto-upgrade daily from the `deployed` branch, staggered an hour apart (`modules/nixos/core/update.nix`). CI fast-forwards `deployed` after every host builds on `main`. Desktops deploy by hand.
+puca, leprechaun, bananach and sluagh auto-upgrade daily from the `deployed` branch, staggered an hour apart (`modules/nixos/core/update.nix`). CI fast-forwards `deployed` after every host builds on `main`. Desktops deploy by hand.
 
 ## Conventions
 
