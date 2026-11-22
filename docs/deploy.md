@@ -12,7 +12,7 @@ push main -> CI: checks + every host builds -> fast-forward deployed
 ## 1. CI builds everything
 
 [`.github/workflows/build.yml`](../.github/workflows/build.yml) runs on every
-push, on the self-hosted runner on leprechaun
+push, on the self-hosted runners on leprechaun and sluagh
 ([`github-runner.nix`](../modules/nixos/server/github-runner/github-runner.nix)).
 
 - `check` builds every `checks.x86_64-linux` output. It evaluates them one at

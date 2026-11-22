@@ -23,7 +23,8 @@ Two things dispatch
   ([`github-runner.nix`](../modules/nixos/server/github-runner/github-runner.nix)),
   every hour. GitHub cron runs hours late, and deferred runs need a retry.
 
-The workflow runs on the self-hosted runner, one run at a time.
+The workflow runs on leprechaun's runner, picked by its `container-smoke` label,
+one run at a time.
 
 ## 2. Pick branches
 

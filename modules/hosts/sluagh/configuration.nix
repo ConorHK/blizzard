@@ -12,6 +12,12 @@
 
     services.zfs.autoScrub.enable = true;
 
+    # 15G of RAM; leave the OS room.
+    blizzard.ciRunner = {
+      memoryHigh = "10G";
+      memoryMax = "12G";
+    };
+
     system.stateVersion = "26.11";
   };
 }

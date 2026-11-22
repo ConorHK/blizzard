@@ -8,7 +8,7 @@ concurrency:
 jobs:
   # Starts changed images on cloned data, offline.
   smoke:
-    runs-on: [self-hosted, nix, x86_64-linux]
+    runs-on: [self-hosted, nix, x86_64-linux, container-smoke]
     timeout-minutes: 60
     environment: production
     permissions:

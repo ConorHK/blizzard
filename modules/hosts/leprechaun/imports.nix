@@ -36,7 +36,6 @@
       glance
       grafana
       grafana-secrets
-      github-nix-access
       github-runner
       hister
       immich
