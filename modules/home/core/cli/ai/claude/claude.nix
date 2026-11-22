@@ -25,8 +25,11 @@
         effortLevel = "medium";
         includeCoAuthoredBy = false;
         tui = "fullscreen";
-        # Auto mode will not engage without this opt-in.
-        env.CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
+        env = {
+          # Auto mode will not engage without this opt-in.
+          CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
+          CLAUDE_CODE_PLUGIN_DIRS = "${./sudo-ssh}";
+        };
         hooks = {
           SessionStart = [
             {

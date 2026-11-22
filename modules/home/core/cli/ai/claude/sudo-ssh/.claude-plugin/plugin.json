@@ -1,0 +1,6 @@
+{
+  "name": "sudo-ssh",
+  "version": "0.1.0",
+  "description": "Run root commands over ssh; the sudo password stays hidden",
+  "types": "./types/index.d.ts"
+}
