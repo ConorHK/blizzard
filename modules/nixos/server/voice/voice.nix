@@ -13,7 +13,7 @@
         containers = {
           wyoming-whisper.containerConfig = {
             # renovate: datasource=docker depName=docker.io/rhasspy/wyoming-whisper
-            image = "docker.io/rhasspy/wyoming-whisper:3.9.0";
+            image = "docker.io/rhasspy/wyoming-whisper:3.9.1";
             publishPorts = [ "${toString whisperPort}:${toString whisperPort}" ];
             volumes = [ "${dataDir}/whisper:/data" ];
             exec = "--model base.en --language en";
@@ -40,7 +40,7 @@
           wyoming-kokoro = {
             containerConfig = {
               # renovate: datasource=docker depName=ghcr.io/roryeckel/wyoming_openai
-              image = "ghcr.io/roryeckel/wyoming_openai:0.9.0";
+              image = "ghcr.io/roryeckel/wyoming_openai:0.9.1";
               publishPorts = [ "${toString ttsPort}:${toString ttsPort}" ];
               networks = [ "kokoro.network" ];
               environments = {
