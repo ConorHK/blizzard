@@ -21,7 +21,8 @@
           set -euo pipefail
           token="$(cat "$CREDENTIALS_DIRECTORY/token")"
           # Empty ip= => DuckDNS uses the request source IP (this host's WAN IP).
-          resp="$(${pkgs.curl}/bin/curl -fsS \
+          # DuckDNS answers a 502 about once a day; curl retries those.
+          resp="$(${pkgs.curl}/bin/curl -fsS --retry 4 --retry-delay 15 --max-time 20 \
             "https://www.duckdns.org/update?domains=${domain}&token=$token&ip=")"
           echo "duckdns: ${domain}.duckdns.org -> $resp"
           [ "$resp" = "OK" ]
