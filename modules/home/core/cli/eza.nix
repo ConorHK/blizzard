@@ -13,10 +13,13 @@
       ];
     in
     {
-      programs.eza.enable = true;
+      home.packages = [ pkgs.eza ];
       home.shellAliases = {
         inherit ls;
         l = "${ls} --long";
+        la = "eza -a";
+        ll = "eza -l";
+        lla = "eza -la";
         lt = "${ls} --tree";
         tree = "${ls} --tree";
       };
