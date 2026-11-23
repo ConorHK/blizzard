@@ -28,6 +28,8 @@
         ];
         # This test walks the source as a git checkout, which the fetched tarball is not.
         checkFlags = [ "--skip=picker::tests::fff_end_to_end_over_this_repo" ];
+        # The daemon tests read the process table, which no ps can do inside a macOS build.
+        doCheck = pkgs.stdenv.hostPlatform.isLinux;
 
         # The app mods run the binary from a root that also holds the plugin's Lua.
         postInstall = ''
