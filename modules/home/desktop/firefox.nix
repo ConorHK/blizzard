@@ -22,6 +22,18 @@
           ];
         });
         configPath = ".mozilla/firefox";
+        # Vicinae's browser extension talks to this host.
+        nativeMessagingHosts = [
+          (pkgs.writeTextDir "lib/mozilla/native-messaging-hosts/com.vicinae.vicinae.json" (
+            builtins.toJSON {
+              name = "com.vicinae.vicinae";
+              description = "Vicinae Native Messaging Host";
+              path = "${pkgs.vicinae}/libexec/vicinae/vicinae-browser-link";
+              type = "stdio";
+              allowed_extensions = [ "firefox@vicinae.com" ];
+            }
+          ))
+        ];
         policies = {
           AutofillAddressEnabled = false;
           AutofillCreditCardEnabled = false;

@@ -6,6 +6,5 @@
     kitty
     media
     social
-    vicinae
   ];
 }
