@@ -188,6 +188,22 @@ Three things change when config moves into the wrapper:
   [`fzf.nix`](../modules/home/core/cli/fzf.nix) sources fzf's key bindings
   from the wrapped package.
 
+## A daemon or a desktop-only program
+
+hypridle, hyprpaper, dunst and hyprlock only run on the NixOS desktops, so
+the desktop NixOS module installs them, not Home Manager. Each file in
+[`modules/nixos/desktop/wayland/`](../modules/nixos/desktop/wayland/) imports
+the wrapper's `install` and, for a daemon, defines its user unit.
+
+- `enableDefaultPath = false` leaves the unit on the session's `PATH`, which
+  hypridle needs for `hyprlock` and `hyprctl`.
+- NixOS does not restart user units on a rebuild. A changed config takes
+  effect at the next login, or after `systemctl --user restart <name>`.
+- A host sets a wrapper option in its NixOS module, as abhartach does with
+  `wrappers.hyprlock.monitor`.
+- These packages do not build on macOS, so `wrappers.packages.<name>` leaves
+  them out there.
+
 ## Config a wrapper cannot carry
 
 Some config is read from a fixed path by more than one program. scp, sftp,

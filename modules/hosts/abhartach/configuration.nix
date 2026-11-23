@@ -53,6 +53,8 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBeGvQMzAFPToh87kRuK4ogdA3OCFXIiEPuohfcLPWx";
 
+      wrappers.hyprlock.monitor = "DP-1";
+
       age.secrets = {
         home-backup-password = {
           rekeyFile = ./secrets/home-backup-password.age;

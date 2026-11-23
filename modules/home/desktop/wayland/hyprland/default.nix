@@ -8,7 +8,6 @@
     }:
     {
       imports = with config.flake.modules.homeManager; [
-        hyprlock
         hypr-workspace-pin
         waybar
         wayland

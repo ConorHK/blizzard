@@ -44,7 +44,6 @@ let
     "gnome-text-editor"
     "gtk"
     "gtksourceview"
-    "hyprlock"
     "nixos-icons"
     "qt"
     "vesktop"
