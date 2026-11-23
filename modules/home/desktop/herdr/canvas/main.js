@@ -2,7 +2,7 @@
 // tool, in the right sidebar. Its pi extension writes them per herdr-core terminal.
 import { View, div } from "gpui-kit";
 import { h_flex, v_flex, TextView } from "gpui-base";
-import { exec, focused, hc, layout, notify, props, run, spaces, terminals, theme } from "herdr";
+import { exec, focused, hc, layout, notify, props, run, setShared, shared, spaces, terminals, theme } from "herdr";
 import { ago, openUrl } from "./util.js";
 import { effect, MAX_SEND, safeUrl } from "./safe.js";
 import { SAMPLE } from "./sample.js";
@@ -43,20 +43,62 @@ function uiLabels() {
   return out;
 }
 
+// Whether each visited space has the canvas open, by space id.
+const OPEN = "canvas.open";
+
+function canvasShown() {
+  const column = find(layout(), "canvas");
+  return Boolean(column) && !column.hidden;
+}
+
 // An invisible copy that is always running, so the canvas opens even before it was ever shown:
 // a new show_ui from the focused terminal shows it. The hidden canvas copy cannot do this, since
 // a block's mod starts only when it first shows.
+// The canvas column belongs to the whole window, so this copy also shows and hides it as the
+// focused space changes: each space keeps the canvas as it was left there, and a space that
+// never had it starts closed.
 class Watch {
   constructor(cx) {
     this.seen = uiLabels();
+    this.space = undefined;
+    this.pending = null;
     cx.timer.every(1000, () => this.tick());
   }
 
+  sync() {
+    const space = focused()?.space ?? null;
+    if (!space) return;
+    const shown = canvasShown();
+    const open = shared(OPEN) ?? {};
+    if (space !== this.space) {
+      const first = this.space === undefined;
+      this.space = space;
+      this.pending = null;
+      // At startup a space with nothing saved keeps what the layout shows.
+      if (!(first && !(space in open))) {
+        const want = Boolean(open[space]);
+        if (want !== shown) {
+          this.pending = { want, until: Date.now() + 1000 };
+          run(want ? "layout.show" : "layout.hide", { id: "canvas" });
+          return;
+        }
+      }
+    }
+    // Until the restore lands, or something else won, the old state is not a choice.
+    if (this.pending) {
+      if (this.pending.want !== shown && Date.now() < this.pending.until) return;
+      this.pending = null;
+    }
+    if (open[space] === shown) return;
+    setShared(OPEN, { ...open, [space]: shown });
+  }
+
   tick() {
+    this.sync();
     const now = uiLabels();
     const address = focused()?.terminal;
     const value = address ? now.get(address) : null;
-    if (value && value !== (this.seen.get(address) ?? null) && find(layout(), "canvas")?.hidden) {
+    if (value && value !== (this.seen.get(address) ?? null) && !canvasShown()) {
       run("layout.show", { id: "canvas" });
     }
     this.seen = now;
@@ -202,7 +244,11 @@ export default class Canvas extends View {
   }
 
   render(_cx) {
-    if (this.watch) return div();
+    if (this.watch) {
+      // A space switch re-renders this copy, which is sooner than its next tick.
+      this.watch.sync();
+      return div();
+    }
     const t = theme();
     const data = this.sample ? SAMPLE : this.data;
     const blocks = [];

@@ -101,7 +101,8 @@
           }
         ];
       };
-      # An invisible floating copy of the canvas mod that opens the canvas on a new show_ui.
+      # An invisible floating copy of the canvas mod: it opens the canvas on a new show_ui and
+      # keeps it open or closed per space.
       canvasWatch = {
         id = "canvas-watch";
         content = {
