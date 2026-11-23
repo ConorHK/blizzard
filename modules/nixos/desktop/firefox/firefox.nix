@@ -107,9 +107,13 @@
         "font.size.variable.x-western" = px fonts.sizes.applications;
       };
 
-      chromeEntries = lib.unique (
-        lib.attrNames (builtins.readDir "${inputs.textfox}/chrome") ++ [ "config.css" ]
+      chromeFiles = lib.unique (
+        map (file: lib.removePrefix "${inputs.textfox}/chrome/" (toString file)) (
+          lib.filesystem.listFilesRecursive "${inputs.textfox}/chrome"
+        )
+        ++ [ "config.css" ]
       );
+      chromeDirs = lib.unique (lib.filter (dir: dir != ".") (map dirOf chromeFiles));
 
       # textfox's stylesheets, with its own userChrome.css followed by ours.
       chrome = pkgs.runCommandLocal "firefox-chrome" { } ''
@@ -163,13 +167,12 @@
         etc."firefox/chrome".source = chrome;
       };
 
-      # Each stylesheet is linked on its own, so a chrome directory that holds other files
-      # still gets them. L never replaces a file that is already there.
-      systemd.user.tmpfiles.rules = [
-        "d %h/.mozilla/firefox/primary/chrome 0755 - - -"
-      ]
-      ++ map (
-        name: "L %h/.mozilla/firefox/primary/chrome/${name} - - - - /etc/firefox/chrome/${name}"
-      ) chromeEntries;
+      # Each file is linked on its own, so a chrome directory that holds other files still
+      # gets them, at any depth. L never replaces a file that is already there.
+      systemd.user.tmpfiles.rules =
+        map (dir: "d %h/.mozilla/firefox/primary/chrome/${dir} 0755 - - -") ([ "" ] ++ chromeDirs)
+        ++ map (
+          file: "L %h/.mozilla/firefox/primary/chrome/${file} - - - - /etc/firefox/chrome/${file}"
+        ) chromeFiles;
     };
 }
