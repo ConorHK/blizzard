@@ -35,7 +35,6 @@
             ignored = [
               "flake.nix"
               "templates/*"
-              "modules/home/core/cli/ssh.nix"
               "modules/home/desktop/media/gfx.nix"
               "modules/nixos/core/network/network-manager.nix"
               "modules/nixos/desktop/wayland/default.nix"

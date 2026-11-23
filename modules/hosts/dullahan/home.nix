@@ -31,7 +31,6 @@ topLevel: {
         jujutsu
         laptop
         ntfy
-        ssh
         syncthing
         xdg
         zai

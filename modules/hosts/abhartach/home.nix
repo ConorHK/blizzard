@@ -36,7 +36,6 @@ topLevel: {
         herdr
         jujutsu
         ntfy
-        ssh
         syncthing
         xdg
         zai

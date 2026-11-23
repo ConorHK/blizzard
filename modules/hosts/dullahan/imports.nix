@@ -22,6 +22,7 @@
       nixbuild
       pi
       secure-boot
+      ssh-client
     ];
   };
 }

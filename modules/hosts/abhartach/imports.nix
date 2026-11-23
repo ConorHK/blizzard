@@ -25,6 +25,7 @@
       nixbuild
       pi
       secure-boot
+      ssh-client
       sunshine
       virtualization
     ];

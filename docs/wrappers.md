@@ -187,3 +187,12 @@ Three things change when config moves into the wrapper:
   not part of a wrapper. They stay in the Home Manager module.
   [`fzf.nix`](../modules/home/core/cli/fzf.nix) sources fzf's key bindings
   from the wrapped package.
+
+## Config a wrapper cannot carry
+
+Some config is read from a fixed path by more than one program. scp, sftp,
+rsync and nix all read ssh's config, and none of them start a wrapped `ssh`.
+On NixOS that config goes in the system file instead:
+[`ssh-client.nix`](../modules/nixos/desktop/ssh-client.nix) writes the host
+aliases to `/etc/ssh/ssh_config`, under `Match localuser` so root and service
+accounts keep the stock settings.
