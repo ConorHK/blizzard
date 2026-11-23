@@ -107,6 +107,10 @@
         "font.size.variable.x-western" = px fonts.sizes.applications;
       };
 
+      chromeEntries = lib.unique (
+        lib.attrNames (builtins.readDir "${inputs.textfox}/chrome") ++ [ "config.css" ]
+      );
+
       # textfox's stylesheets, with its own userChrome.css followed by ours.
       chrome = pkgs.runCommandLocal "firefox-chrome" { } ''
         cp --recursive ${inputs.textfox}/chrome $out
@@ -159,9 +163,13 @@
         etc."firefox/chrome".source = chrome;
       };
 
-      # L never replaces a chrome directory that is already there.
+      # Each stylesheet is linked on its own, so a chrome directory that holds other files
+      # still gets them. L never replaces a file that is already there.
       systemd.user.tmpfiles.rules = [
-        "L %h/.mozilla/firefox/primary/chrome - - - - /etc/firefox/chrome"
-      ];
+        "d %h/.mozilla/firefox/primary/chrome 0755 - - -"
+      ]
+      ++ map (
+        name: "L %h/.mozilla/firefox/primary/chrome/${name} - - - - /etc/firefox/chrome/${name}"
+      ) chromeEntries;
     };
 }
