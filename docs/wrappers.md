@@ -81,6 +81,19 @@ git finds its config through `GIT_CONFIG_GLOBAL`, which only the wrapped
 `config.wrappers.git.wrapper`, as [`ogham.nix`](../modules/home/core/ogham/ogham.nix)
 does. A program that brings its own git reads no global config.
 
+## A program whose config is chosen at run time
+
+[`starship/`](../modules/wrappers/starship/) carries two prompts. fish
+points `STARSHIP_CONFIG` at the jj one inside a jj repo, so the wrapper sets
+the variable with `envDefault` and exposes the directory as
+`config.wrappers.starship.wrapper.configDir`.
+
+## A config that names a store path
+
+[`zellij/`](../modules/wrappers/zellij/) loads a plugin built by this
+flake. `config.kdl` holds `@autolock@` in its place, and `pkgs.replaceVars`
+fills it in when the wrapper builds.
+
 ## A program with a theme
 
 [`bat/`](../modules/wrappers/bat/) keeps its colours in a theme file,
