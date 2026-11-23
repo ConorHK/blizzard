@@ -1,69 +1,19 @@
+{ config, ... }:
+let
+  inherit (config.flake.wrappers.git) install;
+in
 {
   flake.modules.homeManager.core =
+    { pkgs, ... }:
     {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
-    {
+      imports = [ install ];
+      wrappers.git.enable = true;
+
       home.packages = [
-        pkgs.pre-commit
+        pkgs.difftastic
         pkgs.git-absorb
+        pkgs.pre-commit
       ];
-      programs = {
-        difftastic = {
-          enable = true;
-          options.background = "dark";
-        };
-
-        git = {
-          enable = true;
-          lfs.enable = true;
-
-          ignores = [
-            ".pi/messenger/"
-            ".zvec-grep/"
-          ];
-
-          settings = {
-            init.defaultBranch = lib.mkDefault "main";
-
-            commit.verbose = true;
-
-            log.date = "iso";
-            column.ui = "auto";
-
-            branch.sort = "-committerdate";
-            tag.sort = "version:refname";
-
-            diff.algorithm = "histogram";
-            diff.colorMoved = "default";
-
-            pull.rebase = true;
-            push.autoSetupRemote = true;
-
-            merge.conflictStyle = "zdiff3";
-
-            rebase = {
-              autoSquash = true;
-              autoStash = true;
-              updateRefs = true;
-            };
-            rerere.enabled = true;
-
-            fetch.fsckObjects = true;
-            receive.fsckObjects = true;
-            transfer.fsckobjects = true;
-
-            alias = {
-              # https://bernsteinbear.com/git
-              recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10";
-              switch-branch = "! git branch --sort=committerdate | ${lib.getExe config.wrappers.fzf.wrapper} --reverse | xargs -I {} git checkout {}";
-            };
-          };
-        };
-      };
 
       home.shellAliases = {
         gs = "git status";

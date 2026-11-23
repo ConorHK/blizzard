@@ -16,7 +16,7 @@
           pkgs.coreutils
           pkgs.findutils
           pkgs.flock
-          pkgs.git
+          config.wrappers.git.wrapper
           pkgs.gnugrep
           # Activation PATH has no ssh.
           pkgs.openssh

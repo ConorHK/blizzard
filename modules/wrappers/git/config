@@ -1,0 +1,58 @@
+[alias]
+	# https://bernsteinbear.com/git
+	recent = "! git branch --sort=-committerdate --format=\"%(committerdate:relative)%09%(refname:short)\" | head -10"
+	switch-branch = "! git branch --sort=committerdate | fzf --reverse | xargs -I {} git checkout {}"
+
+[branch]
+	sort = -committerdate
+
+[column]
+	ui = auto
+
+[commit]
+	verbose = true
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[fetch]
+	fsckObjects = true
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	process = git-lfs filter-process
+	required = true
+	smudge = git-lfs smudge -- %f
+
+[init]
+	defaultBranch = main
+
+[log]
+	date = iso
+
+[merge]
+	conflictStyle = zdiff3
+
+[pull]
+	rebase = true
+
+[push]
+	autoSetupRemote = true
+
+[rebase]
+	autoSquash = true
+	autoStash = true
+	updateRefs = true
+
+[receive]
+	fsckObjects = true
+
+[rerere]
+	enabled = true
+
+[tag]
+	sort = version:refname
+
+[transfer]
+	fsckobjects = true

@@ -60,6 +60,27 @@ On macOS the Dock and Spotlight start the app bundle's executable, not
 Kitty reads its config at start, so a running kitty keeps the old config
 until it restarts.
 
+## A program hosts extend
+
+[`git/`](../modules/wrappers/git/) and
+[`jujutsu/`](../modules/wrappers/jujutsu/) take `extraConfig` as kitty does,
+for a host's identity and defaults:
+
+```nix
+wrappers.git.extraConfig = ''
+  [user]
+  	email = me@example.com
+'';
+```
+
+git reads the lines after the shared config, so a later value wins. A TOML
+table cannot be defined twice, so jujutsu reads them as a second file.
+
+git finds its config through `GIT_CONFIG_GLOBAL`, which only the wrapped
+`git` sets. A script that needs the config calls
+`config.wrappers.git.wrapper`, as [`ogham.nix`](../modules/home/core/ogham/ogham.nix)
+does. A program that brings its own git reads no global config.
+
 ## A program with a theme
 
 [`bat/`](../modules/wrappers/bat/) keeps its colours in a theme file,
