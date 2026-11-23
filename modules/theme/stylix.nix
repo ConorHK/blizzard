@@ -46,7 +46,6 @@ let
     "gtksourceview"
     "nixos-icons"
     "qt"
-    "vesktop"
     "xresources"
   ];
 
