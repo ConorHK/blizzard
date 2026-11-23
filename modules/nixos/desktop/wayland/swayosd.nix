@@ -17,7 +17,29 @@
     hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd(osd .. " --playerctl previous"),   { locked = true })
   '';
 
-  flake.modules.homeManager.swayosd = {
-    services.swayosd.enable = true;
-  };
+  flake.modules.nixos.desktop =
+    { pkgs, ... }:
+    {
+      environment.systemPackages = [ pkgs.swayosd ];
+
+      systemd.user.services.swayosd = {
+        description = "Volume/backlight OSD indicator";
+        documentation = [ "man:swayosd(1)" ];
+        after = [ "graphical-session.target" ];
+        partOf = [ "graphical-session.target" ];
+        wantedBy = [ "graphical-session.target" ];
+        unitConfig = {
+          ConditionEnvironment = "WAYLAND_DISPLAY";
+          StartLimitBurst = 5;
+          StartLimitIntervalSec = 10;
+        };
+        enableDefaultPath = false;
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = "${pkgs.swayosd}/bin/swayosd-server";
+          Restart = "always";
+          RestartSec = "2s";
+        };
+      };
+    };
 }

@@ -1,4 +1,3 @@
-{ config, ... }:
 {
   flake.modules.homeManager.wayland =
     {
@@ -7,8 +6,6 @@
       ...
     }:
     {
-      imports = [ config.flake.modules.homeManager.swayosd ];
-
       home = {
         packages = lib.attrValues {
           inherit (pkgs)
