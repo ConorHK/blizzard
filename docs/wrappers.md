@@ -204,6 +204,23 @@ the wrapper's `install` and, for a daemon, defines its user unit.
 - These packages do not build on macOS, so `wrappers.packages.<name>` leaves
   them out there.
 
+## A program that insists on files in the home directory
+
+Some programs only read a fixed path under `$HOME`, beside state they write
+themselves. Vesktop reads its theme there, Vicinae its extensions, Firefox
+its `chrome` directory. The desktop NixOS module publishes those files under
+`/etc` and links them in with `systemd.user.tmpfiles.rules`:
+
+- The rule type is `L`, never `L+`: a file the program wrote itself is left
+  alone instead of being replaced.
+- The link points at `/etc`, not at the store, so it follows every rebuild
+  without being recreated.
+- Links appear at login. A first switch shows the old state until then.
+
+Prefer a real override when the program has one. Vicinae loads
+`VICINAE_OVERRIDES` on top of its own `settings.json`, and Firefox takes
+policies, preferences and `--profile` through its nixpkgs wrapper.
+
 ## Config a wrapper cannot carry
 
 Some config is read from a fixed path by more than one program. scp, sftp,

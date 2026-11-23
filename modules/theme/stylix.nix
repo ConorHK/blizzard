@@ -35,7 +35,6 @@ let
   ];
 
   homeTargets = enableTargets [
-    "firefox"
     "fish"
     "font-packages"
     "fontconfig"
