@@ -7,10 +7,7 @@
       ...
     }:
     {
-      imports = with config.flake.modules.homeManager; [
-        swayosd
-        dunst
-      ];
+      imports = [ config.flake.modules.homeManager.swayosd ];
 
       home = {
         packages = lib.attrValues {

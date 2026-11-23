@@ -35,7 +35,6 @@ let
   ];
 
   homeTargets = enableTargets [
-    "dunst"
     "firefox"
     "fish"
     "font-packages"
