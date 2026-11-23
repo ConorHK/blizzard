@@ -90,7 +90,11 @@
           {
             id = "canvas-body";
             type = "block";
-            content.mod = "canvas";
+            content = {
+              mod = "canvas";
+              # The mod copies a remote session's images with hc.
+              props.hc = lib.getExe herdr-core;
+            };
           }
           # A second child, so Herdr never merges this column away with its hidden flag.
           {

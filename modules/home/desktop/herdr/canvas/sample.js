@@ -36,13 +36,5 @@ export const SAMPLE = {
       text: "**Cause so far.** nginx exits on a missing certificate after the switch. The same generation passed on bananach, so the change looks *host specific*.",
     },
     { type: "code", language: "bash", text: "hc read t14 --lines 40\npi --session ~/.pi/agent/sessions/..." },
-    {
-      type: "buttons",
-      items: [
-        { label: "Roll back leprechaun", send: "Roll leprechaun back to its last generation.", tone: "good" },
-        { label: "Dig into nginx", send: "Investigate why nginx failed on leprechaun.", tone: "info" },
-        { label: "Open logs", link: "https://github.com/ConorHK/blizzard/actions" },
-      ],
-    },
   ],
 };

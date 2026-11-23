@@ -1,14 +1,36 @@
-// Generative UI: the cards, tables and buttons that the focused pi session drew with its show_ui
-// tool, in the right sidebar. Its pi extension writes them per herdr-core terminal.
-import { View, div } from "gpui-kit";
+// The page that the focused pi session showed with its show_ui tool, in the right sidebar:
+// documents, images, tables and status cards. Its pi extension writes them per herdr-core terminal.
+import { View, div, image } from "gpui-kit";
 import { h_flex, v_flex, TextView } from "gpui-base";
-import { exec, focused, hc, layout, notify, props, run, setShared, shared, spaces, terminals, theme } from "herdr";
+import { exec, focused, home, layout, notify, props, run, setShared, shared, spaces, terminals, theme } from "herdr";
 import { ago, openUrl } from "./util.js";
-import { effect, MAX_SEND, safeUrl } from "./safe.js";
+import { safeUrl } from "./safe.js";
 import { SAMPLE } from "./sample.js";
 
 const POLL_MS = 2000;
 const READ = 'cat "${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$0.json" 2>/dev/null';
+
+// image() only loads files under the app folder, so a page's images are copied there from the
+// session's machine. The names come from the pi extension and are checked before they get here.
+const IMAGES = "data/canvas";
+const IMAGE_NAME = /^[A-Za-z0-9._-]+$/;
+const FETCH = `
+dir="$1"; machine="$2"; hc="$3"; shift 3
+mkdir -p "$dir"
+find "$dir" -type f -mtime +1 -delete 2>/dev/null
+status=0
+for name in "$@"; do
+  [ -s "$dir/$name" ] && continue
+  tmp="$dir/$name.tmp.$$"
+  if [ -n "$machine" ]; then
+    "$hc" exec --on "$machine" -- sh -c 'base64 < "\${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$0"' "$name" | base64 -d > "$tmp"
+  else
+    cp "\${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$name" "$tmp"
+  fi
+  if [ -s "$tmp" ]; then mv "$tmp" "$dir/$name"; else rm -f "$tmp"; status=1; fi
+done
+exit $status
+`;
 
 // "host/t9" lives on host as t9; "t2" lives here.
 function locate(address) {
@@ -136,33 +158,37 @@ export default class Canvas extends View {
       }
       if (address === this.address && text === this.text) return;
       if (address !== this.address) this.sample = false;
-      this.address = address;
-      this.text = text;
+      let data = null;
       try {
-        this.data = text ? JSON.parse(text) : null;
-      } catch {
-        this.data = null;
+        data = text ? JSON.parse(text) : null;
+      } catch {}
+      const names = [];
+      for (const b of data?.blocks ?? []) if (b.type === "image" && IMAGE_NAME.test(b.file ?? "")) names.push(b.file);
+      let copied = true;
+      if (names.length) {
+        // One transfer at a time: a poll that arrives during a slow copy waits for the next one.
+        if (this.fetching) return;
+        this.fetching = true;
+        const dir = `${home()}/.config/herdr-app/${IMAGES}`;
+        const machine = address ? locate(address).machine : null;
+        const r = await exec("sh", ["-c", FETCH, "sh", dir, machine ?? "", props()?.hc ?? "hc", ...names], { timeout: 60000 })
+          .catch(() => ({ code: 1 }));
+        this.fetching = false;
+        copied = r.code === 0;
       }
+      this.address = address;
+      // A page whose images did not all arrive counts as unseen, so the next poll tries again.
+      this.text = copied ? text : null;
+      this.data = data;
       cx.notify();
     });
   }
 
-  // A send button types into the session as the user; the sample only says what it would send.
-  press(item) {
-    if (item.link) {
-      const url = safeUrl(item.link);
-      if (url) openUrl(url.href);
-      else notify({ title: "Link blocked", body: "Only https links open.", level: "error" });
-      return;
-    }
-    if (typeof item.send !== "string" || item.send.length > MAX_SEND) return;
-    if (this.sample || !this.address) {
-      notify({ title: "Sample button", body: `Would send: ${item.send}`, level: "info", timeout: 3000 });
-      return;
-    }
-    hc(["send", this.address, item.send]).then((r) => {
-      if (r.code !== 0) notify({ title: "Not sent", body: (r.stderr || r.stdout).trim(), level: "error" });
-    });
+  // Only https links open.
+  open(link) {
+    const url = safeUrl(link);
+    if (url) openUrl(url.href);
+    else notify({ title: "Link blocked", body: "Only https links open.", level: "error" });
   }
 
   block(t, b, i) {
@@ -172,7 +198,7 @@ export default class Canvas extends View {
         return div().text_size(15).font_semibold().child(b.text ?? "");
       case "markdown":
         // Its links go through the same https check as a link button.
-        return TextView.markdown(key, b.text ?? "").selectable(true).on_link_click((url) => this.press({ link: url }));
+        return TextView.markdown(key, b.text ?? "").selectable(true).on_link_click((url) => this.open(url));
       case "code":
         return TextView.markdown(key, `\`\`\`${b.language ?? ""}\n${b.text ?? ""}\n\`\`\``).selectable(true);
       case "stats": {
@@ -224,19 +250,15 @@ export default class Canvas extends View {
         }
         return v_flex().children(rows);
       }
-      case "buttons": {
-        const buttons = [];
-        let n = 0;
-        for (const it of b.items ?? []) {
-          const fx = effect(it);
-          const color = fx.ok ? toneColor(t, it.tone ?? "info") : t.dim;
-          // A button always shows what it does, so a friendly label cannot hide what it sends or opens.
-          buttons.push(v_flex().id(`${key}-btn${n++}`).px(10).py(4).border(1).border_color(color)
-            .text_size(13).when(fx.ok, (el) => el.hover((s) => s.bg(t.hover)).on_click(() => this.press(it)))
-            .child(div().text_color(color).child(it.label ?? ""))
-            .child(div().max_w(380).truncate().text_size(11).text_color(fx.ok ? t.dim : t.blocked).child(fx.text)));
-        }
-        return div().flex().flex_wrap().gap(6).children(buttons);
+      case "image": {
+        const ok = IMAGE_NAME.test(b.file ?? "");
+        // An image element is a square unless it is told its height.
+        const width = Math.max(0, (this.width ?? 440) - 20);
+        const sized = b.width > 0 && b.height > 0;
+        const picture = ok && image(`${IMAGES}/${b.file}`).w(width).h(sized ? (width * b.height) / b.width : width);
+        return v_flex().gap(4)
+          .child(ok ? picture : div().text_color(t.blocked).child("This image could not be shown."))
+          .when(Boolean(b.text), (el) => el.child(div().text_size(12).text_color(t.muted).child(b.text)));
       }
       default:
         return div().text_color(t.dim).child(`Unknown block: ${b.type}`);
@@ -270,8 +292,13 @@ export default class Canvas extends View {
       ? v_flex().id("canvas-blocks").flex_1().min_h(0).px(10).gap(10).overflow_y_scrollbar().children(blocks)
       : v_flex().px(10).gap(8).text_size(13).text_color(t.dim)
         .child(div().child(this.address ? "This session has not drawn anything yet." : "Focus a terminal."))
-        .child(div().child("Ask pi to use its show_ui tool, for example: show me a status board of this work."));
-    return v_flex().size_full().py(6).gap(8).bg(t.chrome).text_color(t.foreground)
+        .child(div().child("Ask pi to use its show_ui tool, for example: show me that design doc beside the session."));
+    return v_flex().id("canvas-root").size_full().py(6).gap(8).bg(t.chrome).text_color(t.foreground)
+      .on_size_change((size, cx) => {
+        if (size.width === this.width) return;
+        this.width = size.width;
+        cx.notify();
+      })
       .child(header)
       .child(body)
       .when(!this.data || this.sample, (el) => el.child(toggle(this.sample ? "Hide the sample" : "Show a sample")));
