@@ -22,12 +22,14 @@ status=0
 for name in "$@"; do
   [ -s "$dir/$name" ] && continue
   tmp="$dir/$name.tmp.$$"
+  # Nothing is renamed into place unless every step before it succeeded.
   if [ -n "$machine" ]; then
-    "$hc" exec --on "$machine" -- sh -c 'base64 < "\${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$0"' "$name" | base64 -d > "$tmp"
+    "$hc" exec --on "$machine" -- sh -c 'base64 < "\${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$0"' "$name" > "$tmp.b64" \\
+      && base64 -d < "$tmp.b64" > "$tmp"
   else
     cp "\${XDG_STATE_HOME:-$HOME/.local/state}/pi-ui/$name" "$tmp"
-  fi
-  if [ -s "$tmp" ]; then mv "$tmp" "$dir/$name"; else rm -f "$tmp"; status=1; fi
+  fi && [ -s "$tmp" ] && mv "$tmp" "$dir/$name" || status=1
+  rm -f "$tmp" "$tmp.b64"
 done
 exit $status
 `;
