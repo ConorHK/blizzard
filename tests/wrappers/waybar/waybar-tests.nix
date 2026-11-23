@@ -3,14 +3,9 @@
   perSystem =
     { pkgs, system, ... }:
     let
-      waybarUsers =
-        nixos:
-        lib.filter (user: user.programs.waybar.enable or false) (
-          lib.attrValues (nixos.config.home-manager.users or { })
-        );
-
       hosts = lib.filterAttrs (
-        _: nixos: nixos.config.nixpkgs.hostPlatform.system == system && waybarUsers nixos != [ ]
+        _: nixos:
+        nixos.config.nixpkgs.hostPlatform.system == system && (nixos.config.wrappers.waybar.enable or false)
       ) config.flake.nixosConfigurations;
 
       hyprlandHosts = lib.filterAttrs (_: nixos: nixos.config.programs.hyprland.enable or false) hosts;
@@ -27,7 +22,7 @@
           )
         ) hostSet;
 
-      packages = nixos: map (user: "${user.programs.waybar.package}") (waybarUsers nixos);
+      packages = nixos: [ "${nixos.config.wrappers.waybar.package}" ];
 
       check-backups = pkgs.writeShellApplication {
         name = "check-backups";
@@ -36,7 +31,7 @@
           pkgs.jq
           pkgs.systemd
         ];
-        text = builtins.readFile ../../../../../modules/home/desktop/wayland/waybar/check-backups.sh;
+        text = builtins.readFile ../../../modules/wrappers/waybar/check-backups.sh;
       };
     in
     {
@@ -46,9 +41,9 @@
           touch $out
         '';
       }
-      // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (
-        nixos: map (user: "${user.xdg.configFile."waybar/config".source}") (waybarUsers nixos)
-      )
+      // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (nixos: [
+        "${nixos.config.wrappers.waybar.flags."--config".data}"
+      ])
       // mkChecks hyprlandHosts "lua-api" ./check-lua-api.sh [ pkgs.binutils ] (
         nixos: [ "${nixos.config.programs.hyprland.package}/bin/Hyprland" ] ++ packages nixos
       );

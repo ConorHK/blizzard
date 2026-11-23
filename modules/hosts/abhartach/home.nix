@@ -23,8 +23,6 @@ topLevel: {
         JJ_EMAIL = "$(cat ${config.age.secrets.git-email.path})";
       };
 
-      programs.waybar.settings.main.output = "DP-1";
-
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
         claude

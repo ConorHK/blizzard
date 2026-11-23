@@ -4,6 +4,11 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILckflL1zKiJOTmgA3E7uhn7+Em+Nv940moIIaN3opbd";
 
+      wrappers.waybar = {
+        output = "eDP-1";
+        extraModules = [ "battery" ];
+      };
+
       networking.hostName = "dullahan";
       networking.ipv4.address = "192.168.0.183";
 

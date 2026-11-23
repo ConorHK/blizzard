@@ -6,7 +6,7 @@
     hl.window_rule({ match = { class = "alacritty-popup" }, center = true })
   '';
 
-  flake.modules.homeManager.alacritty = {
+  flake.modules.nixos.desktop = {
     imports = [ config.flake.wrappers.alacritty.install ];
     wrappers.alacritty.enable = true;
   };

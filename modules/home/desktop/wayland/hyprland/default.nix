@@ -9,7 +9,6 @@
     {
       imports = with config.flake.modules.homeManager; [
         hypr-workspace-pin
-        waybar
         wayland
       ];
 

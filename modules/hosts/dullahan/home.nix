@@ -19,8 +19,6 @@ topLevel: {
         };
       };
 
-      programs.waybar.settings.main.output = "eDP-1";
-
       imports = with topLevel.config.flake.modules.homeManager; [
         agenix
         claude
@@ -29,7 +27,6 @@ topLevel: {
         git-identity
         herdr
         jujutsu
-        laptop
         ntfy
         syncthing
         xdg
