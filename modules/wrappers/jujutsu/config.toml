@@ -1,0 +1,20 @@
+[user]
+name = "Conor Knowles"
+email = "dev@conorknowles.com"
+
+[ui]
+diff-formatter = ["difft", "--background=dark", "--color=always", "--sort-paths", "--width=$width", "$left", "$right"]
+
+[aliases]
+# jj sync [revset]: fetch, then rebase @'s branch onto it.
+sync = ["util", "exec", "--", "bash", "-c", 'jj git fetch && jj rebase -o "${1:-trunk()}"', ""]
+# jj push [bookmark]: point a bookmark at the tip, then push.
+# No name moves the nearest ancestor bookmark forward.
+# The tip is the last non-empty commit: @, or @- after `jj commit`.
+push = ["util", "exec", "--", "bash", "-c", '''
+if [ -n "${1:-}" ]; then
+  jj bookmark set "$1" -r 'heads(::@ ~ (@ & empty()))' && jj git push -b "$1"
+else
+  jj bookmark move --from 'heads(::heads(::@ ~ (@ & empty())) & bookmarks())' --to 'heads(::@ ~ (@ & empty()))' && jj git push
+fi
+''', ""]
