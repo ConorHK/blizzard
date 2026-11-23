@@ -48,7 +48,6 @@ let
     "hyprlock"
     "nixos-icons"
     "qt"
-    "starship"
     "vesktop"
     "xresources"
   ];
