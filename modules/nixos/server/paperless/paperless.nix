@@ -41,7 +41,7 @@ in
         containers = {
           paperless-redis.containerConfig = {
             # renovate: datasource=docker depName=docker.io/redis
-            image = "docker.io/redis:8.10-alpine";
+            image = "docker.io/redis:8.12-alpine";
             networks = [ "paperless.network" ];
             noNewPrivileges = true;
           };
