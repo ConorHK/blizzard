@@ -22,7 +22,7 @@ in
         serviceConfig.MemoryMax = "2G";
         containerConfig = {
           # renovate: datasource=docker depName=ghcr.io/home-assistant/home-assistant
-          image = "ghcr.io/home-assistant/home-assistant:2026.11.2";
+          image = "ghcr.io/home-assistant/home-assistant:2026.11.3";
           volumes = [
             "${dataDir}:/config"
             "/etc/localtime:/etc/localtime:ro"
