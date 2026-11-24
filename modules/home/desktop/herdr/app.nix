@@ -28,7 +28,7 @@
         xdg.configFile = {
           # New terminals get fish, not the login shell.
           "herdr-core/config.toml".source = (pkgs.formats.toml { }).generate "herdr-core.toml" {
-            shell = [ (lib.getExe config.programs.fish.package) ];
+            shell = [ (lib.getExe config.wrappers.fish.wrapper) ];
           };
 
           # Linked per file, since the app writes type files into mod folders.

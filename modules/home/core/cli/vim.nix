@@ -23,9 +23,10 @@
           text = config.programs.cnvim.extraLua;
         };
 
+        wrappers.fish.extraConfig = "alias vim nvim";
+
         home = {
           packages = [ cnvim ];
-          shellAliases.vim = "nvim";
           sessionVariables.EDITOR = "nvim";
         };
       };

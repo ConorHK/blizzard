@@ -94,6 +94,39 @@ the variable with `envDefault` and exposes the directory as
 flake. `config.kdl` holds `@autolock@` in its place, and `pkgs.replaceVars`
 fills it in when the wrapper builds.
 
+`@shell@` is the shell every pane starts. It defaults to the wrapped fish;
+a host points `wrappers.zellij.shell` at its own.
+
+## The shell
+
+[`fish/`](../modules/wrappers/fish/) is the shell every terminal starts.
+`config.fish` holds the aliases, key bindings, colours, completions and
+prompt, and the wrapper passes it with `--init-command`. The tools those
+call ride along at the end of `PATH`, so a host's own copy wins.
+
+A host adds lines after the shared file. Only interactive shells read them:
+
+```nix
+wrappers.fish.extraConfig = ''
+  alias vim nvim
+'';
+```
+
+The kitty module adds kitty's shell integration this way, the cnvim module
+the `vim` alias, and the Stylix module the script that paints the terminal
+palette. The build parses the finished file, because fish skips a whole
+file over one syntax error.
+
+Home Manager still owns the session variables. Fish reads
+`~/.config/fish/conf.d` before the wrapper's config, in scripts too, so
+[`fish.nix`](../modules/home/core/shell/fish.nix) puts a fish translation
+of them there. On NixOS the login session reads them through
+`environment.extraInit` in
+[`home-manager.nix`](../modules/nixos/core/home-manager.nix).
+
+The login shell on NixOS is `crash`, which starts the shell `SHELLS` names.
+`fish.nix` sets that variable to the wrapped fish.
+
 ## A program with a theme
 
 [`bat/`](../modules/wrappers/bat/) keeps its colours in a theme file,
@@ -176,17 +209,18 @@ How the test sees the config depends on the program:
 - A program with no display to borrow has its own tool read the file the
   wrapper passes. alacritty's `migrate --dry-run` parses it.
 
-Three things change when config moves into the wrapper:
+Four things change when config moves into the wrapper:
 
 - The config rides with the wrapped binary. An alias or script that calls
   the plain nixpkgs binary by store path skips it.
 - Stylix themes a program through its Home Manager target. A wrapped
   program needs its colours in the config file, and its target removed from
   [`stylix.nix`](../modules/theme/stylix.nix).
-- Session variables, shell aliases, shell integration and user services are
-  not part of a wrapper. They stay in the Home Manager module.
-  [`fzf.nix`](../modules/home/core/cli/fzf.nix) sources fzf's key bindings
-  from the wrapped package.
+- Shell aliases and fish integration go in the fish wrapper: in
+  `config.fish` when every host wants them, in `wrappers.fish.extraConfig`
+  otherwise.
+- Session variables and user services are not part of a wrapper. They stay
+  in the Home Manager module.
 
 ## A daemon or a desktop-only program
 

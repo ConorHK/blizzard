@@ -5,7 +5,6 @@ set -gx MANPAGER "bat --plain"
 set -gx FZF_CTRL_T_OPTS "--preview 'head {}'"
 set -gx FZF_CTRL_R_OPTS --sort
 set -gx LESSHISTFILE "$XDG_CACHE_HOME/less/history"
-set -gx SHELLS (status fish-path)
 
 status is-interactive; or return
 
@@ -16,7 +15,7 @@ alias cat "bat --style='plain,rule,header' --paging never"
 alias less "bat --plain"
 alias df duf
 alias du dust
-alias wget "wget --hsts-file=$XDG_DATA_HOME/wget-hsts"
+alias wget 'wget --hsts-file=$XDG_DATA_HOME/wget-hsts'
 
 alias gs "git status"
 alias gc "git commit"

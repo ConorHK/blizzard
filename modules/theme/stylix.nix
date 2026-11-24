@@ -35,7 +35,6 @@ let
   ];
 
   homeTargets = enableTargets [
-    "fish"
     "font-packages"
     "fontconfig"
     "glance"
@@ -53,10 +52,26 @@ let
   # home-manager integration (which already pulls in the stylix HM module and
   # would otherwise conflict on the read-only `stylix.base16` if imported
   # twice).
-  homeStylix.stylix = {
-    autoEnable = false;
-    targets = homeTargets;
-  };
+  homeStylix =
+    { config, ... }:
+    let
+      inherit (config.lib.stylix) colors;
+    in
+    {
+      stylix = {
+        autoEnable = false;
+        targets = homeTargets;
+      };
+
+      # Stylix's fish target only feeds programs.fish, so the wrapped fish runs its script here.
+      wrappers.fish.extraConfig = ''
+        source ${colors { templateRepo = inputs.stylix.inputs.base16-fish; }}
+        # The escape codes garble tmux and zellij.
+        if test -z "$TMUX"; and test -z "$ZELLIJ"
+            base16-${colors.slug}
+        end
+      '';
+    };
 in
 {
   flake.modules = {

@@ -33,7 +33,10 @@ in
     in
     {
       imports = [ install ];
-      wrappers.zellij.enable = true;
+      wrappers.zellij = {
+        enable = true;
+        shell = lib.getExe config.wrappers.fish.wrapper;
+      };
 
       home.packages = [ sesh ];
     };

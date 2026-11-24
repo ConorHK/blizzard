@@ -34,5 +34,12 @@ topLevel: {
 
         extraSpecialArgs.inputs = inputs;
       };
+
+      # No shell config in $HOME sources Home Manager's session variables, so logins read them here.
+      environment.extraInit = lib.mkAfter ''
+        if [ -e "/etc/profiles/per-user/$USER/etc/profile.d/hm-session-vars.sh" ]; then
+          . "/etc/profiles/per-user/$USER/etc/profile.d/hm-session-vars.sh"
+        fi
+      '';
     };
 }
