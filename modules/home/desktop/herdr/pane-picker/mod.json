@@ -1,0 +1,5 @@
+{
+  "place": "none",
+  "title": "Panes",
+  "overlay": { "kind": "popup", "at": "top", "offset": 80, "width": 0.8, "height": 0.7 }
+}
