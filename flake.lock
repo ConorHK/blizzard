@@ -913,11 +913,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794777599,
-        "narHash": "sha256-bXW/wN2apvf2cFFgNOXyEopUGgnlptYDTk83uYPQ+VU=",
+        "lastModified": 1795650544,
+        "narHash": "sha256-VeQo721pVbHauagH//gGwQBX3vLkGRj2DQTWJCOKfzI=",
         "owner": "ConorHK",
         "repo": "podgetv",
-        "rev": "a090a310a76e77de0b96d4ca7e6349fe099e00ac",
+        "rev": "8955d117bdeac458f157278f986dd131e0677096",
         "type": "github"
       },
       "original": {
