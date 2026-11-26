@@ -104,9 +104,9 @@ programs.pi.ogham.settings.taskSource.command = [
 ```
 
 An orchestrator session starts workers in herdr panes with
-`OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<intercom id>`. Each worker
-joins on startup and records its pane and intercom id, so the orchestrator
-can reach it through intercom.
+`OGHAM_TASK=<repo>/<slug>` and `OGHAM_PARENT=<hc terminal id>`. Each worker
+joins on startup and records its pane and hc terminal id, so the orchestrator
+can reach it with `hc send`.
 
 ## Curation
 

@@ -13,7 +13,7 @@ export interface WorkerInfo {
 	role: Role;
 	session: string;
 	name?: string;
-	intercom?: string;
+	terminal?: string;
 	pane?: string;
 	parent?: string;
 	cwd: string;
@@ -202,7 +202,7 @@ export function renderWorker(info: WorkerInfo): string {
 		status: "idle",
 		session: info.session,
 		name: info.name,
-		intercom: info.intercom,
+		terminal: info.terminal,
 		pane: info.pane,
 		parent: info.parent,
 		cwd: info.cwd,
@@ -239,7 +239,7 @@ function unquote(value: string): string {
 export function workerSummary(fields: Record<string, string>): string {
 	const parts = [fields.session ? workerId(fields.session) : "?", fields.role, fields.status];
 	if (fields.pane) parts.push(`pane ${fields.pane}`);
-	if (fields.intercom) parts.push(`intercom ${fields.intercom}`);
+	if (fields.terminal) parts.push(`terminal ${fields.terminal}`);
 	if (fields.updated) parts.push(`updated ${fields.updated}`);
 	return parts.filter(Boolean).join(" ");
 }

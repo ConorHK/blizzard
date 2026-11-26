@@ -36,7 +36,7 @@ recorded yet.
 
 Each session writes its own worker note, `workers/<session>.md`. An
 orchestrator starts workers in herdr panes with `OGHAM_TASK=<project>/<slug>`
-and `OGHAM_PARENT=<its intercom id>`; they join on startup. `--ogham-task` does
+and `OGHAM_PARENT=<its hc terminal id>`; they join on startup. `--ogham-task` does
 the same as `OGHAM_TASK`, and either one given a ticket URL starts the task
 for that ticket, with no start dialog. `/task` alone lists the workers.
 Bindings survive resume.

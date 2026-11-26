@@ -98,7 +98,7 @@ test("yaml values stay typed or get quoted", () => {
 test("frontmatter updates keep the body", () => {
 	const note = renderWorker({ ref, role: "worker", session: "01a15dd2-70e3", cwd: "/repo", pane: "w2:p1P", now });
 	assert.match(note, /^---\ntype: worker\ntask: blizzard\/fix-sync\n/);
-	assert.doesNotMatch(note, /intercom:/);
+	assert.doesNotMatch(note, /terminal:/);
 	const updated = setFrontmatter(note, { status: "working", extra: "x y" });
 	assert.match(updated, /\nstatus: working\n/);
 	assert.match(updated, /\nextra: "x y"\n---\n/);
@@ -148,10 +148,10 @@ test("tasks from links keep the URL", () => {
 });
 
 test("worker summaries read back the frontmatter", () => {
-	const note = renderWorker({ ref, role: "orchestrator", session: "01a15dd2-70e3", cwd: "/r", pane: "w2:p1P", intercom: "abc", now });
+	const note = renderWorker({ ref, role: "orchestrator", session: "01a15dd2-70e3", cwd: "/r", pane: "w2:p1P", terminal: "t7", now });
 	const fields = readFrontmatter(setFrontmatter(note, { status: "working" }));
 	assert.equal(fields.pane, "w2:p1P");
-	assert.equal(workerSummary(fields), "01a15dd2 orchestrator working pane w2:p1P intercom abc updated 2026-10-20T14:05");
+	assert.equal(workerSummary(fields), "01a15dd2 orchestrator working pane w2:p1P terminal t7 updated 2026-10-20T14:05");
 	assert.deepEqual(readFrontmatter("no frontmatter"), {});
 	assert.deepEqual(readFrontmatter('---\ntitle: "unterminated\nstatus: active\n---\n'), { title: '"unterminated', status: "active" });
 });

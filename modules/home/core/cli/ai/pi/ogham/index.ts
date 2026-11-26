@@ -129,7 +129,7 @@ const SOURCE_CACHE = path.join(homedir(), ".cache", "ogham", "source.json");
 
 const DESCRIPTION = `Bind this session to an ogham task, a markdown note in the user's notes repo.
 
-Call it when the user says which task they are working on. Pass title to create or reuse a task in the current repo's project. If the user gives a ticket or URL, look up its ID and title first, pass "<ID>: <title>" as title and the URL as link. Pass task ("project/slug") to join a task another session created. Pass done to close the bound task; its knowledge moves to topic notes and its win to wins.md. Pass nothing to list the task's workers with their status, pane, and intercom id.
+Call it when the user says which task they are working on. Pass title to create or reuse a task in the current repo's project. If the user gives a ticket or URL, look up its ID and title first, pass "<ID>: <title>" as title and the URL as link. Pass task ("project/slug") to join a task another session created. Pass done to close the bound task; its knowledge moves to topic notes and its win to wins.md. Pass nothing to list the task's workers with their status, pane, and hc terminal id.
 
 A side model keeps the task note current after each run.`;
 
@@ -200,9 +200,8 @@ export default function (pi: ExtensionAPI) {
 		const file = workerFile();
 		if (!file || !existsSync(file)) return;
 		const updates: Record<string, string> = { status, updated: stamp(new Date()) };
-		// pi-intercom sets it in its own session_start.
-		const intercom = process.env.PI_INTERCOM_SESSION_ID;
-		if (intercom) updates.intercom = intercom;
+		const terminal = process.env.HC_TERMINAL_ID;
+		if (terminal) updates.terminal = terminal;
 		await edit(file, (text) => setFrontmatter(text, updates));
 	}
 
@@ -470,7 +469,7 @@ export default function (pi: ExtensionAPI) {
 			role: request.role,
 			session,
 			name: ctx.sessionManager.getSessionName(),
-			intercom: process.env.PI_INTERCOM_SESSION_ID,
+			terminal: process.env.HC_TERMINAL_ID,
 			pane,
 			parent: request.parent,
 			cwd: ctx.cwd,
@@ -699,7 +698,7 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	function joinHint(ref: string): string {
-		const parent = process.env.PI_INTERCOM_SESSION_ID;
+		const parent = process.env.HC_TERMINAL_ID;
 		return `Workers join with OGHAM_TASK=${ref}${parent ? ` OGHAM_PARENT=${parent}` : ""} in their environment, or ogham_task task="${ref}".`;
 	}
 
