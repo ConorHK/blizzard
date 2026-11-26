@@ -8,5 +8,6 @@
     server-users
     systemd-boot
     users
+    wake-abhartach
   ];
 }
