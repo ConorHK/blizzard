@@ -18,6 +18,8 @@
       package = pkgs.supersonic.overrideAttrs (old: {
         patches = old.patches or [ ] ++ [ ./creeper-sizes.patch ];
       });
+      # Without notify-send, track notifications fall back to ones that never expire.
+      runtimePkgs = [ pkgs.libnotify ];
       # Supersonic rewrites config.toml on exit, so the managed keys are merged in at each start.
       runShell = [ "${python.interpreter} -I ${./merge.py} ${config} ${./blizzard.toml}" ];
     };
