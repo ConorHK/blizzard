@@ -69,7 +69,7 @@ export class Menu {
 
   render() {
     const t = theme();
-    const danger = (it) => ["abandon", "deleteBookmark"].includes(it.action.type);
+    const danger = (it) => ["abandon", "deleteBookmark", "removeWorkspace"].includes(it.action.type);
     const { font, size } = props().ctx?.text ?? {};
     return v_flex().id("jj-graph-menu").track_focus(this.handle).w_full().min_h(0).p(5).bg(t.popover).text_size(size ?? 12.8).when(Boolean(font), (e) => e.font_family(font))
       .on_key_down((e, cx) => {

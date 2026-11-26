@@ -153,6 +153,8 @@ export function menuFor(target, ctx) {
       section(w.path && !w.current && item("Show its space", "folder", { type: "space", name: w.name, path: w.path }),
         item(`New change on ${w.name}@`, "plus", { type: "new", rev, short: `${w.name}@` })),
       section(w.path && item("Copy workspace path", "copy", { type: "copy", text: w.path })),
+      // jj never removes the main workspace, which keeps the name "default".
+      section(!w.current && w.name !== "default" && item("Remove workspace…", "trash", { type: "removeWorkspace", name: w.name, path: w.path })),
     ];
   } else if (target.kind === "tag") {
     sections = [
@@ -197,6 +199,7 @@ export function dialogFor(action, ctx) {
       inputs: [{ id: "name", label: "Bookmark name", value: "" }], checks: [{ id: "backwards", label: "Allow moving it backwards or sideways", value: false }], confirm: "Set" };
     case "renameBookmark": return { title: "Rename bookmark", detail: `Rename ${a.name}.`, inputs: [{ id: "name", label: "New name", value: a.name }], confirm: "Rename" };
     case "deleteBookmark": return { title: "Delete bookmark", detail: `Delete ${a.name}? The next push deletes it on the remote too.`, confirm: "Delete", danger: true };
+    case "removeWorkspace": return { title: "Remove workspace", detail: `Remove ${a.name}@? Its space closes and ${a.path || "its folder"} is deleted. Its changes stay in the log.`, confirm: "Remove", danger: true };
     case "push": return { title: "Push bookmark", detail: `Push ${a.name}.`, choice: remoteChoice(ctx), confirm: "Push" };
     default: return null;
   }
@@ -235,9 +238,9 @@ export function validate(action, v, ctx) {
 // The jj commands an action runs, in order.
 export function commandsFor(a, v = {}, ctx = {}) {
   const revs = ["edit", "new", "describe", "squash", "rebase", "abandon", "setBookmark"];
-  const names = ["push", "renameBookmark", "deleteBookmark"];
+  const names = ["push", "renameBookmark", "deleteBookmark", "removeWorkspace"];
   if (revs.includes(a.type) && !revision(a.rev)) throw new Error("Invalid revision");
-  if (names.includes(a.type) && !refName(a.name)) throw new Error("Invalid bookmark name");
+  if (names.includes(a.type) && !refName(a.name)) throw new Error(a.type === "removeWorkspace" ? "Invalid workspace name" : "Invalid bookmark name");
   if (["track", "untrack"].includes(a.type) && (!refName(a.bookmark) || !refName(a.remote))) throw new Error("Invalid remote bookmark");
   if (["setBookmark", "renameBookmark"].includes(a.type) && !refName(String(v.name ?? "").trim())) throw new Error("Invalid bookmark name");
   if (a.type === "push" && (!refName(v.remote) || !ctx.remotes?.includes(v.remote))) throw new Error("Invalid remote");
@@ -254,6 +257,7 @@ export function commandsFor(a, v = {}, ctx = {}) {
     case "setBookmark": return [cmd("bookmark", "set", name, "-r", a.rev, ...(v.backwards ? ["--allow-backwards"] : []))];
     case "renameBookmark": return [cmd("bookmark", "rename", a.name, name)];
     case "deleteBookmark": return [cmd("bookmark", "delete", `exact:${a.name}`)];
+    case "removeWorkspace": return [cmd("workspace", "remove", a.name)];
     case "track": return [cmd("bookmark", "track", `${a.bookmark}@${a.remote}`)];
     case "untrack": return [cmd("bookmark", "untrack", `${a.bookmark}@${a.remote}`)];
     case "push": return [cmd("git", "push", "--remote", v.remote, "-b", `exact:${a.name}`)];
@@ -275,6 +279,7 @@ export function doneText(a, v = {}) {
     case "setBookmark": return `Set ${name} to ${a.short}`;
     case "renameBookmark": return `Renamed ${a.name} to ${name}`;
     case "deleteBookmark": return `Deleted ${a.name}`;
+    case "removeWorkspace": return `Removed ${a.name}@`;
     case "track": return `Tracking ${a.name}`;
     case "untrack": return `Stopped tracking ${a.name}`;
     case "push": return `Pushed ${a.name} to ${v.remote}`;
