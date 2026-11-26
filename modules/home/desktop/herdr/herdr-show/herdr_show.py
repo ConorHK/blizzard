@@ -94,13 +94,11 @@ def label(terminal: str, value: str) -> None:
     subprocess.run([HC, "label", terminal, f"pi.ui={value}"], capture_output=True, timeout=5, check=False)  # noqa: S603
 
 
-def session(terminal: str) -> str | None:
-    """Return the Claude session id the SessionStart hook put on this terminal."""
-    out = subprocess.run([HC, "get", terminal], capture_output=True, text=True, timeout=5, check=False)  # noqa: S603
-    try:
-        return json.loads(out.stdout).get("labels", {}).get("claude.session")
-    except json.JSONDecodeError:
-        return None
+def clear(page: Path, folder: Path, terminal: str) -> None:
+    """Remove the page and its images, then close the canvas."""
+    page.unlink(missing_ok=True)
+    prune(folder, terminal, set())
+    label(terminal, "")
 
 
 def main() -> None:
@@ -114,9 +112,7 @@ def main() -> None:
     page = folder / f"{terminal}.json"
 
     if sys.argv[1:] == ["--clear"]:
-        page.unlink(missing_ok=True)
-        prune(folder, terminal, set())
-        label(terminal, "")
+        clear(page, folder, terminal)
         return
     try:
         body = json.load(sys.stdin)
@@ -126,9 +122,7 @@ def main() -> None:
     if not isinstance(title, str) or not isinstance(blocks, list):
         fail('stdin needs {"title": string, "blocks": [...]}')
     if not blocks:
-        page.unlink(missing_ok=True)
-        prune(folder, terminal, set())
-        label(terminal, "")
+        clear(page, folder, terminal)
         print("Canvas cleared.")
         return
 
@@ -138,7 +132,7 @@ def main() -> None:
     resolved = resolve(blocks, folder, terminal, stamp)
     prune(folder, terminal, {b["file"] for b in resolved if "file" in b})
     tmp = page.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({"session": session(terminal), "updated": updated, "title": title, "blocks": resolved}))
+    tmp.write_text(json.dumps({"updated": updated, "title": title, "blocks": resolved}))
     # A rename keeps the canvas from reading half a file.
     tmp.replace(page)
     label(terminal, updated)

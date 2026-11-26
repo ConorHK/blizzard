@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  # herdr-show: Claude Code draws in the canvas sidebar through the same file and label as pi's show_ui.
+  # herdr-show draws a page in the canvas sidebar: pi's show_ui tool runs it, and Claude Code learns it from a skill.
   flake.modules.homeManager.herdr =
     { lib, pkgs, ... }:
     let
@@ -13,12 +13,12 @@
           }
           (
             builtins.replaceStrings [ "@hc@" ] [ (lib.getExe herdr-core) ] (
-              builtins.readFile ./claude-show/herdr_show.py
+              builtins.readFile ./herdr-show/herdr_show.py
             )
           );
     in
     {
       home.packages = [ show ];
-      home.file.".claude/skills/herdr-show/SKILL.md".source = ./claude-show/SKILL.md;
+      home.file.".claude/skills/herdr-show/SKILL.md".source = ./herdr-show/SKILL.md;
     };
 }

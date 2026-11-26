@@ -82,6 +82,10 @@ shapes exist.
   `programs.pi.extensions.bash-highlight = ./bash-highlight.ts;`
   ([`pi-bash-highlight.nix`](../modules/home/core/cli/ai/pi/pi-bash-highlight.nix)).
 
+`workspace-guard`, `tab-name` and `show-ui` are thin adapters over
+`herdr-*` commands that Claude Code shares; see
+[herdr-agents.md](herdr-agents.md).
+
 A local extension that needs an npm dependency can still use the builder.
 [`pi-ttsr.nix`](../modules/home/core/cli/ai/pi/pi-ttsr.nix) builds
 `picomatch` with `mkPiExtension`.

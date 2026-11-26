@@ -15,5 +15,6 @@ see [AGENTS.md](../AGENTS.md).
 | [metrics.md](metrics.md) | Prometheus, exporters, resource alerts through ntfy |
 | [wrappers.md](wrappers.md) | Programs wrapped with their config, installing them, leaving Home Manager |
 | [pi-extensions.md](pi-extensions.md) | npm pinning, `mkPiExtension`, the load check |
+| [herdr-agents.md](herdr-agents.md) | Herdr features shared by Claude Code and pi through `herdr-*` commands |
 | [ogham.md](ogham.md) | The notes repo: sync, task curation, wins, search |
 | [revolut-import.md](revolut-import.md) | Phone CSV exports into Actual over WireGuard |

@@ -28,7 +28,7 @@
         ];
         text = builtins.readFile ./worktree.sh;
       };
-      # jj comes from the user's PATH, so it reads the store with the same version that wrote it.
+      # The herdr-* commands these call come from the herdr module, so hosts without Herdr skip them.
       script =
         name: runtimeInputs:
         pkgs.writeShellApplication {
@@ -37,10 +37,7 @@
           text = builtins.readFile ./${name}.sh;
         };
       workspaceGuard = script "workspace-guard" [ pkgs.jq ];
-      tabName = script "tab-name" [
-        pkgs.jq
-        pkgs.claude-code
-      ];
+      tabName = script "tab-name" [ pkgs.jq ];
       statusline = script "statusline" [ pkgs.jq ];
       hook = command: [
         {
@@ -70,7 +67,6 @@
         hooks = {
           SessionStart = hook (lib.getExe hcSession) ++ hook (lib.getExe workspaceGuard);
           UserPromptSubmit = hook (lib.getExe tabName);
-          # herdr-show comes from the herdr module, so hosts without Herdr skip this.
           SessionEnd = hook "[ -n \"\${HC_TERMINAL_ID:-}\" ] && command -v herdr-show >/dev/null && herdr-show --clear >/dev/null 2>&1; true";
           WorktreeCreate = worktreeHook "create";
           WorktreeRemove = worktreeHook "remove";
