@@ -23,9 +23,9 @@
               addr=''${line#openwindow>>}
               addr=''${addr%%,*}
 
-              read -r pid ws < <(hyprctl -j clients |
+              read -r pid ws floating < <(hyprctl -j clients |
                 ${pkgs.jq}/bin/jq -r --arg a "0x$addr" \
-                  '.[] | select(.address==$a) | "\(.pid) \(.workspace.id)"')
+                  '.[] | select(.address==$a) | "\(.pid) \(.workspace.id) \(.floating)"')
               [ -n "''${pid:-}" ] && [ "$pid" -gt 0 ] && [ "''${ws:-0}" -gt 0 ] || continue
 
               token=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null |
@@ -35,7 +35,8 @@
 
               if [ -z "''${pinned[$token]:-}" ]; then
                 pinned[$token]=$ws
-              elif [ "''${pinned[$token]}" != "$ws" ]; then
+              # Menus and dialogs float and belong where they open.
+              elif [ "$floating" = false ] && [ "''${pinned[$token]}" != "$ws" ]; then
                 hyprctl dispatch \
                   "hl.dsp.window.move({ workspace = ''${pinned[$token]}, follow = false, window = \"address:0x$addr\" })"
               fi
