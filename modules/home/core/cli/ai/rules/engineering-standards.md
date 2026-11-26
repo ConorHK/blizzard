@@ -11,6 +11,38 @@ Do not store user preferences in agent memory. Write them in this file.
 If the repo has a `.jj` directory, commit with jj (`jj describe`, `jj new`); do
 not shell out to git for local commits. Otherwise use git.
 
+### Parallel Work in jj: Workspaces
+
+In a jj repo, use a jj workspace, never `git worktree`, when work must run
+beside another checkout: a second agent, a slow build or test, or a fix while a
+feature is half done.
+
+When the user starts new work that will produce commits (a feature, fix or
+refactor) and you sit in the repo's default workspace, move into a workspace of
+your own before the first edit. Skip this for questions, reviews and one-line
+fixes. In Claude Code, call `EnterWorktree` with a short name for the work; a
+hook makes it a jj workspace under `~/.herdr/workspaces/<repo>/`. Elsewhere,
+run `jj workspace add` and work in that folder.
+
+- All workspaces share one store: commits, bookmarks and the op log. A commit
+  made in one shows in `jj log` everywhere, marked `<name>@`.
+- Each workspace has its own files and its own `@`. Move it with `jj new X`,
+  not `jj edit X`, so two workspaces never share an `@`.
+- jj records file edits only when a jj command runs in that workspace. Run
+  `jj st` there before reading its changes from elsewhere.
+- If another workspace rewrites your `@`, jj reports it stale. Run
+  `jj workspace update-stale`.
+- Ignored files (`result`, `.direnv`, build caches) are per workspace.
+
+```bash
+jj workspace add --name fix ~/.herdr/workspaces/<repo>/fix   # parent dir must exist
+jj workspace list
+jj workspace remove fix   # snapshots its edits into a commit, then deletes the folder
+```
+
+In Herdr, a space's right-click menu offers New, Open and Remove workspace in
+a jj repo. Each workspace gets its own space.
+
 ## Missing Tools: Use nix-shell First
 
 When a command, CLI, or dependency is not on PATH, run it through Nix

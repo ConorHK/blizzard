@@ -43,9 +43,44 @@ async function jjBranch(cwd, on) {
 """
 WATCH = "if (!on) this.watch(repo, cx);"
 JJ_LOOKUP = 'if (info.branch === "(detached)") info.branch = await jjBranch(cwd, on);'
-# Git worktrees make no sense in a jj repo, so the menus leave them out there.
+# In a jj repo the menus offer jj workspaces in place of git worktrees.
 JJ_ROOT = 'exec("jj", ["root", "--ignore-working-copy"], { cwd: folder, on })'
 MENU_CHECK = "async function checkout(folder, on) {"
+MENU_JJ_CHECK = f"""
+  const jj = await {JJ_ROOT}.catch(() => null);
+  if (jj?.code === 0) {{
+    const linked = await exec("test", ["-f", `${{jj.stdout.trim()}}/.jj/repo`], {{ on }}).catch(() => null);
+    return linked?.code === 0 ? "jj-linked" : "jj";
+  }}"""
+MENU_GIT_ITEMS = '...(git ? [["New worktree"'
+MENU_JJ_ITEMS = (
+    '...(git?.startsWith("jj") ? [\n'
+    '          ["New workspace", "jj-workspace", { space: tg.id, action: "new" }],\n'
+    '          ["Open workspace", "jj-workspace", { space: tg.id, action: "open" }],\n'
+    '          ...(git === "jj-linked" ? [["Remove workspace", "jj-workspace", { space: tg.id, action: "remove" }]] : []),\n'
+    "        ] : []),\n"
+    '        ...(git && !git.startsWith("jj") ? [["New worktree"'
+)
+MENU_CHOOSE = 'if (it[1] === "worktree") openOverlay('
+# The font placeholder becomes the look's font when the mod is cloned.
+JJ_DIALOG = (
+    '{ mod: "jj-workspace", kind: "dialog", width: OPEN ? 560 : 460, height: OPEN ? 480 : 280,'
+    f' props: {{ ...ARGS, font: "@font@", size: {STRIKE} }} }}'
+)
+MENU_JJ_CHOOSE = (
+    'if (it[1] === "jj-workspace") openOverlay('
+    + JJ_DIALOG.replace("OPEN", 'it[2].action === "open"').replace("ARGS", "it[2]")
+    + ");\n    else "
+    + MENU_CHOOSE
+)
+MENU_ICON = 'command === "worktree" ?'
+NEW_MENU_JJ_ROW = """
+    if (this.jj && id.startsWith("worktree")) {
+      const open = id === "worktree-open";
+      const args = { space: spaces().find((s) => s.active)?.id, folder: panes().find((p) => p.focused)?.cwd, action: open ? "open" : "new" };
+      name = open ? "Open workspace\\u2026" : "New workspace\\u2026";
+      action = () => openOverlay(DIALOG);
+    }""".replace("DIALOG", JJ_DIALOG.replace("OPEN", "open").replace("ARGS", "args"))
 NEW_MENU_INIT = "    this.handle.focus();\n    cx.spawn(async cx => {"
 NEW_MENU_JJ = (
     "    const folder = panes().find((p) => p.focused)?.cwd;\n"
@@ -86,10 +121,10 @@ PANE_LINK_CHIP = """
         .child(linkText)))"""
 PATCHES = {
     "menu": [
-        (
-            MENU_CHECK,
-            f"{MENU_CHECK}\n  if ((await {JJ_ROOT}).code === 0) return null;",
-        ),
+        (MENU_CHECK, MENU_CHECK + MENU_JJ_CHECK),
+        (MENU_GIT_ITEMS, MENU_JJ_ITEMS),
+        (MENU_CHOOSE, MENU_JJ_CHOOSE),
+        (MENU_ICON, 'command === "worktree" || command === "jj-workspace" ?'),
     ],
     "new-menu": [
         ("knownAgents, run,", "knownAgents, exec, run,"),
@@ -99,7 +134,7 @@ PATCHES = {
         ),
         (
             NEW_MENU_ROW,
-            f'{NEW_MENU_ROW}\n    if (this.jj && id.startsWith("worktree")) return div();',
+            NEW_MENU_ROW + NEW_MENU_JJ_ROW,
         ),
     ],
     "spaces": [
@@ -165,7 +200,8 @@ def clone_mod(mods: Path, name: str, font: str) -> None:
     for js in dst.rglob("*.js"):
         js.write_text(rewrite(js.read_text()))
     main = dst / "main.js"
-    main.write_text(set_font(patch(name, main.read_text()), font))
+    patched = patch(name, main.read_text()).replace("@font@", font)
+    main.write_text(set_font(patched, font))
 
 
 def rename_mods(node: object) -> object:

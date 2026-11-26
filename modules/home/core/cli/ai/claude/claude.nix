@@ -20,6 +20,24 @@
           hc label "$HC_TERMINAL_ID" "claude.session=$session" >/dev/null 2>&1 || true
         '';
       };
+      worktree = pkgs.writeShellApplication {
+        name = "claude-worktree";
+        runtimeInputs = [
+          pkgs.jq
+          pkgs.git
+        ];
+        text = builtins.readFile ./worktree.sh;
+      };
+      worktreeHook = event: [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "${lib.getExe worktree} ${event}";
+            }
+          ];
+        }
+      ];
       settings = {
         model = "claude-opus-5-5";
         effortLevel = "medium";
@@ -41,6 +59,8 @@
               ];
             }
           ];
+          WorktreeCreate = worktreeHook "create";
+          WorktreeRemove = worktreeHook "remove";
         };
         permissions = {
           defaultMode = "auto";
