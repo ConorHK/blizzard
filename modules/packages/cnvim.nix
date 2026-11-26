@@ -10,6 +10,7 @@
     {
       system,
       pkgs,
+      self',
       ...
     }:
     let
@@ -28,6 +29,7 @@
             buildInputs = old.buildInputs ++ [ unfreePkgs.aws-lc ];
           });
         };
+        inherit (self'.packages) git-url;
         alduin = pkgs.vimUtils.buildVimPlugin {
           name = "alduin";
           src = inputs.plugins-alduin;

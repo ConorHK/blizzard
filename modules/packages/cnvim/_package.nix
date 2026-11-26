@@ -25,6 +25,7 @@
   ghostscript,
   mermaid-cli,
   tectonic,
+  git-url,
 }:
 let
   packageName = "cnvim";
@@ -45,6 +46,7 @@ let
     ghostscript
     mermaid-cli
     tectonic
+    git-url
   ];
 
   startPlugins = with vimPlugins; [
