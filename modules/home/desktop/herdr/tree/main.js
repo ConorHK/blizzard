@@ -341,6 +341,8 @@ export default class Tree extends View {
   subRow({ k, depth }, t, level) {
     return this.row(`sub-${k.address}`, level + depth, t)
       .on_click(() => run("terminal.peek", { terminal: k.address }))
+      // A rail in the chevron slot ties sub-agents to their parent.
+      .child(div().w(14).h_full().flex_none().flex().justify_center().child(div().w(1).h_full().bg(t.border)))
       .child(icon(k.program, 13, t.muted))
       .child(div().flex_1().min_w(0).truncate().text_color(t.muted).child(k.name || k.template || k.program?.name || k.address))
       .child(this.status(t, kidStatus(k, this.listed), true));
