@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Waybar hides a custom module whenever its exec exits non-zero, discarding any output,
-# so every path that has something to show must print it and exit 0.
+# Every path prints JSON and exits 0, so errors still reach the sidebar.
 
 FLAKE_DIR="${1:-.}"
 REMOTE="${2:-origin}"

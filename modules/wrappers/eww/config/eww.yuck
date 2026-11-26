@@ -1,0 +1,76 @@
+(include "./host.yuck")
+
+(defvar thumbs "{}")
+
+(deflisten workspaces :initial "[]" "sidebar-workspaces")
+(deflisten volume :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-volume")
+
+(defpoll privacy :interval "3s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-privacy")
+(defpoll bluetooth :interval "5s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-bluetooth")
+(defpoll network :interval "3s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-network")
+(defpoll battery :interval "30s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-battery")
+(defpoll failed :interval "10s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-failed")
+(defpoll backups :interval "60s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-run backups")
+(defpoll flake :interval "300s" :initial '{"text": "", "tooltip": "", "class": ""}' "sidebar-run flake")
+
+(defwindow sidebar [screen]
+  :monitor screen
+  :geometry (geometry :x "0px" :y "0px" :width "58px" :height "100%" :anchor "center left")
+  :stacking "fg"
+  :exclusive true
+  :focusable false
+  :namespace "sidebar"
+  (bar :screen screen))
+
+(defwidget bar [screen]
+  (centerbox :orientation "v" :class "bar"
+    (box :valign "start" :halign "center" :orientation "v" :space-evenly false
+      (clock))
+    (workspaces :screen screen)
+    (box :valign "end" :halign "center" :orientation "v" :space-evenly false :spacing 5
+      (module :name "privacy" :data privacy)
+      (module :name "wireplumber" :data volume
+        :onclick "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        :onrightclick "sidebar-run mixer"
+        :onscroll "sidebar-run volume {}")
+      (host-modules)
+      (module :name "bluetooth" :data bluetooth :onclick "sidebar-run bluetooth")
+      (module :name "network" :data network :onclick "sidebar-run network")
+      (label :class "separator" :text "﹏﹏﹏")
+      (module :name "systemd-failed-units" :data failed :onclick "sidebar-run units")
+      (module :name "backup" :data backups)
+      (module :name "system-up-to-date" :data flake :onclick "sidebar-run jj"))))
+
+(defwidget module [name data ?onclick ?onrightclick ?onscroll]
+  (eventbox
+    :visible {data.text != ""}
+    :cursor {(onclick ?: "") != "" ? "pointer" : "default"}
+    :onclick onclick
+    :onrightclick onrightclick
+    :onscroll onscroll
+    (label :class "module ${name} ${data.class}" :text {data.text} :tooltip {data.tooltip})))
+
+(defwidget clock []
+  (tooltip
+    (box :orientation "v" :class "calendar" :space-evenly false
+      (label :text {formattime(EWW_TIME, "%A %B %d")})
+      (calendar))
+    (box :orientation "v" :class "module clock" :space-evenly false
+      (for part in {["%H", "%M", "--", "%d", "%m"]}
+        (label :text {formattime(EWW_TIME, part)})))))
+
+(defwidget workspaces [screen]
+  ; Entering the strip captures every workspace, so a dot's tooltip has an image before it opens.
+  (eventbox :valign "center" :halign "center" :onhover "sidebar-thumb ${EWW_CONFIG_DIR}"
+  (box :orientation "v" :class "workspaces" :space-evenly false :spacing 24
+    (for ws in workspaces
+      (eventbox :cursor "pointer"
+        :onhover "sidebar-thumb ${EWW_CONFIG_DIR} ${ws.name}"
+        :onclick "sidebar-focus ${ws.name}"
+        (tooltip
+          (box :class "thumb"
+            (image :visible {(thumbs?.[ws.name] ?: "") != ""}
+              :path {thumbs?.[ws.name] ?: "${EWW_CONFIG_DIR}/blank.png"})
+            (label :visible {(thumbs?.[ws.name] ?: "") == ""} :text "workspace ${ws.name}"))
+          (box :halign "center" :valign "center"
+            :class "workspace ${ws.focused ? 'active' : ''} ${ws.visible ? 'visible' : ''} ${ws.monitor == screen ? '' : 'away'}")))))))

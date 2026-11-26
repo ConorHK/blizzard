@@ -4,7 +4,7 @@
     {
       age.rekey.hostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILckflL1zKiJOTmgA3E7uhn7+Em+Nv940moIIaN3opbd";
 
-      wrappers.waybar = {
+      wrappers.eww = {
         output = "eDP-1";
         extraModules = [ "battery" ];
       };

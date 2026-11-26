@@ -46,7 +46,7 @@ Each job writes to `/var/lib/restic-status`:
 - `<name>.backup`: epoch of the last successful backup.
 - `<name>.drill`: the last drill's alerts, one per line; empty means it passed.
 
-The waybar `custom/backup` module reads them: `BKOK`, `BKRUN` while a
+The sidebar backup module reads them: `BKOK`, `BKRUN` while a
 backup runs, `BKOLD` when the last success is over 48h old, `BKERR` on a
 failed backup or drill. The tooltip lists each job. Hosts without the
 directory hide the module.

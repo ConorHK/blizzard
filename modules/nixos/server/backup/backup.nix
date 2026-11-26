@@ -11,7 +11,7 @@ _: {
       host = config.networking.hostName;
       jobs = lib.filterAttrs (_: job: job.paths != [ ] || job.dumpPaths != [ ]) cfg.jobs;
 
-      # Read by the waybar backup module.
+      # Read by the sidebar backup module.
       statusDir = "/var/lib/restic-status";
 
       zfs = lib.getExe' config.boot.zfs.package "zfs";

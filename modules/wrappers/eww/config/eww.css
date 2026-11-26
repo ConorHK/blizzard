@@ -1,0 +1,104 @@
+@define-color base00 #1c1c1c; @define-color base01 #262626;
+@define-color base02 #626262; @define-color base03 #878787;
+@define-color base04 #dfdfaf; @define-color base05 #dfdfaf;
+@define-color base06 #dfdfaf; @define-color base07 #dfdfaf;
+
+@define-color base08 #af5f5f; @define-color base09 #af875f;
+@define-color base0A #af875f; @define-color base0B #87875f;
+@define-color base0C #87afaf; @define-color base0D #878787;
+@define-color base0E #af8787; @define-color base0F #87afaf;
+
+* {
+    all: unset;
+    font-family: "Creeper", "Siji";
+    font-size: 10pt;
+}
+
+.bar, tooltip {
+    background: @base00;
+    color: @base05;
+}
+
+tooltip {
+    border: 1px solid @base0D;
+    padding: 4px;
+}
+
+.module {
+    padding: 0 5px;
+}
+
+.clock {
+    padding-top: 5px;
+}
+
+.separator {
+    padding: 0 5px;
+}
+
+/* Something is wrong and you can act on it. */
+.battery.critical,
+.network.disconnected,
+.systemd-failed-units.degraded,
+.backup.error,
+.system-up-to-date.error,
+.privacy.sharing {
+    color: @base08;
+}
+
+/* Worth a glance, not urgent. */
+.battery.warning,
+.backup.stale,
+.system-up-to-date.needs-update,
+.system-up-to-date.sync-issue {
+    color: @base09;
+}
+
+.battery.charging {
+    color: @base0B;
+}
+
+.bluetooth.connected {
+    color: @base0C;
+}
+
+/* Deliberately silenced, so recede. */
+.wireplumber.muted,
+.bluetooth.off,
+.bluetooth.disabled {
+    color: @base02;
+}
+
+.workspace {
+    min-width: 4px;
+    min-height: 4px;
+    margin: 2px 0;
+    background-color: @base05;
+}
+
+/* Workspaces that live on another monitor. */
+.workspace.away {
+    background-color: @base03;
+}
+
+/* Shown on a monitor without focus. */
+.workspace.visible {
+    background-color: @base0C;
+}
+
+.workspace.active {
+    background-color: @base08;
+}
+
+calendar {
+    padding: 4px;
+}
+
+calendar:selected {
+    color: @base08;
+}
+
+calendar.header,
+calendar.highlight {
+    color: @base0D;
+}

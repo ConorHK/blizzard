@@ -3,9 +3,11 @@
   perSystem =
     { pkgs, system, ... }:
     let
+      scripts = ../../../modules/wrappers/eww/scripts;
+
       hosts = lib.filterAttrs (
         _: nixos:
-        nixos.config.nixpkgs.hostPlatform.system == system && (nixos.config.wrappers.waybar.enable or false)
+        nixos.config.nixpkgs.hostPlatform.system == system && (nixos.config.wrappers.eww.enable or false)
       ) config.flake.nixosConfigurations;
 
       hyprlandHosts = lib.filterAttrs (_: nixos: nixos.config.programs.hyprland.enable or false) hosts;
@@ -14,15 +16,13 @@
         hostSet: name: script: nativeBuildInputs: arguments:
         lib.mapAttrs' (
           host: nixos:
-          lib.nameValuePair "waybar-${name}-${host}" (
-            pkgs.runCommand "waybar-${name}-${host}" { inherit nativeBuildInputs; } ''
-              ${pkgs.writeShellScript "waybar-${name}" (builtins.readFile script)} ${lib.escapeShellArgs (arguments nixos)}
+          lib.nameValuePair "eww-${name}-${host}" (
+            pkgs.runCommand "eww-${name}-${host}" { inherit nativeBuildInputs; } ''
+              ${pkgs.writeShellScript "eww-${name}" (builtins.readFile script)} ${lib.escapeShellArgs (arguments nixos)}
               touch $out
             ''
           )
         ) hostSet;
-
-      packages = nixos: [ "${nixos.config.wrappers.waybar.package}" ];
 
       check-backups = pkgs.writeShellApplication {
         name = "check-backups";
@@ -31,7 +31,7 @@
           pkgs.jq
           pkgs.systemd
         ];
-        text = builtins.readFile ../../../modules/wrappers/waybar/check-backups.sh;
+        text = builtins.readFile "${scripts}/check-backups.sh";
       };
 
       check-flake-updates = pkgs.writeShellApplication {
@@ -42,17 +42,17 @@
           pkgs.jujutsu
         ];
         bashOptions = [ ];
-        text = builtins.readFile ../../../modules/wrappers/waybar/check-flake-updates.sh;
+        text = builtins.readFile "${scripts}/check-flake-updates.sh";
       };
     in
     {
       checks = {
-        waybar-backups = pkgs.runCommand "waybar-backups" { nativeBuildInputs = [ pkgs.jq ]; } ''
+        eww-backups = pkgs.runCommand "eww-backups" { nativeBuildInputs = [ pkgs.jq ]; } ''
           ${pkgs.writeShellScript "check-backups-tests" (builtins.readFile ./check-backups-tests.sh)} ${lib.getExe check-backups}
           touch $out
         '';
-        waybar-flake-updates =
-          pkgs.runCommand "waybar-flake-updates"
+        eww-flake-updates =
+          pkgs.runCommand "eww-flake-updates"
             {
               nativeBuildInputs = [
                 pkgs.git
@@ -65,11 +65,14 @@
               touch $out
             '';
       }
-      // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (nixos: [
-        "${nixos.config.wrappers.waybar.flags."--config".data}"
-      ])
-      // mkChecks hyprlandHosts "lua-api" ./check-lua-api.sh [ pkgs.binutils ] (
-        nixos: [ "${nixos.config.programs.hyprland.package}/bin/Hyprland" ] ++ packages nixos
-      );
+      // mkChecks hosts "commands" ./check-commands.sh [ ] (
+        nixos:
+        [ nixos.config.wrappers.eww.flags."--config".data ]
+        ++ map (p: toString (p.data or p)) nixos.config.wrappers.eww.runtimePkgs
+      )
+      // mkChecks hyprlandHosts "lua-api" ./check-lua-api.sh [ ] (nixos: [
+        "${nixos.config.programs.hyprland.package}/bin/Hyprland"
+        "${scripts}/sidebar-focus.sh"
+      ]);
     };
 }
