@@ -82,6 +82,23 @@
         networkmanager.logLevel = "TRACE";
       };
 
+      # Names the process that deletes the wired subnet route (#733); revert once found.
+      systemd.services.route-delete-trace = {
+        description = "Log processes that delete IPv4 routes";
+        wantedBy = [ "multi-user.target" ];
+        before = [ "NetworkManager.service" ];
+        serviceConfig.ExecStart = "${pkgs.bpftrace}/bin/bpftrace ${pkgs.writeText "route-delete.bt" ''
+          fentry:vmlinux:fib_table_delete {
+            $c = args.cfg;
+            printf("delete %s/%d oif=%d pid=%d comm=%s%s\n",
+              ntop($c->fc_dst), $c->fc_dst_len, $c->fc_oif, pid, comm, kstack);
+          }
+          fentry:vmlinux:fib_table_flush {
+            printf("flush pid=%d comm=%s%s\n", pid, comm, kstack);
+          }
+        ''}";
+      };
+
       services.sunshine = {
         settings.output_name = "DP-1";
         applications.apps = [
