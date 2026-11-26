@@ -1,0 +1,20 @@
+[Application]
+FontNormalTTF = "@regular@"
+FontBoldTTF = "@bold@"
+UIScaleSize = "Normal"
+EnableAutoUpdateChecker = false
+ShowTrackChangeNotification = true
+SavePlayQueue = true
+SaveQueueToServer = true
+
+[Playback]
+UseWaveformSeekbar = true
+
+[ReplayGain]
+Mode = "Auto"
+PreventClipping = true
+
+[Theme]
+ThemeFile = "blizzard.toml"
+Appearance = "Dark"
+UseRoundedImageCorners = false

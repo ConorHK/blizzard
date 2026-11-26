@@ -1,0 +1,20 @@
+--- a/ui/theme/theme.go
++++ b/ui/theme/theme.go
+@@ -300,12 +300,11 @@
+ 
+ func (m *MyTheme) Size(name fyne.ThemeSizeName) float32 {
+ 	switch name {
+-	case SizeNameSubSubHeadingText:
+-		return 15.5
+-	case SizeNameSubText:
+-		return 13
+-	case SizeNameSuffixText:
+-		return 12
++	case theme.SizeNameHeadingText:
++		return 30
++	case theme.SizeNameText, theme.SizeNameCaptionText, theme.SizeNameSubHeadingText,
++		SizeNameSubSubHeadingText, SizeNameSubText, SizeNameSuffixText:
++		return 15
+ 	case theme.SizeNameScrollBar:
+ 		return 14
+ 	case SizeNameImageCornerRadius:

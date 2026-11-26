@@ -151,6 +151,22 @@ the config directory alone, because mpv writes its watch-later state there.
 nixpkgs points `umpv`, and on macOS the app bundle, at its own mpv. Each
 gets a wrapper variant, so every way in reads the config.
 
+## A program that rewrites its own config
+
+[`supersonic/`](../modules/wrappers/supersonic/) keeps its server list,
+window size and volume in `config.toml`, and writes the whole file back on
+exit. The config cannot sit in the store, so the wrapper runs `merge.py`
+through `runShell` at each start. It lays the repo's `config.toml` over the
+user's copy: the keys in the repo win, every other key stays.
+
+A setting changed in the app's dialog lasts until the next start if the
+repo sets it.
+
+`merge.py` also links `blizzard.toml`, the colour theme, into the app's
+`themes` directory. Creeper is a 15px bitmap font, so
+`creeper-sizes.patch` sets every text size to 15 or 30; any other size
+blurs it.
+
 ## What a wrapper exports
 
 | Output | Use |

@@ -1,0 +1,32 @@
+[SupersonicTheme]
+Name = "Blizzard"
+Version = "0.2"
+SupportsDark = true
+SupportsLight = false
+
+[DarkColors]
+PageBackground = "#1c1c1c"
+PageHeader = "#262626"
+ListHeader = "#262626"
+Background = "#262626"
+MenuBackground = "#262626"
+OverlayBackground = "#262626"
+Button = "#262626"
+DisabledButton = "#262626"
+InputBackground = "#1c1c1c"
+InputBorder = "#626262"
+Separator = "#626262"
+ScrollBar = "#626262"
+Shadow = "#00000066"
+Foreground = "#dfdfaf"
+Hyperlink = "#dfdfaf"
+Primary = "#dfdfaf"
+Placeholder = "#878787"
+Disabled = "#626262"
+Focus = "#dfdfaf33"
+Hover = "#dfdfaf1a"
+Pressed = "#dfdfaf33"
+Selection = "#dfdfaf26"
+Error = "#af5f5f"
+Warning = "#af875f"
+Success = "#87875f"
