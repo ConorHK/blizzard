@@ -33,6 +33,17 @@
         ];
         text = builtins.readFile ../../../modules/wrappers/waybar/check-backups.sh;
       };
+
+      check-flake-updates = pkgs.writeShellApplication {
+        name = "check-flake-updates";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.git
+          pkgs.jujutsu
+        ];
+        bashOptions = [ ];
+        text = builtins.readFile ../../../modules/wrappers/waybar/check-flake-updates.sh;
+      };
     in
     {
       checks = {
@@ -40,6 +51,19 @@
           ${pkgs.writeShellScript "check-backups-tests" (builtins.readFile ./check-backups-tests.sh)} ${lib.getExe check-backups}
           touch $out
         '';
+        waybar-flake-updates =
+          pkgs.runCommand "waybar-flake-updates"
+            {
+              nativeBuildInputs = [
+                pkgs.git
+                pkgs.jq
+                pkgs.jujutsu
+              ];
+            }
+            ''
+              ${pkgs.writeShellScript "check-flake-updates-tests" (builtins.readFile ./check-flake-updates-tests.sh)} ${lib.getExe check-flake-updates}
+              touch $out
+            '';
       }
       // mkChecks hosts "commands" ./check-commands.sh [ pkgs.jq ] (nixos: [
         "${nixos.config.wrappers.waybar.flags."--config".data}"

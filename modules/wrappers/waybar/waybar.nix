@@ -10,6 +10,7 @@ topLevel: {
     let
       icon = cp: builtins.fromJSON ''"\u${cp}"'';
       alacritty = topLevel.config.flake.wrappers.alacritty.wrap { inherit pkgs; };
+      jujutsu = topLevel.config.flake.wrappers.jujutsu.wrap { inherit pkgs; };
       main = {
         name = "sidebar";
         reload_style_on_change = true;
@@ -100,22 +101,31 @@ topLevel: {
         };
         "custom/system-up-to-date" =
           let
-            check-flake-updates = pkgs.writeShellScriptBin "check-flake-updates" (
-              builtins.readFile ./check-flake-updates.sh
-            );
-            git-status = pkgs.writeShellScriptBin "gitstatus" ''
-              #!/usr/bin/env bash
-              cd /home/goose/repositories/blizzard && git fetch origin && git status
+            check-flake-updates = pkgs.writeShellApplication {
+              name = "check-flake-updates";
+              runtimeInputs = [
+                jujutsu
+                pkgs.coreutils
+                pkgs.git
+                pkgs.openssh
+              ];
+              bashOptions = [ ];
+              text = builtins.readFile ./check-flake-updates.sh;
+            };
+            jj-status = pkgs.writeShellScriptBin "jj-status" ''
+              cd "$HOME/repositories/blizzard" || exit 1
+              ${lib.getExe jujutsu} git fetch --remote origin --branch main
+              ${lib.getExe jujutsu} --no-pager log -r '@ | main@origin | ::main@origin ~ ::@ | ::@ ~ ::main@origin'
               read -n 1 -s -r -p "Press any key to exit"
             '';
           in
           {
             format = "{}";
             exec = "${lib.getExe check-flake-updates} $HOME/repositories/blizzard origin";
-            exec-if = "test -d $HOME/repositories/blizzard/.git";
+            exec-if = "test -d $HOME/repositories/blizzard/.jj";
             interval = 300;
             tooltip = true;
-            on-click = "${lib.getExe alacritty} --class alacritty-popup -e ${lib.getExe git-status}";
+            on-click = "${lib.getExe alacritty} --class alacritty-popup -e ${lib.getExe jj-status}";
             return-type = "json";
           };
         systemd-failed-units =

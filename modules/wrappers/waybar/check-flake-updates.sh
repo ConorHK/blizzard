@@ -16,10 +16,23 @@ emit() {
     exit 0
 }
 
+# Skip the snapshot so a poll never rewrites the working-copy commit under the user.
+j() {
+    jj --ignore-working-copy --no-pager --color never "$@"
+}
+
+count() {
+    j log --no-graph -r "$1" -T 'commit_id ++ "\n"' 2>/dev/null | wc -l
+}
+
+day() {
+    j log --no-graph -r "$1" -T 'committer.timestamp().format("%Y-%m-%d")' 2>/dev/null
+}
+
 cd "$FLAKE_DIR" || emit "$ICON_ERROR" "No such directory: $FLAKE_DIR" "error"
 
-if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    emit "$ICON_ERROR" "Not a git repository" "error"
+if ! j root > /dev/null 2>&1; then
+    emit "$ICON_ERROR" "Not a jj repository" "error"
 fi
 
 # Never block on a dead network or an interactive credential prompt.
@@ -27,32 +40,27 @@ export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o ConnectTimeout=5 -o BatchMode=
 export GIT_TERMINAL_PROMPT=0
 
 STALE=""
-if ! timeout -k 5 "$FETCH_TIMEOUT" git fetch --quiet --no-tags "$REMOTE" 2>/dev/null; then
-    STALE=" — offline, last known"
+if ! timeout -k 5 "$FETCH_TIMEOUT" jj --ignore-working-copy git fetch --quiet --remote "exact:$REMOTE" --branch "exact:$BRANCH" 2>/dev/null; then
+    STALE=", offline, last known"
 fi
 
-LOCAL_COMMIT=$(git rev-parse --verify --quiet HEAD)
-REMOTE_COMMIT=$(git rev-parse --verify --quiet "$REMOTE/$BRANCH")
+UPSTREAM="remote_bookmarks(exact:\"$BRANCH\", exact:\"$REMOTE\")"
+BEHIND="::$UPSTREAM ~ ::@"
+AHEAD="(::@ ~ ::$UPSTREAM) ~ empty()"
 
-if [ -z "$LOCAL_COMMIT" ] || [ -z "$REMOTE_COMMIT" ]; then
-    emit "$ICON_ERROR" "No commit for HEAD or $REMOTE/$BRANCH" "error"
+if [ "$(count "$UPSTREAM")" -ne 1 ]; then
+    emit "$ICON_ERROR" "No commit for $BRANCH@$REMOTE" "error"
 fi
 
-LOCAL_LOCK_HASH=$(git rev-parse --verify --quiet HEAD:flake.lock)
-REMOTE_LOCK_HASH=$(git rev-parse --verify --quiet "$REMOTE/$BRANCH:flake.lock")
+COMMITS_BEHIND=$(count "$BEHIND")
+COMMITS_AHEAD=$(count "$AHEAD")
 
-LOCAL_DATE=$(git log -1 --format=%ai 2>/dev/null | cut -d' ' -f1)
-REMOTE_DATE=$(git log -1 --format=%ai "$REMOTE/$BRANCH" 2>/dev/null | cut -d' ' -f1)
-COMMITS_BEHIND=$(git rev-list --count HEAD.."$REMOTE/$BRANCH" 2>/dev/null)
-COMMITS_BEHIND=${COMMITS_BEHIND:-0}
-
-if [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ]; then
-    emit "$ICON_UP_TO_DATE" "✓ Up to date ($LOCAL_DATE)$STALE" "up-to-date"
-elif [ -n "$LOCAL_LOCK_HASH" ] && [ "$LOCAL_LOCK_HASH" != "$REMOTE_LOCK_HASH" ]; then
-    emit "$ICON_OUTDATED" "󰔄 Updates available ($REMOTE_DATE)$STALE" "needs-update"
+if [ "$COMMITS_BEHIND" -eq 0 ] && [ "$COMMITS_AHEAD" -eq 0 ]; then
+    emit "$ICON_UP_TO_DATE" "Up to date ($(day "$UPSTREAM"))$STALE" "up-to-date"
+elif [ "$(count "($BEHIND) & files(root:\"flake.lock\")")" -gt 0 ]; then
+    emit "$ICON_OUTDATED" "Updates available ($(day "$UPSTREAM"))$STALE" "needs-update"
 elif [ "$COMMITS_BEHIND" -gt 0 ]; then
-    emit "$ICON_OUTDATED" "${COMMITS_BEHIND} commit(s) behind remote$STALE" "sync-issue"
+    emit "$ICON_OUTDATED" "$COMMITS_BEHIND commit(s) behind remote$STALE" "sync-issue"
 else
-    AHEAD=$(git rev-list --count "$REMOTE/$BRANCH"..HEAD 2>/dev/null)
-    emit "$ICON_UP_TO_DATE" "${AHEAD:-0} commit(s) ahead of remote$STALE" "sync-issue"
+    emit "$ICON_UP_TO_DATE" "$COMMITS_AHEAD commit(s) ahead of remote$STALE" "sync-issue"
 fi
