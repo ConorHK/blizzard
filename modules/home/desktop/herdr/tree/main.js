@@ -1,4 +1,4 @@
-// The sidebar as a tree: each space a folder, its tabs folders in it, and in each tab its live
+// The sidebar as a tree: each space a folder, its tabs windows in it, and in each tab its live
 // agents and their sub-agents with their status. A folded folder shows its most urgent status.
 
 import { View, div, image, svg } from "gpui-kit";
@@ -7,6 +7,7 @@ import { agents, terminals, spaces, panes, machines, focused, run, theme, shared
 import { followSpace } from "./space-layout.js";
 
 const ICONS = "mods/workspace-chrome";
+const OWN = "mods/tree/icons";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -263,7 +264,7 @@ export default class Tree extends View {
       .on_click(() => run("space.select", { id: s.id }))
       .on_mouse_down("right", () => this.menu({ tab: "space", target: { id: s.id } }))
       .child(this.chevron(s.id, open, t))
-      .child(svg(`${ICONS}/folder.svg`).size(14).flex_none().text_color(fill))
+      .child(svg(`${OWN}/${open ? "folder-open" : "folder"}.svg`).size(14).flex_none().text_color(fill))
       .child(div().flex_1().min_w(0).truncate().font_semibold().text_color(s.active ? t.foreground : t.muted).child(s.name))
       .when(!open && Boolean(s.status) && s.status !== "idle", (el) => el.child(this.status(t, s.status, true)))
       .child(div().id(`tab-new-${s.id}`).size(20).flex_none().flex().items_center().justify_center().rounded(5).text_color(t.dim)
@@ -292,7 +293,7 @@ export default class Tree extends View {
       })
       .on_mouse_down("right", () => this.menu({ tab: "tab", target: { id: tab.id, space: s.id } }))
       .child(hasAgents ? this.chevron(tab.id, open, t) : div().w(14).flex_none())
-      .child(svg(`${ICONS}/folder.svg`).size(13).flex_none().text_color(shown ? t.accent : t.dim))
+      .child(svg(`${OWN}/app-window.svg`).size(13).flex_none().text_color(shown ? t.accent : t.dim))
       .child(div().flex_1().min_w(0).truncate().text_color(shown ? t.foreground : t.muted).child(label))
       .when(!open && Boolean(tab.status) && tab.status !== "idle", (el) => el.child(this.status(t, tab.status, true)));
   }
@@ -323,7 +324,7 @@ export default class Tree extends View {
     return this.tail(row, a, subs, open, t, now);
   }
 
-  // A tab with one agent gets one row for both: the agent's icon when it is the only pane, else a folder.
+  // A tab with one agent gets one row for both: the agent's icon when it is the only pane, else a window.
   soloRow(s, tab, label, a, subs, t, now) {
     const open = !this.folded.has(a.address);
     const shown = s.active && tab.active;
@@ -332,7 +333,7 @@ export default class Tree extends View {
       .on_click(() => run("pane.focus", { pane: a.pane }))
       .on_mouse_down("right", () => this.menu({ tab: "tab", target: { id: tab.id, space: s.id } }))
       .child(subs.length ? this.chevron(a.address, open, t) : div().w(14).flex_none())
-      .child(tab.panes === 1 ? icon(a.program, 14, t.foreground) : svg(`${ICONS}/folder.svg`).size(13).flex_none().text_color(shown ? t.accent : t.dim))
+      .child(tab.panes === 1 ? icon(a.program, 14, t.foreground) : svg(`${OWN}/app-window.svg`).size(13).flex_none().text_color(shown ? t.accent : t.dim))
       .child(div().flex_1().min_w(0).truncate().text_color(shown ? t.foreground : t.muted).child(label));
     return this.tail(row, a, subs, open, t, now);
   }

@@ -137,6 +137,10 @@
         "herdr-app/mods/${mod}/mod.json".source = "${bundle mod dir}/mod.json";
       };
       json = v: lib.escapeShellArg (builtins.toJSON v);
+      treeIcons = lib.fileset.toSource {
+        root = ./tree/icons;
+        fileset = lib.fileset.fileFilter (f: f.hasExt "svg") ./tree/icons;
+      };
     in
     {
       options.programs.herdr-app = {
@@ -170,6 +174,16 @@
 
         programs.herdr-app.keys.global."ctrl-shift-g" = "layout.toggle:canvas";
         programs.pi.showUi.enable = true;
+
+        # Herdr draws no SVG reached through a store symlink, so the icons are copied.
+        home.activation.herdrTreeIcons = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+          if [[ ! -v DRY_RUN ]]; then
+            dir=${config.xdg.configHome}/herdr-app/mods/tree/icons
+            rm -rf "$dir"
+            mkdir -p "$dir"
+            install -m644 ${treeIcons}/*.svg "$dir/"
+          fi
+        '';
 
         # herdrCreeper rebuilds the home layout at each switch, so the tree and canvas go in after it.
         home.activation.herdrSidebar = lib.hm.dag.entryAfter [ "herdrCreeper" ] ''
