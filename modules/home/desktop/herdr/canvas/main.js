@@ -1,5 +1,5 @@
-// The page that the focused pi session showed with its show_ui tool, in the right sidebar:
-// documents, images, tables and status cards. Its pi extension writes them per herdr-core terminal.
+// The page the focused agent showed (pi show_ui, Claude herdr-show), in the right sidebar:
+// documents, images, tables and status cards. The agent writes them per herdr-core terminal.
 import { View, div, image } from "gpui-kit";
 import { h_flex, v_flex, TextView } from "gpui-base";
 import { exec, focused, home, layout, notify, props, run, setShared, shared, spaces, terminals, theme } from "herdr";
@@ -294,7 +294,7 @@ export default class Canvas extends View {
       ? v_flex().id("canvas-blocks").flex_1().min_h(0).px(10).gap(10).overflow_y_scrollbar().children(blocks)
       : v_flex().px(10).gap(8).text_size(13).text_color(t.dim)
         .child(div().child(this.address ? "This session has not drawn anything yet." : "Focus a terminal."))
-        .child(div().child("Ask pi to use its show_ui tool, for example: show me that design doc beside the session."));
+        .child(div().child("Ask the agent to show something here, for example: show me that design doc beside the session."));
     return v_flex().id("canvas-root").size_full().py(6).gap(8).bg(t.chrome).text_color(t.foreground)
       .on_size_change((size, cx) => {
         if (size.width === this.width) return;
