@@ -4,7 +4,7 @@ import { div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { props, closeOverlay, notify, theme, exec } from "herdr";
 import { menuFor, describeArgs, jjError } from "./jj.js";
-import { perform, openDialog } from "./act.js";
+import { perform, openDialog, showSpace } from "./act.js";
 
 export const icon = (name) => `mods/jj-graph/icons/${name}.svg`;
 
@@ -31,6 +31,9 @@ export class Menu {
       cx.write_to_clipboard(a.text);
       closeOverlay(overlay);
       notify({ title: "Copied", body: a.text, level: "success", timeout: 2000 });
+    } else if (a.type === "space") {
+      closeOverlay(overlay);
+      showSpace(a, ctx.on);
     } else if (a.type === "copyMessage" || a.type === "describe") {
       // Both need the full description, which the log only has the first line of.
       this.busy = i;

@@ -1,4 +1,4 @@
-import { exec, notify, setShared, openOverlay } from "herdr";
+import { exec, notify, setShared, openOverlay, spaces, panes, run } from "herdr";
 import { commandsFor, dialogFor, dialogHeight, doneText, jjError } from "./jj.js";
 
 // Runs an action's jj commands in order, stopping at the first failure. Every
@@ -22,6 +22,20 @@ export async function perform(action, values, ctx, { toast = true } = {}) {
   } finally {
     setShared("jj-graph.changed", Date.now());
   }
+}
+
+const inside = (p, dir) => p === dir || p.startsWith(`${dir}/`);
+
+// Selects the space whose first terminal sits in a workspace, or opens one there.
+export function showSpace(w, on) {
+  const space = spaces().find((s) => {
+    if ((s.machine ?? null) !== (on ?? null)) return false;
+    const tabs = new Set((s.tabs ?? []).map((c) => c.id));
+    const at = panes().find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder;
+    return Boolean(at) && inside(at, w.path);
+  });
+  if (space) run("space.select", { id: space.id });
+  else run("space.new", { name: w.name, folder: w.path, machine: on ?? "" });
 }
 
 // Opens the action's dialog; false when it has none and should run at once.

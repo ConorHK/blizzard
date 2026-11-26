@@ -7,7 +7,7 @@ import { spaces, panes, focused, exec, watchFolder, readTextFile, theme, setting
 import { layoutLanes } from "./lanes.js";
 import { READ, ALL, LABEL, logArgs, ancestorArgs, parseLog, labelsOf, hitLabel, menuFor, menuHeight, revOf,
   diffArgs, describeArgs, parseGitDiff, diffRows, jjError } from "./jj.js";
-import { perform } from "./act.js";
+import { perform, showSpace } from "./act.js";
 import { icon } from "./menu.js";
 
 function location(folder) {
@@ -175,7 +175,8 @@ export class Graph {
     const { rows, width } = layoutLanes(commits);
     this.commits = commits; this.rows = rows; this.lanes = width;
     const { advance, size } = look();
-    this.labels = new Map(commits.map((c) => [c.hash, labelsOf(c, this.remotes, size ? size * advance : LABEL.CHAR)]));
+    const workspaces = commits.flatMap((c) => c.refs).filter((r) => r.kind === "workspace").length > 1;
+    this.labels = new Map(commits.map((c) => [c.hash, labelsOf(c, this.remotes, size ? size * advance : LABEL.CHAR, workspaces)]));
     this.index = new Map(commits.map((c, i) => [c.hash, i]));
     this.ctx = { root: this.root, on: this.on, wcChange: this.wcChange, wcShort: this.wcShort, remotes: this.remoteNames, text: { font: look().font, size: look().size } };
     this.state = commits.length ? "ready" : "empty"; this.error = null;
@@ -333,11 +334,15 @@ export class Graph {
     this.pick(commit, cx);
   }
 
-  // A double-click edits a mutable change, or starts a new one on an immutable change or a label.
+  // A double-click edits a mutable change, or starts a new one on an immutable change, a label, or another
+  // workspace's @, so two workspaces never share one. A workspace label shows that workspace's space.
   activate(commit, x, cx) {
     const hit = hitLabel(this.labels.get(commit.hash), x, this.labelStart(), this.labelLimit());
-    const short = hit ? hit.part.name : shortOf(commit), ctx = this.ctx;
-    const action = !hit && !commit.immutable && !commit.root ? { type: "edit", rev: revOf(commit), short } : { type: "new", rev: revOf(commit), short };
+    const w = hit?.part.kind === "workspace" ? hit.part.ref : null;
+    if (w?.path && !w.current) return showSpace(w, this.on);
+    const short = w ? `${w.name}@` : hit ? hit.part.name : shortOf(commit), ctx = this.ctx;
+    const owned = commit.refs.some((r) => r.kind === "workspace");
+    const action = !hit && !owned && !commit.immutable && !commit.root ? { type: "edit", rev: revOf(commit), short } : { type: "new", rev: revOf(commit), short };
     if (action.type === "edit" && commit.wc) return;
     cx.spawn(async () => { await perform(action, {}, ctx); });
   }
@@ -350,7 +355,7 @@ export class Graph {
     const hit = hitLabel(this.labels.get(key), x, this.labelStart(), this.labelLimit());
     const parent = commit.parents.length === 1 ? this.commits[this.index.get(commit.parents[0])] : null;
     const target = hit ? { kind: hit.part.kind, name: hit.part.name, ref: hit.part.ref, commit: brief(commit) }
-      : { kind: "change", commit: brief(commit), squashable: Boolean(parent && !parent.immutable && !commit.indirect?.size),
+      : { kind: "change", commit: brief(commit), workspace: commit.refs.some((r) => r.kind === "workspace"), squashable: Boolean(parent && !parent.immutable && !commit.indirect?.size),
         bothDescribed: Boolean(parent && commit.subject && parent.subject) };
     const items = menuFor(target, this.ctx);
     openOverlay({ mod: "jj-graph", kind: "popup", at: "pointer", width: 268, height: menuHeight(items), props: { role: "menu", target, ctx: this.ctx } });
@@ -427,11 +432,12 @@ export class Graph {
   }
 
   label(label, color, t) {
-    const edge = label.kind === "tag" ? t.ansi3 : label.kind === "remote" ? t.muted : color;
-    return h_flex().flex_none().w(label.width).h(20).rounded(5).border_1().border_color(edge).overflow_hidden()
+    const here = label.kind === "workspace" && label.parts[0].ref.current;
+    const edge = label.kind === "tag" ? t.ansi3 : label.kind === "remote" ? t.muted : label.kind === "workspace" ? t.accent : color;
+    return h_flex().flex_none().w(label.width).h(20).rounded(5).border_1().border_color(edge).overflow_hidden().when(here, (e) => e.bg(edge + "33"))
       .children(label.parts.map((part, i) => {
-        const fg = part.kind === "tag" ? t.ansi3 : i > 0 || part.kind === "remote" ? t.muted : t.foreground;
-        const glyph = part.kind === "bookmark" ? "branch" : part.kind === "tag" ? "tag" : "cloud";
+        const fg = part.kind === "tag" ? t.ansi3 : part.kind === "workspace" ? t.accent : i > 0 || part.kind === "remote" ? t.muted : t.foreground;
+        const glyph = { bookmark: "branch", tag: "tag", workspace: "folder" }[part.kind] ?? "cloud";
         return h_flex().w(part.width).h_full().flex_none().px(LABEL.PAD).gap(3).items_center().overflow_hidden()
           .when(i > 0, (e) => e.border_l(1).border_color(edge).bg(edge + "1f"))
           .when(Boolean(part.icon), (e) => e.child(svg(icon(glyph)).size(10).flex_none().text_color(fg)))

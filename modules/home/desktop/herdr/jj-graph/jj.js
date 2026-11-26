@@ -8,7 +8,7 @@ export const READ = ["--no-pager", "--color=never", "--ignore-working-copy"];
 export const WRITE = ["--no-pager", "--color=never", "--config=ui.editor=\"false\""];
 export const ALL = "all()";
 
-const FIELDS = 13;
+const FIELDS = 14;
 export const TEMPLATE = String.raw`commit_id ++ "\0" ++ change_id ++ "\0"
   ++ change_id.shortest(8).prefix() ++ "\0" ++ change_id.shortest(8).rest() ++ "\0"
   ++ parents.map(|c| c.commit_id()).join(" ") ++ "\0"
@@ -16,6 +16,7 @@ export const TEMPLATE = String.raw`commit_id ++ "\0" ++ change_id ++ "\0"
   ++ local_bookmarks.map(|b| b.name()).join("\x1f") ++ "\0"
   ++ remote_bookmarks.filter(|b| b.remote() != "git").map(|b| b.name() ++ "@" ++ b.remote() ++ if(b.tracked(), "\x1d")).join("\x1f") ++ "\0"
   ++ tags.map(|t| t.name()).join("\x1f") ++ "\0"
+  ++ working_copies.map(|w| w.name() ++ "\x1e" ++ w.root() ++ "\x1e" ++ if(w.current_workspace(), "*")).join("\x1f") ++ "\0"
   ++ if(current_working_copy, "@") ++ if(empty, "e") ++ if(conflict, "c") ++ if(immutable, "i") ++ if(divergent, "d") ++ if(root, "r") ++ "\0"
   ++ description.first_line() ++ "\0"`;
 
@@ -44,7 +45,7 @@ export function parseLog(text) {
   if (fields.pop() !== "" || fields.length % FIELDS !== 0) throw new Error("Invalid log framing");
   const commits = [];
   for (let i = 0; i < fields.length; i += FIELDS) {
-    const [hash, change, prefix, rest, parents, author, email, time, locals, remotes, tags, flags, subject] = fields.slice(i, i + FIELDS);
+    const [hash, change, prefix, rest, parents, author, email, time, locals, remotes, tags, workspaces, flags, subject] = fields.slice(i, i + FIELDS);
     const refs = [
       ...list(locals).map((name) => ({ kind: "bookmark", name })),
       ...list(remotes).map((raw) => {
@@ -52,6 +53,10 @@ export function parseLog(text) {
         return { kind: "remote", name, bookmark: name.slice(0, at), remote: name.slice(at + 1), tracked };
       }),
       ...list(tags).map((name) => ({ kind: "tag", name })),
+      ...list(workspaces).map((raw) => {
+        const [name, path, current] = raw.split("\x1e");
+        return { kind: "workspace", name, path, current: current === "*" };
+      }),
     ];
     const commit = {
       hash, change, prefix, rest, parents: parents ? parents.split(" ") : [], author, email, time: Number(time), refs, subject,
@@ -75,8 +80,10 @@ export const LABEL = { CHAR: 6.6, PAD: 5, ICON: 13, GAP: 6, MAX: 22, FONT: 11 };
 const fit = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 const partWidth = (part, char) => Math.ceil(LABEL.PAD * 2 + (part.icon ? LABEL.ICON : 0) + part.text.length * char) + 1;
 
-export function labelsOf(commit, remotesShown = true, char = LABEL.CHAR) {
+// Workspace labels show only once the repo has a second workspace, as jj log's own <name>@ markers do.
+export function labelsOf(commit, remotesShown = true, char = LABEL.CHAR, workspacesShown = false) {
   const labels = [], remotes = remotesShown ? commit.refs.filter((r) => r.kind === "remote") : [], paired = new Set();
+  if (workspacesShown) for (const ref of commit.refs) if (ref.kind === "workspace") labels.push({ kind: "workspace", parts: [{ kind: "workspace", name: ref.name, ref, text: fit(`${ref.name}@`, LABEL.MAX), icon: true }] });
   for (const ref of commit.refs) {
     if (ref.kind !== "bookmark") continue;
     // A remote bookmark at the same commit rides on its local bookmark's label.
@@ -140,6 +147,13 @@ export function menuFor(target, ctx) {
         : item("Track bookmark", "cloud", { type: "track", bookmark: r.bookmark, remote: r.remote, name: r.name })),
       section(item("Copy bookmark name", "copy", { type: "copy", text: r.name })),
     ];
+  } else if (target.kind === "workspace") {
+    const w = target.ref;
+    sections = [
+      section(w.path && !w.current && item("Show its space", "folder", { type: "space", name: w.name, path: w.path }),
+        item(`New change on ${w.name}@`, "plus", { type: "new", rev, short: `${w.name}@` })),
+      section(w.path && item("Copy workspace path", "copy", { type: "copy", text: w.path })),
+    ];
   } else if (target.kind === "tag") {
     sections = [
       section(item(`New change on ${target.name}`, "plus", { type: "new", rev, short: target.name })),
@@ -148,7 +162,7 @@ export function menuFor(target, ctx) {
   } else {
     const mutable = !c.immutable && !c.root;
     sections = [
-      section(mutable && !c.wc && item("Edit this change", "commit", { type: "edit", rev, short }),
+      section(mutable && !c.wc && !target.workspace && item("Edit this change", "commit", { type: "edit", rev, short }),
         item("New change on top", "plus", { type: "new", rev, short }),
         mutable && item("Describe…", "rename", { type: "describe", rev, short })),
       section(mutable && target.squashable && item("Squash into parent…", "merge", { type: "squash", rev, short, useDest: Boolean(target.bothDescribed) }),
