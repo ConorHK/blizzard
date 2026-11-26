@@ -19,7 +19,8 @@ create() {
 	if root=$(jj workspace root --ignore-working-copy -R "$cwd" 2>/dev/null); then
 		path="$HOME/.herdr/workspaces/$(basename "$(main_root "$root")")/$name"
 		mkdir -p "$(dirname "$path")"
-		jj workspace add --name "$name" -R "$root" "$path"
+		# Claude passes the main checkout, whose own @ may be old, so new work starts from trunk.
+		jj workspace add --name "$name" -r "trunk()" -R "$root" "$path"
 	else
 		root=$(git -C "$cwd" rev-parse --show-toplevel)
 		path="$root/.claude/worktrees/$name"
