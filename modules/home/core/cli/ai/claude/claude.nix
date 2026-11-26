@@ -28,37 +28,50 @@
         ];
         text = builtins.readFile ./worktree.sh;
       };
-      worktreeHook = event: [
+      # jj comes from the user's PATH, so it reads the store with the same version that wrote it.
+      script =
+        name: runtimeInputs:
+        pkgs.writeShellApplication {
+          name = "claude-${name}";
+          inherit runtimeInputs;
+          text = builtins.readFile ./${name}.sh;
+        };
+      workspaceGuard = script "workspace-guard" [ pkgs.jq ];
+      tabName = script "tab-name" [
+        pkgs.jq
+        pkgs.claude-code
+      ];
+      statusline = script "statusline" [ pkgs.jq ];
+      hook = command: [
         {
           hooks = [
             {
               type = "command";
-              command = "${lib.getExe worktree} ${event}";
+              inherit command;
             }
           ];
         }
       ];
+      worktreeHook = event: hook "${lib.getExe worktree} ${event}";
       settings = {
         model = "claude-opus-5-5";
         effortLevel = "medium";
         includeCoAuthoredBy = false;
         tui = "fullscreen";
+        statusLine = {
+          type = "command";
+          command = lib.getExe statusline;
+        };
         env = {
           # Auto mode will not engage without this opt-in.
           CLAUDE_CODE_ENABLE_AUTO_MODE = "1";
           CLAUDE_CODE_PLUGIN_DIRS = "${./sudo-ssh}";
         };
         hooks = {
-          SessionStart = [
-            {
-              hooks = [
-                {
-                  type = "command";
-                  command = lib.getExe hcSession;
-                }
-              ];
-            }
-          ];
+          SessionStart = hook (lib.getExe hcSession) ++ hook (lib.getExe workspaceGuard);
+          UserPromptSubmit = hook (lib.getExe tabName);
+          # herdr-show comes from the herdr module, so hosts without Herdr skip this.
+          SessionEnd = hook "[ -n \"\${HC_TERMINAL_ID:-}\" ] && command -v herdr-show >/dev/null && herdr-show --clear >/dev/null 2>&1; true";
           WorktreeCreate = worktreeHook "create";
           WorktreeRemove = worktreeHook "remove";
         };
