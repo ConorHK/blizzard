@@ -70,6 +70,25 @@ export function parseLog(text) {
   return commits;
 }
 
+// The workspace holding the repository store: a secondary workspace's .jj/repo file names it.
+export function storeRoot(root, pointer) {
+  if (!pointer) return root;
+  const out = [];
+  for (const p of (pointer.startsWith("/") ? pointer : `${root}/.jj/${pointer}`).split("/")) {
+    if (p === "..") out.pop();
+    else if (p && p !== ".") out.push(p);
+  }
+  const path = `/${out.join("/")}`;
+  return path.endsWith("/.jj/repo") ? path.slice(0, -"/.jj/repo".length) : null;
+}
+
+// jj records no path for a workspace made by older versions, usually "default", the store's own.
+export function fillWorkspacePaths(commits, path) {
+  const refs = commits.flatMap((c) => c.refs).filter((r) => r.kind === "workspace" && !r.path);
+  if (!path || new Set(refs.map((r) => r.name)).size !== 1) return;
+  for (const r of refs) r.path = path;
+}
+
 // A divergent change id names several commits, so those are acted on by commit id.
 export const revOf = (c) => (c.divergent ? c.hash : c.change);
 

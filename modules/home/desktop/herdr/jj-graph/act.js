@@ -42,8 +42,26 @@ function closeSpace(w, on) {
   if (space) run("space.close", { id: space.id, confirmed: true });
 }
 
-// Selects the space whose first terminal sits in a workspace, or opens one there.
+// The terminal pane in a workspace, agents first, then the focused one.
+function paneIn(w, on) {
+  if (!w.path) return null;
+  const spaceOf = new Map(spaces().filter((s) => (s.machine ?? null) === (on ?? null))
+    .flatMap((s) => (s.tabs ?? []).map((t) => [t.id, s])));
+  const rank = (p) => (p.program?.agent ? 2 : 0) + (p.focused ? 1 : 0);
+  const pane = panes().filter((p) => p.terminal && p.cwd && spaceOf.has(p.tab) && inside(p.cwd, w.path))
+    .sort((a, b) => rank(b) - rank(a))[0];
+  return pane ? { pane, space: spaceOf.get(pane.tab) } : null;
+}
+
+// Shows the tab with a workspace's agent or terminal, else its space, else opens one there.
 export function showSpace(w, on) {
+  const hit = paneIn(w, on);
+  if (hit) {
+    run("space.select", { id: hit.space.id });
+    run("tab.select", { id: hit.pane.tab });
+    run("pane.focus", { pane: hit.pane.pane });
+    return;
+  }
   const space = spaceIn(w, on);
   if (space) run("space.select", { id: space.id });
   else run("space.new", { name: w.name, folder: w.path, machine: on ?? "" });

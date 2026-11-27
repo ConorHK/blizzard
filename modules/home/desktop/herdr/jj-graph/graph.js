@@ -6,7 +6,7 @@ import { v_flex, h_flex, Scrollbar, v_virtual_list } from "gpui-base";
 import { spaces, panes, focused, exec, watchFolder, readTextFile, theme, settings, props, shared, setShared, openOverlay, closeOverlay, home, updates } from "herdr";
 import { layoutLanes } from "./lanes.js";
 import { READ, ALL, LABEL, logArgs, ancestorArgs, parseLog, labelsOf, hitLabel, menuFor, menuHeight, revOf,
-  diffArgs, describeArgs, parseGitDiff, diffRows, jjError } from "./jj.js";
+  diffArgs, describeArgs, parseGitDiff, diffRows, jjError, storeRoot, fillWorkspacePaths } from "./jj.js";
 import { perform, showSpace } from "./act.js";
 import { icon } from "./menu.js";
 
@@ -94,12 +94,16 @@ async function readFolder(cwd, on, { all, limit }) {
     jj(["git", "remote", "list", ...READ]), all ? null : jj(["config", "get", "revsets.log", ...READ])]);
   if (top.code !== 0) return { state: "norepo", cwd, on };
   if (log.code !== 0) throw new Error(jjError(log));
-  const parsed = parseLog(log.stdout), base = parsed.slice(0, limit);
+  const root = top.stdout.trim(), parsed = parseLog(log.stdout), base = parsed.slice(0, limit);
+  if (parsed.some((c) => c.refs.some((r) => r.kind === "workspace" && !r.path))) {
+    const pointer = (await readTextFile(`${root}/.jj/repo`, { on }).catch(() => null))?.trim();
+    fillWorkspacePaths(parsed, storeRoot(root, pointer));
+  }
   const revset = all ? ALL : (config?.code === 0 && config.stdout.trim()) || "@ | ancestors(immutable_heads().., 2) | trunk()";
   const ancestry = all ? "" : await connect(base, revset, jj);
   const [wcChange, wcShort] = wc.code === 0 ? wc.stdout.split("\0") : [null, null];
   return {
-    root: top.stdout.trim(), on, cwd, base, limit, hasMore: parsed.length > limit,
+    root, on, cwd, base, limit, hasMore: parsed.length > limit,
     wcChange, wcShort, op: op.stdout.trim(),
     remoteNames: remotes.code === 0 ? remotes.stdout.split("\n").filter(Boolean).map((l) => l.split(/\s+/)[0]) : [],
     signature: [log.stdout, ancestry, wc.stdout, remotes.stdout].join("\0"), scope: String(all),
@@ -331,11 +335,20 @@ export class Graph {
     const commit = this.commits[this.index.get(key)];
     if (!commit) return;
     if (press?.count >= 2) return this.activate(commit, press.x, cx);
+    const w = this.workspaceAt(commit, press?.x);
+    if (w?.path && !w.current) return showSpace(w, this.on);
     this.pick(commit, cx);
   }
 
+  // A click on another workspace's label shows the tab working in it.
+  workspaceAt(commit, x) {
+    if (x === undefined) return null;
+    const hit = hitLabel(this.labels.get(commit.hash), x, this.labelStart(), this.labelLimit());
+    return hit?.part.kind === "workspace" ? hit.part.ref : null;
+  }
+
   // A double-click edits a mutable change, or starts a new one on an immutable change, a label, or another
-  // workspace's @, so two workspaces never share one. A workspace label shows that workspace's space.
+  // workspace's @, so two workspaces never share one.
   activate(commit, x, cx) {
     const hit = hitLabel(this.labels.get(commit.hash), x, this.labelStart(), this.labelLimit());
     const w = hit?.part.kind === "workspace" ? hit.part.ref : null;
