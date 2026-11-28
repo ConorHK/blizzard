@@ -78,26 +78,10 @@
         ipv4.address = "192.168.0.38";
         # Lets Moonlight wake the PC.
         interfaces.enp13s0.wakeOnLan.enable = true;
-        # Catches what deletes the wired subnet route at boot; revert once found.
-        networkmanager.logLevel = "TRACE";
       };
 
-      # Names the process that deletes the wired subnet route (#733); revert once found.
-      systemd.services.route-delete-trace = {
-        description = "Log processes that delete IPv4 routes";
-        wantedBy = [ "multi-user.target" ];
-        before = [ "NetworkManager.service" ];
-        serviceConfig.ExecStart = "${pkgs.bpftrace}/bin/bpftrace ${pkgs.writeText "route-delete.bt" ''
-          fentry:vmlinux:fib_table_delete {
-            $c = args.cfg;
-            printf("delete %s/%d oif=%d pid=%d comm=%s%s\n",
-              ntop($c->fc_dst), $c->fc_dst_len, $c->fc_oif, pid, comm, kstack);
-          }
-          fentry:vmlinux:fib_table_flush {
-            printf("flush pid=%d comm=%s%s\n", pid, comm, kstack);
-          }
-        ''}";
-      };
+      # Both NICs share the LAN, so otherwise Wi-Fi answers ARP for the wired IP and NetworkManager drops its route as a conflict.
+      boot.kernel.sysctl."net.ipv4.conf.all.arp_ignore" = 1;
 
       services.sunshine = {
         settings.output_name = "DP-1";
